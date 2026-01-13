@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCAE Examination System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Updated Mammoth.js to v1.8.0 for better stability -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        
+        /* PRINT STYLES */
+        @media print {
+            body > * { display: none !important; }
+            body > #print-staging-area { 
+                display: block !important; position: absolute !important; top: 0; left: 0; width: 100%; 
+                background: white; z-index: 9999; font-size: 11px; line-height: 1.3;
+            }
+            #print-staging-area * { visibility: visible !important; }
+            .no-print { display: none !important; }
+            #paper-body { column-count: 2; column-gap: 0.5cm; display: block !important; }
+            .question-item { break-inside: avoid; page-break-inside: avoid; margin-bottom: 0.5rem; display: inline-block; width: 100%; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+            #print-header { border-bottom: 2px solid black !important; margin-bottom: 10px !important; padding-bottom: 5px !important; }
+            .q-number { color: black !important; font-weight: 800 !important; margin-right: 4px; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- DEDICATED PRINT STAGING AREA -->
+    <div id="print-staging-area" class="hidden"></div>
+
+    <!-- MAIN NAVIGATION (Hidden on Login Screen) -->
+    <nav id="main-nav" class="bg-blue-900 text-white shadow-lg flex-none z-20 no-print hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-graduation-cap text-2xl text-yellow-400"></i>
+                    <span class="font-bold text-xl tracking-wide hidden sm:block">NCAE System</span>
+                </div>
+                <div class="flex space-x-2 bg-blue-800 p-1 rounded-lg" id="nav-buttons-container">
+                    <!-- Buttons injected based on role -->
+                </div>
+                <div class="ml-4 flex items-center space-x-3">
+                    <span id="nav-user-label" class="text-sm text-blue-200 hidden md:block"></span>
+                    <!-- Settings Button (Teacher Only) -->
+                    <button id="btn-settings" onclick="document.getElementById('settings-modal').classList.remove('hidden')" class="text-xs bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded text-white font-medium transition hidden">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button onclick="app.logoutUser()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-white font-bold transition">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-hidden relative" id="main-container">
+
+        <!-- ================= LOGIN DASHBOARD ================= -->
+        <div id="view-login" class="h-full overflow-y-auto flex items-center justify-center p-4 fade-in bg-gradient-to-br from-blue-900 to-slate-800">
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 my-8 relative">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+                        <i class="fas fa-graduation-cap text-3xl"></i>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-slate-800">NCAE System</h1>
+                    <p class="text-slate-500 text-sm mt-1">Please select your role to continue</p>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-slate-200 mb-6">
+                    <button onclick="app.switchLoginTab('student')" id="tab-login-student" class="flex-1 pb-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">Student</button>
+                    <button onclick="app.switchLoginTab('teacher')" id="tab-login-teacher" class="flex-1 pb-3 text-sm font-medium text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-colors">Teacher</button>
+                </div>
+
+                <!-- Student Login Form -->
+                <div id="form-login-student" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">FULL NAME</label>
+                        <input type="text" id="login-st-name" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Juan Dela Cruz">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">COURSE / GRADE LEVEL</label>
+                        <select id="login-st-course" class="w-full p-3 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">Select Course...</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">SECTION (OPTIONAL)</label>
+                            <input type="text" id="login-st-section" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Rizal">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">LRN NUMBER</label>
+                            <input type="number" id="login-st-lrn" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="12-digit LRN">
+                        </div>
+                    </div>
+                    <button onclick="app.loginStudent()" class="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg transform transition hover:-translate-y-0.5">Enter Exam Portal</button>
+                </div>
+
+                <!-- Teacher Login / Register Container -->
+                <div id="container-teacher-auth" class="hidden">
+                    <!-- Login Form -->
+                    <div id="form-login-teacher" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
+                            <input type="text" id="login-te-user" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter username">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD</label>
+                            <input type="password" id="login-te-pass" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter password">
+                        </div>
+                        <button onclick="app.loginTeacher()" class="w-full py-3 mt-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg shadow-lg transform transition hover:-translate-y-0.5">Access Dashboard</button>
+                        <div class="text-center mt-4">
+                            <span class="text-xs text-slate-500">New teacher?</span>
+                            <button onclick="app.toggleTeacherRegister(true)" class="text-xs font-bold text-blue-600 hover:underline">Register Account</button>
+                        </div>
+                    </div>
+
+                    <!-- Register Form -->
+                    <div id="form-register-teacher" class="space-y-4 hidden">
+                         <div class="text-center mb-4">
+                            <h3 class="text-lg font-bold text-slate-700">Teacher Registration</h3>
+                            <p class="text-xs text-slate-400">Create your admin credentials</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">FULL NAME</label>
+                            <input type="text" id="reg-te-name" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Mary Clara">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">USERNAME</label>
+                            <input type="text" id="reg-te-user" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Choose a username">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">PASSWORD</label>
+                            <input type="password" id="reg-te-pass" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Create password">
+                        </div>
+                        <button onclick="app.registerTeacher()" class="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg transform transition hover:-translate-y-0.5">Create Account</button>
+                        <div class="text-center mt-3">
+                            <button onclick="app.toggleTeacherRegister(false)" class="text-xs font-bold text-slate-500 hover:text-slate-700">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <p class="text-slate-400 text-xs mt-6 mb-4">&copy; 2024 NCAE System</p>
+        </div>
+        
+        <!-- ================= TEACHER MODE ================= -->
+        <div id="view-teacher" class="h-full flex flex-col hidden fade-in bg-slate-100">
+            <!-- Sub-Nav -->
+            <div class="bg-white border-b border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center shadow-sm no-print gap-4">
+                <div class="flex space-x-2 overflow-x-auto">
+                    <button onclick="app.toggleTeacherView('courses')" id="tab-courses" class="px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 rounded-lg border border-blue-100">Curriculum Setup</button>
+                    <button onclick="app.toggleTeacherView('questions')" id="tab-questions" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-blue-600">Manage Questions</button>
+                    <button onclick="app.toggleTeacherView('records')" id="tab-records" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-blue-600">Student Records</button>
+                </div>
+                
+                <!-- Import/Export Tools (Only visible in Questions View) -->
+                <div id="teacher-tools-panel" class="flex space-x-3 items-center hidden">
+                    <input type="file" id="file-import" class="hidden" accept=".docx" onchange="app.importDocx(this)">
+                    <div class="text-xs text-slate-500 mr-2 hidden md:block">
+                        Upload to: <span id="current-upload-target" class="font-bold text-blue-600">--</span>
+                    </div>
+                    <button onclick="document.getElementById('file-import').click()" class="text-xs px-3 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 font-medium flex items-center">
+                        <i class="fas fa-file-word mr-1"></i> Import .DOCX
+                    </button>
+                    <button onclick="app.downloadTemplate()" class="text-xs px-3 py-1 bg-slate-600 text-white rounded hover:bg-slate-700 font-medium">
+                        <i class="fas fa-download mr-1"></i> Get Template
+                    </button>
+                    <button onclick="app.clearData()" class="text-xs text-red-500 hover:text-red-700 underline ml-2">Reset</button>
+                </div>
+            </div>
+
+            <!-- VIEW 1: Curriculum Setup -->
+            <div id="teacher-courses-view" class="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                <!-- Subject Database -->
+                <div class="w-full md:w-1/3 bg-white border-r border-slate-200 flex flex-col p-6 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-800">Subject Database</h2>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Register New Subject</h3>
+                        <input type="text" id="new-subject-domain" placeholder="Domain (e.g. GSA)" class="w-full p-2 mb-2 border rounded text-sm">
+                        <input type="text" id="new-subject-name" placeholder="Subject (e.g. Math)" class="w-full p-2 mb-2 border rounded text-sm">
+                        <button onclick="app.registerNewSubject()" class="w-full bg-blue-600 text-white py-1.5 rounded text-sm font-medium hover:bg-blue-700">Add to Database</button>
+                    </div>
+                    <div id="subject-database-list" class="space-y-4"></div>
+                </div>
+
+                <!-- Course/Grade Builder -->
+                <div class="flex-1 bg-slate-50 p-6 overflow-y-auto">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4">Grade Levels & Courses</h2>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-200 mb-6">
+                        <h3 class="text-md font-bold text-blue-800 mb-3"><i class="fas fa-plus-circle mr-2"></i>Create New Grade Level</h3>
+                        <div class="flex gap-3 mb-4">
+                            <input type="text" id="new-course-name" placeholder="Course Name (e.g. Grade 7, STEM 12)" class="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button onclick="app.createNewCourse()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700">Save Course</button>
+                        </div>
+                        <p class="text-xs font-bold text-slate-500 uppercase mb-2">Select Subjects for this Course:</p>
+                        <div id="course-builder-checkboxes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto p-2 border rounded bg-slate-50"></div>
+                    </div>
+                    <div id="course-list-container" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Question Editor -->
+            <div id="teacher-questions-view" class="flex-1 hidden flex-col md:flex-row h-full overflow-hidden">
+                <!-- Sidebar -->
+                <div class="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col flex-none shadow-sm z-10 overflow-y-auto">
+                    <div class="p-6">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-4">Select Context</h2>
+                        <div class="space-y-4">
+                            <div><label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Domain</label><select id="editor-domain" onchange="app.editorUpdateSubdomains()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm"></select></div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Sub-Test</label>
+                                <div class="flex space-x-2">
+                                    <select id="editor-subdomain" onchange="app.editorLoadQuestions()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm"></select>
+                                    <button onclick="app.deleteCurrentSubject()" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <hr class="border-slate-100 my-4">
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-slate-600">Item Count</span><span id="count-badge" class="bg-blue-200 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span></div>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2"><div id="progress-bar" class="bg-blue-600 h-1.5 rounded-full" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Editor -->
+                <div class="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden">
+                    <div class="p-6 bg-white border-b border-slate-200 shadow-sm flex-none">
+                        <h3 class="text-md font-bold text-slate-700 mb-4">Manual Entry</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="col-span-1 md:col-span-2"><input type="text" id="q-text" placeholder="Question text..." class="w-full p-3 border border-slate-300 rounded-lg text-sm"></div>
+                            <input type="text" id="opt-a" placeholder="Option A" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            <input type="text" id="opt-b" placeholder="Option B" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            <input type="text" id="opt-c" placeholder="Option C" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            <input type="text" id="opt-d" placeholder="Option D" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm">
+                            <div class="flex items-center space-x-2"><label class="text-xs font-bold text-slate-500">Answer:</label><select id="correct-opt" class="p-2 bg-slate-100 rounded border border-slate-300 text-sm"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+                            <div class="flex justify-end"><button onclick="app.addQuestion()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">Save</button></div>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto custom-scroll p-6"><div id="questions-container" class="space-y-3"></div><div id="empty-state" class="text-center py-10 text-slate-400 hidden">No questions.</div></div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Student Records Table -->
+            <div id="teacher-records-view" class="flex-1 hidden p-8 overflow-y-auto custom-scroll">
+                <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-xl overflow-hidden border border-slate-200">
+                    <div class="bg-slate-800 text-white p-6 flex justify-between items-center">
+                        <h1 class="text-2xl font-bold">Student Submissions</h1>
+                        <button onclick="app.smartPrint('teacher-records-table-container')" class="bg-white text-slate-800 px-4 py-2 rounded font-bold hover:bg-slate-200 text-sm no-print"><i class="fas fa-print mr-2"></i> Print List</button>
+                    </div>
+                    <div id="teacher-records-table-container">
+                        <div class="p-4 hidden print:block text-center font-bold text-xl border-b mb-4">Class Examination Master List</div>
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase text-xs">
+                                <tr><th class="p-4">Name</th><th class="p-4">Course/Grade</th><th class="p-4">LRN</th><th class="p-4">Subject</th><th class="p-4 text-center">Score</th><th class="p-4 text-center no-print">Actions</th></tr>
+                            </thead>
+                            <tbody id="teacher-records-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                        <div id="no-records-msg" class="text-center py-10 text-slate-400 italic hidden">No records found.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL (For Password Change) -->
+        <div id="settings-modal" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Account Settings</h3>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">NEW PASSWORD</label>
+                    <input type="password" id="setting-new-pass" class="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button onclick="document.getElementById('settings-modal').classList.add('hidden')" class="px-4 py-2 text-slate-500 text-sm hover:text-slate-700">Cancel</button>
+                    <button onclick="app.changePassword()" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAILED TEST PAPER OVERLAY -->
+        <div id="detailed-paper-overlay" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex justify-center overflow-y-auto p-4 no-print">
+            <div id="paper-content-wrapper" class="bg-white w-full max-w-3xl shadow-2xl rounded-xl my-4 flex flex-col h-fit min-h-full md:min-h-0 relative">
+                <div id="paper-printable-content">
+                    <div id="print-header" class="p-8 border-b-2 border-slate-800 flex justify-between items-start bg-slate-50 rounded-t-xl print:bg-white print:p-0">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800 uppercase tracking-wider mb-2 print:text-lg print:mb-1">Answer Sheet</h1>
+                            <div class="grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-slate-700 mt-4 print:mt-1 print:gap-y-1 print:text-xs">
+                                <p><strong>Name:</strong> <span id="paper-name">--</span></p>
+                                <p><strong>LRN:</strong> <span id="paper-lrn">--</span></p>
+                                <p><strong>Grade:</strong> <span id="paper-grade">--</span></p>
+                                <p><strong>Date:</strong> <span id="paper-date">--</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold text-slate-400 uppercase print:text-xs">Subject</div>
+                            <div class="text-lg font-bold text-slate-800 mb-2 print:text-sm print:mb-0" id="paper-subject">--</div>
+                            <div class="inline-block bg-slate-800 text-white px-6 py-3 rounded-lg print:border print:border-black print:text-black print:bg-transparent print:p-0 print:text-right">
+                                <span class="text-xs uppercase opacity-70 block print:hidden">Score</span>
+                                <span class="text-3xl font-mono font-bold print:text-xl" id="paper-score">0/0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="paper-body" class="p-8 space-y-6 bg-white print:space-y-0 print:p-0"></div>
+                </div>
+                <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-end space-x-3 rounded-b-xl no-print">
+                    <button onclick="document.getElementById('detailed-paper-overlay').classList.add('hidden')" class="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded">Close</button>
+                    <button onclick="app.smartPrint('paper-printable-content')" class="px-5 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 shadow-sm"><i class="fas fa-print mr-2"></i> Print Paper</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STUDENT MODE ================= -->
+        <div id="view-student" class="h-full flex flex-col hidden fade-in overflow-y-auto custom-scroll bg-slate-50">
+            <div id="student-dashboard" class="max-w-6xl mx-auto w-full p-6">
+                <header class="mb-8 flex justify-between items-center border-b border-slate-200 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800">Exam Portal</h1>
+                        <p class="text-sm text-slate-500">Student: <span id="dash-user-name" class="font-bold text-blue-600">--</span> | Course: <span id="dash-course-name" class="font-bold text-slate-700">--</span></p>
+                    </div>
+                </header>
+                <div id="exam-categories-container" class="space-y-8"></div>
+            </div>
+            
+            <div id="exam-interface" class="hidden fixed inset-0 z-50 bg-white flex flex-col">
+                <div class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md"><h2 id="exam-title" class="font-bold">Subject</h2><button onclick="app.quitExam()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded transition-colors">Exit (Save & Close)</button></div>
+                <div class="flex-1 flex justify-center items-center p-6 bg-slate-50 overflow-y-auto">
+                    <div class="w-full max-w-2xl">
+                        <div class="bg-white p-8 rounded-2xl shadow border border-slate-200"><h3 id="exam-q-text" class="text-xl font-medium text-slate-800 mb-6">Question?</h3><div class="space-y-3" id="exam-options"></div></div>
+                        <div class="mt-8 flex justify-end"><button onclick="app.nextQuestion()" class="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow">Next</button></div>
+                    </div>
+                </div>
+            </div>
+            <div id="single-result-interface" class="hidden fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+                <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                    <div class="text-4xl font-extrabold text-blue-600 mb-2" id="single-result-score">0/0</div><p class="text-slate-500 text-sm mb-4">Submitted to teacher.</p><button onclick="app.closeSingleResult()" class="w-full py-2 bg-slate-800 text-white rounded-lg">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RESULTS TAB ================= -->
+        <div id="view-results" class="h-full hidden fade-in overflow-y-auto custom-scroll bg-slate-100 p-6 flex items-center justify-center">
+            <div id="printable-report" class="bg-white shadow-xl max-w-3xl w-full rounded-xl overflow-hidden print:shadow-none">
+                <div class="bg-slate-800 text-white p-8 flex justify-between items-start print:bg-white print:text-black print:border-b-2 print:border-black">
+                    <div><h1 class="text-2xl font-bold uppercase">Report Card</h1><p class="text-slate-300 text-sm print:text-slate-600">Student Copy</p></div>
+                    <div class="text-right"><div class="font-bold text-lg" id="report-name">--</div><div class="text-xs" id="report-grade">Grade: --</div></div>
+                </div>
+                <div class="p-8">
+                    <table class="w-full text-sm text-left"><thead><tr class="border-b"><th class="py-2">Subject</th><th class="py-2 text-center">Score</th><th class="py-2 text-right">Rating</th></tr></thead><tbody id="results-table-body" class="divide-y"></tbody></table>
+                    <div id="no-results-msg" class="text-center py-8 text-slate-400 italic hidden">No results.</div>
+                    <div class="mt-8 flex justify-end no-print"><button onclick="app.smartPrint('printable-report')" class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium">Print Report</button></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const app = {
+            structure: { GSA: { "Reading Comprehension":{}, "Mathematical Ability":{}, "Scientific Ability":{} }, SHS: { "Academic Track (STEM)":{}, "Academic Track (ABM)":{} }, OIISSS: { "Occupational Interest":{} } },
+            data: {}, submissions: [], currentUser: null, userResults: {}, examState: null, userProgress: {}, courseConfig: {}, teachers: {},
+
+            init() {
+                this.data = JSON.parse(localStorage.getItem('ncae_db_v7')) || this.initDataStructure();
+                this.submissions = JSON.parse(localStorage.getItem('ncae_submissions_v5')) || [];
+                this.courseConfig = JSON.parse(localStorage.getItem('ncae_courses_v1')) || {};
+                this.teachers = JSON.parse(localStorage.getItem('ncae_teachers_v1')) || {
+                    'admin': { name: 'Administrator', password: btoa('admin123') } // Pre-seed admin, base64 encoded for simple storage
+                };
+                
+                this.userProgress = JSON.parse(sessionStorage.getItem('ncae_progress')) || {};
+                
+                const user = JSON.parse(sessionStorage.getItem('ncae_user'));
+                const role = sessionStorage.getItem('ncae_role'); 
+
+                if (user) {
+                    this.currentUser = user;
+                    this.userResults = JSON.parse(sessionStorage.getItem('ncae_results')) || {};
+                    this.setMode(role === 'teacher' ? 'teacher' : 'student');
+                } else if (role === 'teacher') {
+                    // Recover teacher session state if mostly stateless
+                    const teacherUser = sessionStorage.getItem('ncae_teacher_username');
+                    if(teacherUser && this.teachers[teacherUser]) {
+                        this.currentUser = { name: this.teachers[teacherUser].name, username: teacherUser };
+                        this.setMode('teacher');
+                    } else {
+                        this.showLoginScreen();
+                    }
+                } else {
+                    this.showLoginScreen();
+                }
+                
+                this.renderDomainOptions(); 
+                this.renderStudentLoginDropdown();
+            },
+
+            initDataStructure() { let d = {}; for(let k in this.structure) { d[k]={}; for(let s in this.structure[k]) d[k][s]=[]; } return d; },
+            save() { localStorage.setItem('ncae_db_v7', JSON.stringify(this.data)); },
+            saveSub() { localStorage.setItem('ncae_submissions_v5', JSON.stringify(this.submissions)); },
+            saveProgress() { sessionStorage.setItem('ncae_progress', JSON.stringify(this.userProgress)); },
+            saveCourses() { localStorage.setItem('ncae_courses_v1', JSON.stringify(this.courseConfig)); },
+            saveTeachers() { localStorage.setItem('ncae_teachers_v1', JSON.stringify(this.teachers)); },
+
+            // --- NAVIGATION & LOGIN FLOW ---
+            showLoginScreen() {
+                document.getElementById('view-login').classList.remove('hidden');
+                document.getElementById('main-nav').classList.add('hidden');
+                document.getElementById('view-teacher').classList.add('hidden');
+                document.getElementById('view-student').classList.add('hidden');
+                document.getElementById('view-results').classList.add('hidden');
+                this.switchLoginTab('student'); 
+            },
+
+            switchLoginTab(type) {
+                const sTab = document.getElementById('tab-login-student');
+                const tTab = document.getElementById('tab-login-teacher');
+                const sForm = document.getElementById('form-login-student');
+                const tAuth = document.getElementById('container-teacher-auth');
+
+                if (type === 'student') {
+                    sTab.classList.replace('text-slate-400', 'text-blue-600');
+                    sTab.classList.replace('border-transparent', 'border-blue-600');
+                    sTab.classList.add('font-bold');
+                    tTab.classList.replace('text-blue-600', 'text-slate-400');
+                    tTab.classList.replace('border-blue-600', 'border-transparent');
+                    tTab.classList.remove('font-bold');
+                    sForm.classList.remove('hidden');
+                    tAuth.classList.add('hidden');
+                } else {
+                    tTab.classList.replace('text-slate-400', 'text-blue-600');
+                    tTab.classList.replace('border-transparent', 'border-blue-600');
+                    tTab.classList.add('font-bold');
+                    sTab.classList.replace('text-blue-600', 'text-slate-400');
+                    sTab.classList.replace('border-blue-600', 'border-transparent');
+                    sTab.classList.remove('font-bold');
+                    tAuth.classList.remove('hidden');
+                    sForm.classList.add('hidden');
+                    this.toggleTeacherRegister(false); // Reset to login view
+                }
+            },
+
+            toggleTeacherRegister(showRegister) {
+                const loginForm = document.getElementById('form-login-teacher');
+                const regForm = document.getElementById('form-register-teacher');
+                if (showRegister) {
+                    loginForm.classList.add('hidden');
+                    regForm.classList.remove('hidden');
+                } else {
+                    loginForm.classList.remove('hidden');
+                    regForm.classList.add('hidden');
+                }
+            },
+
+            loginTeacher() {
+                const user = document.getElementById('login-te-user').value.trim();
+                const pass = document.getElementById('login-te-pass').value;
+                
+                if (!user || !pass) return alert("Please enter credentials.");
+
+                const teacher = this.teachers[user];
+                if (teacher && teacher.password === btoa(pass)) {
+                    sessionStorage.setItem('ncae_role', 'teacher');
+                    sessionStorage.setItem('ncae_teacher_username', user);
+                    this.currentUser = { name: teacher.name, username: user };
+                    this.setMode('teacher');
+                } else {
+                    alert('Invalid Username or Password');
+                }
+            },
+
+            registerTeacher() {
+                const name = document.getElementById('reg-te-name').value.trim();
+                const user = document.getElementById('reg-te-user').value.trim();
+                const pass = document.getElementById('reg-te-pass').value;
+
+                if (!name || !user || !pass) return alert("All fields are required.");
+                if (this.teachers[user]) return alert("Username already taken.");
+
+                this.teachers[user] = {
+                    name: name,
+                    password: btoa(pass)
+                };
+                this.saveTeachers();
+                alert("Account created! Please log in.");
+                this.toggleTeacherRegister(false);
+            },
+
+            changePassword() {
+                const newPass = document.getElementById('setting-new-pass').value;
+                if (!newPass) return alert("Please enter a new password.");
+                
+                const user = this.currentUser.username;
+                if (this.teachers[user]) {
+                    this.teachers[user].password = btoa(newPass);
+                    this.saveTeachers();
+                    alert("Password updated successfully.");
+                    document.getElementById('settings-modal').classList.add('hidden');
+                }
+            },
+
+            loginStudent() {
+                const n = document.getElementById('login-st-name').value;
+                const c = document.getElementById('login-st-course').value;
+                const sec = document.getElementById('login-st-section').value;
+                const l = document.getElementById('login-st-lrn').value;
+
+                if (!n || !c || !l) return alert("Please fill Name, Course, and LRN.");
+
+                const gradeDisplay = sec ? `${c} - ${sec}` : c;
+                this.currentUser = { name: n, grade: gradeDisplay, courseKey: c, lrn: l };
+                
+                sessionStorage.setItem('ncae_user', JSON.stringify(this.currentUser));
+                sessionStorage.setItem('ncae_role', 'student');
+                
+                this.setMode('student');
+            },
+
+            logoutUser() {
+                if (confirm("Are you sure you want to logout?")) {
+                    sessionStorage.clear();
+                    this.currentUser = null;
+                    location.reload();
+                }
+            },
+
+            setMode(mode) {
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('main-nav').classList.remove('hidden');
+
+                const navContainer = document.getElementById('nav-buttons-container');
+                const userLabel = document.getElementById('nav-user-label');
+                const settingsBtn = document.getElementById('btn-settings');
+                
+                navContainer.innerHTML = '';
+                
+                if (mode === 'teacher') {
+                    navContainer.innerHTML = `
+                        <button onclick="app.setMode('teacher')" class="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white shadow-md"><i class="fas fa-chalkboard-teacher mr-2"></i>Teacher Dashboard</button>
+                    `;
+                    userLabel.innerText = this.currentUser ? `Welcome, ${this.currentUser.name}` : "Teacher Mode";
+                    settingsBtn.classList.remove('hidden');
+                    
+                    document.getElementById('view-teacher').classList.remove('hidden');
+                    document.getElementById('view-student').classList.add('hidden');
+                    document.getElementById('view-results').classList.add('hidden');
+                    this.toggleTeacherView('courses'); 
+                } 
+                else if (mode === 'student' || mode === 'results') {
+                    navContainer.innerHTML = `
+                        <button onclick="app.setMode('student')" class="px-3 py-2 rounded-md text-sm font-medium transition-colors ${mode==='student'?'bg-blue-600 text-white shadow-md':'hover:bg-blue-700 text-blue-100'}"><i class="fas fa-book-reader mr-2"></i>Exam</button>
+                        <button onclick="app.setMode('results')" class="px-3 py-2 rounded-md text-sm font-medium transition-colors ${mode==='results'?'bg-blue-600 text-white shadow-md':'hover:bg-blue-700 text-blue-100'}"><i class="fas fa-clipboard-list mr-2"></i>My Results</button>
+                    `;
+                    userLabel.innerText = this.currentUser ? `Hi, ${this.currentUser.name}` : '';
+                    settingsBtn.classList.add('hidden');
+
+                    document.getElementById('view-teacher').classList.add('hidden');
+                    document.getElementById('view-student').classList.toggle('hidden', mode !== 'student');
+                    document.getElementById('view-results').classList.toggle('hidden', mode !== 'results');
+
+                    if (mode === 'student') this.checkStudentState();
+                    if (mode === 'results') this.renderReportCard();
+                }
+            },
+
+            renderStudentLoginDropdown() {
+                const select = document.getElementById('login-st-course');
+                select.innerHTML = '<option value="">Select Course / Grade Level...</option>';
+                Object.keys(this.courseConfig).forEach(c => {
+                    select.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+            },
+
+            // --- CURRICULUM SETUP LOGIC ---
+            registerNewSubject() {
+                const domain = document.getElementById('new-subject-domain').value.trim();
+                const subject = document.getElementById('new-subject-name').value.trim();
+                
+                if (!domain || !subject) return alert("Please enter Domain and Subject.");
+                
+                if (!this.data[domain]) this.data[domain] = {};
+                if (this.data[domain][subject]) return alert("Subject already exists.");
+                
+                this.data[domain][subject] = [];
+                this.save();
+                this.renderCourseManager(); 
+                
+                document.getElementById('new-subject-domain').value = '';
+                document.getElementById('new-subject-name').value = '';
+                alert(`Added ${subject} to ${domain}`);
+            },
+            
+            deleteSubject(domain, subject) {
+                if (confirm(`Delete "${subject}" from "${domain}"? All data will be lost.`)) {
+                    delete this.data[domain][subject];
+                    if (Object.keys(this.data[domain]).length === 0) delete this.data[domain];
+                    this.save();
+                    this.renderCourseManager();
+                }
+            },
+
+            renderCourseManager() {
+                const treeContainer = document.getElementById('subject-database-list');
+                treeContainer.innerHTML = '';
+                
+                if (Object.keys(this.data).length === 0) {
+                    treeContainer.innerHTML = '<p class="text-slate-400 italic text-sm">Database empty.</p>';
+                } else {
+                    Object.keys(this.data).forEach(d => {
+                        let subsHtml = '';
+                        Object.keys(this.data[d]).forEach(s => {
+                            subsHtml += `
+                                <div class="flex justify-between items-center text-sm pl-4 py-1 text-slate-600 hover:bg-slate-100 rounded">
+                                    <span>${s}</span>
+                                    <button onclick="app.deleteSubject('${d}', '${s}')" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+                                </div>
+                            `;
+                        });
+                        treeContainer.innerHTML += `<div class="mb-3"><h4 class="font-bold text-slate-700 text-sm border-b pb-1 mb-1">${d}</h4>${subsHtml}</div>`;
+                    });
+                }
+
+                const checkContainer = document.getElementById('course-builder-checkboxes');
+                checkContainer.innerHTML = '';
+                Object.keys(this.data).forEach(d => {
+                    Object.keys(this.data[d]).forEach(s => {
+                        checkContainer.innerHTML += `
+                            <label class="flex items-center text-xs p-1.5 hover:bg-slate-100 rounded cursor-pointer">
+                                <input type="checkbox" value="${d}|${s}" class="mr-2 course-subject-checkbox">
+                                <span>${s} <span class="text-gray-400">(${d})</span></span>
+                            </label>
+                        `;
+                    });
+                });
+
+                const listContainer = document.getElementById('course-list-container');
+                listContainer.innerHTML = '';
+                const courses = Object.keys(this.courseConfig);
+                if (courses.length === 0) {
+                    listContainer.innerHTML = '<p class="text-slate-400 italic text-sm">No courses defined yet.</p>';
+                } else {
+                    courses.forEach(c => {
+                        const subjects = this.courseConfig[c];
+                        const chips = subjects.map(s => {
+                            const [d, sub] = s.split('|');
+                            return `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] border border-blue-100 mr-1 mb-1 inline-block">${sub}</span>`;
+                        }).join('');
+
+                        listContainer.innerHTML += `
+                            <div class="p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-slate-800">${c}</h4>
+                                    <button onclick="app.deleteCourse('${c}')" class="text-red-500 hover:text-red-700 text-xs font-medium bg-red-50 px-2 py-1 rounded">Delete</button>
+                                </div>
+                                <div class="flex flex-wrap">${chips}</div>
+                            </div>
+                        `;
+                    });
+                }
+            },
+
+            createNewCourse() {
+                const name = document.getElementById('new-course-name').value.trim();
+                if (!name) return alert("Please enter a course name.");
+                if (this.courseConfig[name]) return alert("Course already exists.");
+
+                const checkboxes = document.querySelectorAll('.course-subject-checkbox:checked');
+                const selectedSubjects = Array.from(checkboxes).map(cb => cb.value);
+
+                if (selectedSubjects.length === 0) return alert("Please select at least one subject.");
+
+                this.courseConfig[name] = selectedSubjects;
+                this.saveCourses();
+                this.renderCourseManager(); 
+                this.renderStudentLoginDropdown(); 
+                document.getElementById('new-course-name').value = '';
+                document.querySelectorAll('.course-subject-checkbox').forEach(cb => cb.checked = false);
+            },
+
+            deleteCourse(name) {
+                if (confirm(`Delete course "${name}"?`)) {
+                    delete this.courseConfig[name];
+                    this.saveCourses();
+                    this.renderCourseManager();
+                    this.renderStudentLoginDropdown();
+                }
+            },
+
+            smartPrint(sourceId) {
+                const source = document.getElementById(sourceId);
+                const staging = document.getElementById('print-staging-area');
+                staging.innerHTML = source.innerHTML;
+                window.print();
+                setTimeout(() => { staging.innerHTML = ''; }, 1000);
+            },
+
+            // --- DOCX IMPORT LOGIC ---
+            importDocx(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                if (!file.name.toLowerCase().endsWith('.docx')) {
+                    alert("Incorrect file type. Please upload a .docx file.");
+                    input.value = '';
+                    return;
+                }
+                
+                if (file.size === 0) {
+                    alert("File appears to be empty.");
+                    input.value = '';
+                    return;
+                }
+
+                const domain = document.getElementById('editor-domain').value;
+                const sub = document.getElementById('editor-subdomain').value;
+
+                const reader = new FileReader();
+                reader.onload = (loadEvent) => {
+                    const arrayBuffer = loadEvent.target.result;
+                    if (!window.mammoth) { alert("Mammoth.js library not loaded."); return; }
+
+                    mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                        .then((result) => {
+                            let text = result.value;
+                            text = text.replace(/([^\n])\s+([A-D][\.\)])\s/gi, '$1\n$2 ');
+                            const questions = this.parseQuestionsFromText(text);
+                            
+                            if(questions.length > 0) {
+                                if(confirm(`Found ${questions.length} questions. Import into "${sub}"?`)) {
+                                    this.data[domain][sub].push(...questions);
+                                    this.save();
+                                    this.editorLoadQuestions();
+                                    alert('Success! Questions imported.');
+                                }
+                            } else {
+                                alert('No questions detected.');
+                            }
+                        })
+                        .catch((err) => {
+                            console.error(err);
+                            alert("System could not read this DOCX file.");
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+                input.value = '';
+            },
+
+            parseQuestionsFromText(text) {
+                const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+                const questions = [];
+                let currentQ = null;
+                const optionRegex = /^(\(?[A-D]\)?|\[[A-D]\]|[A-D][\.\)])\s*(.+)/i;
+                const answerRegex = /^(Answer|Ans|Key|Correct|@Answer)\s*[:\-]?\s*([A-D])/i;
+                const questionNumRegex = /^((?:Q|Question)?\s*\d+|[IVX]+)(?:[\.\)\-]|\s+)\s*(.+)/i;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const ansMatch = line.match(answerRegex);
+                    if (ansMatch) { if (currentQ) currentQ.correct = ansMatch[2].toUpperCase(); continue; }
+                    const optMatch = line.match(optionRegex);
+                    if (optMatch) {
+                        if (!currentQ) continue; 
+                        const rawLetter = optMatch[1].replace(/[^a-zA-Z]/g, '').toUpperCase();
+                        const content = optMatch[2].trim();
+                        currentQ.options[rawLetter] = content;
+                        continue;
+                    }
+                    const qMatch = line.match(questionNumRegex);
+                    if (currentQ && (Object.keys(currentQ.options).length > 0 || qMatch)) {
+                        if (currentQ.text && Object.keys(currentQ.options).length >= 2) {
+                            if (!currentQ.correct) currentQ.correct = 'A';
+                            questions.push(currentQ);
+                        }
+                        currentQ = null;
+                    }
+                    if (!currentQ) {
+                        let qText = line;
+                        if (qMatch) qText = qMatch[2].trim();
+                        currentQ = { text: qText, options: {}, correct: null };
+                    } else {
+                        if (Object.keys(currentQ.options).length === 0) currentQ.text += " " + line;
+                    }
+                }
+                if (currentQ && Object.keys(currentQ.options).length >= 2) {
+                    if (!currentQ.correct) currentQ.correct = 'A';
+                    questions.push(currentQ);
+                }
+                return questions;
+            },
+
+            downloadTemplate() {
+                const template = `FORMAT INSTRUCTIONS:\n\n1. Type your question...\nA. Option\nB. Option...\nAnswer: A`;
+                const blob = new Blob([template], { type: "text/plain" });
+                const anchor = document.createElement("a");
+                anchor.href = URL.createObjectURL(blob);
+                anchor.download = "NCAE_Question_Template.txt";
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+            },
+
+            // --- DYNAMIC SUBJECT MANAGEMENT ---
+            addSubject() {
+                const d = prompt("Enter Domain Name (e.g., GSA):", "GSA");
+                if(!d) return;
+                const s = prompt("Enter Subject Name:");
+                if(!s) return;
+                if (!this.data[d]) this.data[d] = {};
+                if (this.data[d][s]) return alert("Exists!");
+                this.data[d][s] = [];
+                this.save();
+                this.renderDomainOptions(); 
+                this.renderCourseManager(); 
+                document.getElementById('editor-domain').value = d;
+                this.editorUpdateSubdomains();
+                document.getElementById('editor-subdomain').value = s;
+                this.editorLoadQuestions();
+            },
+
+            deleteCurrentSubject() {
+                const d = document.getElementById('editor-domain').value;
+                const s = document.getElementById('editor-subdomain').value;
+                if(confirm(`Delete "${s}"?`)) {
+                    delete this.data[d][s];
+                    if(Object.keys(this.data[d]).length === 0) delete this.data[d];
+                    this.save();
+                    this.renderDomainOptions(); 
+                    this.renderCourseManager();
+                }
+            },
+
+            renderDomainOptions() {
+                const dSelect = document.getElementById('editor-domain');
+                dSelect.innerHTML = '';
+                Object.keys(this.data).forEach(d => { dSelect.innerHTML += `<option value="${d}">${d}</option>`; });
+                if (dSelect.options.length > 0) dSelect.selectedIndex = 0;
+                this.editorUpdateSubdomains();
+            },
+            
+            renderStudentLoginDropdown() {
+                const select = document.getElementById('login-st-course');
+                select.innerHTML = '<option value="">Select Course / Grade Level...</option>';
+                Object.keys(this.courseConfig).forEach(c => {
+                    select.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+            },
+
+            // --- TEACHER LOGIC ---
+            toggleTeacherView(view) {
+                document.getElementById('teacher-questions-view').classList.toggle('hidden', view !== 'questions');
+                document.getElementById('teacher-records-view').classList.toggle('hidden', view !== 'records');
+                document.getElementById('teacher-courses-view').classList.toggle('hidden', view !== 'courses');
+                
+                // Active Tab Styles
+                ['questions','courses','records'].forEach(v => {
+                    const btn = document.getElementById(`tab-${v}`);
+                    if (v === view) btn.className = "px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 rounded-lg border border-blue-100";
+                    else btn.className = "px-4 py-2 text-sm font-medium text-slate-500 hover:text-blue-600";
+                });
+
+                document.getElementById('teacher-tools-panel').classList.toggle('hidden', view !== 'questions');
+                if(view === 'records') this.renderTeacherRecords();
+                if(view === 'courses') this.renderCourseManager();
+                if(view === 'questions') this.renderDomainOptions();
+            },
+            renderTeacherRecords() {
+                const tbody = document.getElementById('teacher-records-body'); tbody.innerHTML = '';
+                if(!this.submissions.length) { document.getElementById('no-records-msg').classList.remove('hidden'); return; }
+                document.getElementById('no-records-msg').classList.add('hidden');
+                [...this.submissions].reverse().forEach((sub, i) => {
+                    const originalIndex = this.submissions.length - 1 - i;
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="p-4 font-bold text-slate-700">${sub.name}</td>
+                            <td class="p-4">${sub.grade || '-'}</td>
+                            <td class="p-4 font-mono text-xs">${sub.lrn}</td>
+                            <td class="p-4">${sub.subject}</td>
+                            <td class="p-4 text-center font-bold">${sub.score}/${sub.total}</td>
+                            <td class="p-4 text-center no-print"><button onclick="app.viewPaper(${originalIndex})" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"><i class="fas fa-eye mr-1"></i> View Paper</button></td>
+                        </tr>`;
+                });
+            },
+
+            viewPaper(index) {
+                const sub = this.submissions[index];
+                document.getElementById('paper-name').innerText = sub.name;
+                document.getElementById('paper-grade').innerText = sub.grade || 'N/A';
+                document.getElementById('paper-lrn').innerText = sub.lrn;
+                document.getElementById('paper-date').innerText = sub.date;
+                document.getElementById('paper-subject').innerText = sub.subject;
+                document.getElementById('paper-score').innerText = `${sub.score}/${sub.total}`;
+                const body = document.getElementById('paper-body');
+                body.innerHTML = '';
+                sub.details.forEach((q, i) => {
+                    const isCorrect = q.selected === q.correct;
+                    let optionsHtml = '';
+                    for(const [key, val] of Object.entries(q.options)) {
+                        if(!val) continue;
+                        let optionClass = "p-1.5 border rounded text-xs mb-1 flex items-center print:border-gray-300";
+                        let icon = `<span class="w-4 h-4 rounded-full border border-slate-300 mr-2 flex items-center justify-center text-[10px] font-bold text-slate-400">${key}</span>`;
+                        if (q.selected === key) {
+                            if (isCorrect) {
+                                optionClass += " bg-green-50 border-green-300 text-green-800 font-bold print:border-black print:font-bold";
+                                icon = `<span class="w-4 h-4 rounded-full bg-green-500 text-white mr-2 flex items-center justify-center text-[10px] print:bg-black print:text-white"><i class="fas fa-check"></i></span>`;
+                            } else {
+                                optionClass += " bg-red-50 border-red-300 text-red-800 print:border-black";
+                                icon = `<span class="w-4 h-4 rounded-full bg-red-500 text-white mr-2 flex items-center justify-center text-[10px] print:bg-gray-400 print:text-white"><i class="fas fa-times"></i></span>`;
+                            }
+                        } else if (!isCorrect && q.correct === key) {
+                            optionClass += " bg-blue-50 border-blue-200 text-blue-700 font-bold print:border-gray-400";
+                            icon = `<span class="w-4 h-4 rounded-full bg-blue-100 text-blue-600 mr-2 flex items-center justify-center text-[10px] print:bg-gray-200 print:text-black"><i class="fas fa-check"></i></span>`;
+                        }
+                        optionsHtml += `<div class="${optionClass}">${icon} ${val}</div>`;
+                    }
+                    body.innerHTML += `<div class="question-item border-b border-slate-100 pb-2 break-inside-avoid print:border-gray-200 print:mb-2"><p class="font-medium text-slate-800 mb-1 text-sm print:text-xs"><span class="text-slate-400 font-bold mr-1 print:text-black q-number">${i+1}.</span> ${q.text}</p><div class="ml-4 space-y-1">${optionsHtml}</div></div>`;
+                });
+                document.getElementById('detailed-paper-overlay').classList.remove('hidden');
+            },
+
+            // --- EXAM LOGIC ---
+            checkStudentState() {
+                if(this.currentUser) {
+                    document.getElementById('student-dashboard').classList.remove('hidden');
+                    document.getElementById('dash-user-name').innerText = this.currentUser.name;
+                    document.getElementById('dash-course-name').innerText = this.currentUser.grade;
+                    this.renderStudentDashboard();
+                } else {
+                    this.setMode('student'); 
+                }
+            },
+            
+            renderStudentDashboard() {
+                const container = document.getElementById('exam-categories-container');
+                container.innerHTML = '';
+
+                // Get allowed subjects for user's course
+                const allowedSubjects = this.currentUser && this.courseConfig[this.currentUser.courseKey] 
+                                        ? this.courseConfig[this.currentUser.courseKey] 
+                                        : [];
+                
+                Object.keys(this.data).forEach(cat => {
+                    const subTests = this.data[cat];
+                    const visibleSubjects = Object.keys(subTests).filter(sub => allowedSubjects.includes(`${cat}|${sub}`));
+
+                    if (visibleSubjects.length > 0) {
+                        const sectionTitle = document.createElement('h2');
+                        sectionTitle.className = "font-bold text-slate-700 mb-4 border-l-4 border-blue-500 pl-3 text-lg";
+                        sectionTitle.innerText = cat;
+                        container.appendChild(sectionTitle);
+
+                        const grid = document.createElement('div');
+                        grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
+                        
+                        visibleSubjects.forEach(sub => {
+                            const c = subTests[sub].length;
+                            const isPaused = this.userProgress[sub];
+                            const isDone = this.userResults[sub];
+                            
+                            let btnText = 'Start';
+                            let btnClass = 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm';
+                            let disabled = '';
+
+                            if (c === 0) {
+                                btnText = 'Empty';
+                                btnClass = 'bg-slate-200 text-slate-400 cursor-not-allowed';
+                                disabled = 'disabled';
+                            } else if (isDone) {
+                                btnText = 'Retake';
+                                btnClass = 'bg-green-600 hover:bg-green-700 text-white shadow-sm';
+                            } else if (isPaused) {
+                                btnText = 'Resume';
+                                btnClass = 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm';
+                            }
+
+                            grid.innerHTML += `<div class="bg-white p-4 border rounded shadow-sm text-center relative">
+                                ${isPaused ? '<span class="absolute top-2 right-2 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span></span>' : ''}
+                                <h3 class="font-bold text-sm mb-2 text-slate-700">${sub}</h3>
+                                <button onclick="app.startExam('${cat}','${sub}')" ${disabled} class="w-full py-2 rounded text-sm font-medium transition-transform active:scale-95 ${btnClass}">${btnText} (${c})</button>
+                            </div>`;
+                        });
+                        container.appendChild(grid);
+                    }
+                });
+
+                if (container.innerHTML === '') {
+                    container.innerHTML = `<div class="text-center py-10 text-slate-400 italic">No subjects assigned to your course (${this.currentUser.courseKey}). Please contact your teacher.</div>`;
+                }
+            },
+            startExam(d,s){
+                if (this.userProgress[s]) {
+                    this.examState = this.userProgress[s];
+                } 
+                else if (this.userResults[s]) {
+                    if(!confirm("You have already finished this exam. Retake it? Previous score will be overwritten.")) return;
+                    delete this.userResults[s];
+                    const qs=this.data[d][s];
+                    this.examState={questions:[...qs], idx:0, score:0, subject:s, userAnswers: []};
+                }
+                else {
+                    const qs=this.data[d][s]; if(!qs.length)return;
+                    this.examState={questions:[...qs], idx:0, score:0, subject:s, userAnswers: []};
+                }
+
+                document.getElementById('student-dashboard').classList.add('hidden');
+                document.getElementById('exam-interface').classList.remove('hidden');
+                document.getElementById('exam-title').innerText=s;
+                this.renderExamQ();
+            },
+            quitExam() {
+                if(!this.examState) return;
+                this.userProgress[this.examState.subject] = this.examState;
+                this.saveProgress();
+                document.getElementById('exam-interface').classList.add('hidden');
+                document.getElementById('student-dashboard').classList.remove('hidden');
+                this.renderStudentDashboard();
+            },
+            renderExamQ(){
+                const q=this.examState.questions[this.examState.idx];
+                const cleanText = q.text.replace(/^((?:Q|Question)?\s*\d+|[IVX]+)(?:[\.\)\-]|\s+)\s*/i, '');
+                document.getElementById('exam-q-text').innerText = (this.examState.idx + 1) + ". " + cleanText;
+                const o=document.getElementById('exam-options'); o.innerHTML='';
+                ['A','B','C','D'].forEach(k=>{if(q.options[k])o.innerHTML+=`<label class="block p-3 border rounded cursor-pointer hover:bg-slate-50"><input type="radio" name="opt" value="${k}" class="mr-2">${k}. ${q.options[k]}</label>`});
+            },
+            nextQuestion(){
+                const s=document.querySelector('input[name="opt"]:checked');
+                if(!s)return alert("Answer required");
+                const currentQ = this.examState.questions[this.examState.idx];
+                const selected = s.value;
+                const isCorrect = selected === currentQ.correct;
+                if(isCorrect) this.examState.score++;
+                this.examState.userAnswers.push({text: currentQ.text, options: currentQ.options, correct: currentQ.correct, selected: selected});
+                if(++this.examState.idx < this.examState.questions.length) this.renderExamQ(); else this.finishExam();
+            },
+            finishExam() {
+                const { subject, score, questions, userAnswers } = this.examState;
+                const total = questions.length;
+                this.userResults[subject] = { score, total };
+                sessionStorage.setItem('ncae_results', JSON.stringify(this.userResults));
+                delete this.userProgress[subject];
+                this.saveProgress();
+                const record = { name: this.currentUser.name, grade: this.currentUser.grade, lrn: this.currentUser.lrn, subject: subject, score: score, total: total, date: new Date().toLocaleDateString(), details: userAnswers };
+                this.submissions.push(record);
+                this.saveSub();
+                document.getElementById('single-result-score').innerText = `${score}/${total}`;
+                document.getElementById('single-result-interface').classList.remove('hidden');
+            },
+            closeSingleResult(){
+                document.getElementById('single-result-interface').classList.add('hidden');
+                document.getElementById('exam-interface').classList.add('hidden');
+                document.getElementById('student-dashboard').classList.remove('hidden');
+                this.renderStudentDashboard();
+            },
+            renderReportCard(){
+                document.getElementById('printable-report').classList.remove('hidden');
+                document.getElementById('report-name').innerText=this.currentUser.name;
+                document.getElementById('report-grade').innerText="Grade: "+this.currentUser.grade;
+                const b=document.getElementById('results-table-body'); b.innerHTML='';
+                Object.keys(this.userResults).forEach(s=>{
+                    const r=this.userResults[s];
+                    b.innerHTML+=`<tr class="border-b"><td class="py-3">${s}</td><td class="py-3 text-center">${r.score}/${r.total}</td><td class="py-3 text-right">${Math.round((r.score/r.total)*100)}%</td></tr>`;
+                });
+                if(!Object.keys(this.userResults).length) document.getElementById('no-results-msg').classList.remove('hidden');
+                else document.getElementById('no-results-msg').classList.add('hidden');
+            },
+            editorUpdateSubdomains(){
+                const d = document.getElementById('editor-domain').value;
+                const sSelect = document.getElementById('editor-subdomain');
+                sSelect.innerHTML = '';
+                if (this.data[d]) Object.keys(this.data[d]).forEach(k => sSelect.innerHTML += `<option value="${k}">${k}</option>`);
+                if (sSelect.options.length > 0) sSelect.selectedIndex = 0;
+                const s = sSelect.value;
+                document.getElementById('current-upload-target').innerText = s ? `${d} - ${s}` : `${d}`;
+                this.editorLoadQuestions();
+            },
+            editorLoadQuestions(){
+                const d=document.getElementById('editor-domain').value,s=document.getElementById('editor-subdomain').value,qs=(this.data[d] && this.data[d][s]) ? this.data[d][s] : [];
+                document.getElementById('current-upload-target').innerText = `${d} - ${s || 'None'}`;
+                document.getElementById('count-badge').innerText=qs.length; document.getElementById('progress-bar').style.width=Math.min(qs.length*10,100)+'%';
+                const c=document.getElementById('questions-container');c.innerHTML='';
+                if(!qs.length)document.getElementById('empty-state').classList.remove('hidden');
+                else {document.getElementById('empty-state').classList.add('hidden');qs.forEach((q,i)=>c.innerHTML+=`<div class="p-3 border rounded mb-2 bg-white flex justify-between"><div class="text-sm truncate w-3/4">${i+1}. ${q.text}</div><button onclick="app.delQ('${d}','${s}',${i})" class="text-red-500"><i class="fas fa-trash"></i></button></div>`);}
+            },
+            addQuestion(){
+                const d=document.getElementById('editor-domain').value,s=document.getElementById('editor-subdomain').value,t=document.getElementById('q-text').value,a=document.getElementById('opt-a').value,b=document.getElementById('opt-b').value,c=document.getElementById('opt-c').value,dd=document.getElementById('opt-d').value,cor=document.getElementById('correct-opt').value;
+                if(!t||!a||!b)return alert("Incomplete");
+                this.data[d][s].push({text:t,options:{A:a,B:b,C:c,D:dd},correct:cor});
+                this.save();this.editorLoadQuestions();
+                document.getElementById('q-text').value='';document.getElementById('opt-a').value='';document.getElementById('opt-b').value='';document.getElementById('opt-c').value='';document.getElementById('opt-d').value='';
+            },
+            delQ(d,s,i){if(confirm("Delete?")){this.data[d][s].splice(i,1);this.save();this.editorLoadQuestions();}},
+            
+            // Fixed ClearData to properly wipe everything
+            clearData(){if(confirm("RESET ALL? This will clear all database, courses, and student records.")){localStorage.clear();sessionStorage.clear();location.reload();}},
+
+            generateSampleData(){
+                const mk=(n)=>Array(50).fill(0).map((_,i)=>({text:`Sample Q${i+1} for ${n} - Testing Layout`,options:{A:"Opt 1",B:"Opt 2",C:"Opt 3",D:"Opt 4"},correct:"A"}));
+                for(let d in this.data)for(let s in this.data[d])if(!this.data[d][s].length)this.data[d][s]=mk(s);
+                this.save();this.editorLoadQuestions();
+            }
+        };
+        app.init();
+    </script>
+</body>
+</html>

@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NCAE System (Universal)</title>
+    <title>NCAE System (Modular)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
-
-    <!-- 1. LOAD FIREBASE LIBRARIES (COMPAT MODE) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
     <style>
         .custom-scroll::-webkit-scrollbar { width: 8px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -33,15 +27,11 @@
                 </div>
                 <div>
                     <h1 class="font-bold leading-tight">NCAE System</h1>
-                    <!-- STATUS INDICATOR -->
-                    <p class="text-[10px] font-mono text-yellow-300" id="db-status">
-                        <i class="fas fa-circle-notch fa-spin mr-1"></i> Connecting...
-                    </p>
+                    <!-- STATUS: STARTS YELLOW, TURNS GREEN ON CONNECT -->
+                    <p class="text-[10px] text-yellow-300 font-mono" id="status-indicator">Initializing...</p>
                 </div>
             </div>
-            <button onclick="app.logout()" id="logout-btn" class="hidden text-xs bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white transition">
-                Logout
-            </button>
+            <button id="btn-logout" class="hidden text-xs bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white transition">Logout</button>
         </header>
 
         <!-- VIEW 1: LANDING -->
@@ -52,11 +42,11 @@
                 </div>
                 <h2 class="text-xl font-bold">Select Portal</h2>
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="app.setMode('student-login')" class="p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-500 transition">
+                    <button id="nav-student" class="p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-500 transition">
                         <i class="fas fa-user text-2xl text-blue-500 mb-2"></i>
                         <div class="font-bold text-sm">Student</div>
                     </button>
-                    <button onclick="app.setMode('teacher-login')" class="p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-500 transition">
+                    <button id="nav-teacher" class="p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-500 transition">
                         <i class="fas fa-chalkboard-teacher text-2xl text-orange-500 mb-2"></i>
                         <div class="font-bold text-sm">Teacher</div>
                     </button>
@@ -67,27 +57,29 @@
         <!-- VIEW 2: TEACHER LOGIN -->
         <div id="view-teacher-login" class="hidden flex-1 flex items-center justify-center p-4 fade-in">
             <div class="max-w-sm w-full bg-white rounded-xl shadow-lg p-6 relative">
-                <button onclick="app.setMode('landing')" class="absolute top-4 right-4 text-slate-400"><i class="fas fa-times"></i></button>
+                <button id="close-login" class="absolute top-4 right-4 text-slate-400"><i class="fas fa-times"></i></button>
                 
+                <!-- LOGIN FORM -->
                 <div id="form-login">
                     <h2 class="text-lg font-bold mb-4">Teacher Login</h2>
                     <input type="text" id="login-user" class="w-full p-3 border rounded mb-3 text-sm" placeholder="Username">
                     <input type="password" id="login-pass" class="w-full p-3 border rounded mb-4 text-sm" placeholder="Password">
-                    <button id="btn-login" onclick="app.loginTeacher()" disabled class="w-full bg-slate-400 text-white font-bold py-2 rounded cursor-not-allowed">Wait for Connection...</button>
+                    <button id="do-login" class="w-full bg-blue-900 text-white font-bold py-2 rounded hover:bg-blue-800 disabled:opacity-50">Login</button>
                     <div class="text-center mt-4 text-xs">
-                        New here? <button onclick="app.toggleRegister(true)" class="text-blue-600 font-bold">Create Account</button>
+                        New here? <button id="show-register" class="text-blue-600 font-bold">Create Account</button>
                     </div>
                 </div>
 
+                <!-- REGISTER FORM -->
                 <div id="form-register" class="hidden">
                     <h2 class="text-lg font-bold mb-1">Create Account</h2>
                     <p class="text-xs text-slate-500 mb-4">Your data will be saved to the cloud.</p>
                     <input type="text" id="reg-name" class="w-full p-3 border rounded mb-2 text-sm" placeholder="Full Name">
                     <input type="text" id="reg-user" class="w-full p-3 border rounded mb-2 text-sm" placeholder="Username">
                     <input type="password" id="reg-pass" class="w-full p-3 border rounded mb-4 text-sm" placeholder="Password">
-                    <button id="btn-reg" onclick="app.registerTeacher()" disabled class="w-full bg-slate-400 text-white font-bold py-2 rounded cursor-not-allowed">Wait for Connection...</button>
+                    <button id="do-register" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700 disabled:opacity-50">Register</button>
                     <div class="text-center mt-4 text-xs">
-                        <button onclick="app.toggleRegister(false)" class="text-slate-500">Cancel</button>
+                        <button id="cancel-register" class="text-slate-500">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -95,100 +87,149 @@
 
         <!-- VIEW 3: DASHBOARD -->
         <div id="view-dashboard" class="hidden flex-1 flex overflow-hidden fade-in bg-slate-50">
+            <!-- Sidebar -->
             <aside class="w-64 bg-white border-r flex flex-col z-10 hidden md:flex">
                 <div class="p-4 border-b">
                     <div class="font-bold truncate" id="dash-name">Teacher</div>
                     <div class="text-xs text-green-600 flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> Online</div>
                 </div>
                 <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
-                    <button onclick="app.setTab('manage')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-edit w-6 text-slate-400"></i> Manage Questions</button>
-                    <button onclick="app.setTab('curriculum')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-book w-6 text-slate-400"></i> Curriculum</button>
-                    <button onclick="app.setTab('records')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-users w-6 text-slate-400"></i> Student Records</button>
+                    <button id="tab-btn-manage" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-edit w-6 text-slate-400"></i> Manage Questions</button>
+                    <button id="tab-btn-curriculum" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-book w-6 text-slate-400"></i> Curriculum</button>
+                    <button id="tab-btn-records" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-users w-6 text-slate-400"></i> Student Records</button>
                 </nav>
                 <div class="p-4 border-t">
-                    <button onclick="app.syncCloud()" class="w-full bg-blue-100 text-blue-800 text-xs font-bold py-2 rounded hover:bg-blue-200">
+                    <button id="do-sync" class="w-full bg-blue-100 text-blue-800 text-xs font-bold py-2 rounded hover:bg-blue-200">
                         <i class="fas fa-cloud-upload-alt mr-1"></i> Force Save
                     </button>
                 </div>
             </aside>
-            <main class="flex-1 overflow-y-auto custom-scroll p-4 relative">
-                <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');" class="md:hidden absolute top-4 left-4 z-20 bg-white p-2 rounded shadow text-slate-600"><i class="fas fa-bars"></i></button>
 
+            <!-- Main Content -->
+            <main class="flex-1 overflow-y-auto custom-scroll p-4 relative">
+                <!-- Mobile Menu Button -->
+                <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');" class="md:hidden absolute top-4 left-4 z-20 bg-white p-2 rounded shadow text-slate-600">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <!-- TAB: MANAGE QUESTIONS -->
                 <div id="tab-manage" class="tab-content max-w-4xl mx-auto">
                     <div class="flex justify-between items-center mb-6 pl-12 md:pl-0">
                         <h2 class="text-xl font-bold">Question Bank</h2>
                         <div class="flex gap-2">
-                             <input type="file" id="docx-upload" class="hidden" accept=".docx" onchange="app.importDocx(this)">
+                             <input type="file" id="docx-upload" class="hidden" accept=".docx">
                              <button onclick="document.getElementById('docx-upload').click()" class="bg-blue-600 text-white text-xs px-3 py-2 rounded font-bold shadow hover:bg-blue-700"><i class="fas fa-file-word mr-1"></i> Import .DOCX</button>
                         </div>
                     </div>
+
                     <div class="bg-white p-4 rounded-lg shadow-sm border mb-4 grid grid-cols-2 gap-4">
-                        <div><label class="text-[10px] uppercase font-bold text-slate-400">Domain</label><select id="sel-domain" onchange="app.updateSubtests()" class="w-full p-2 border rounded bg-slate-50 text-sm"></select></div>
-                        <div><label class="text-[10px] uppercase font-bold text-slate-400">Subtest</label><select id="sel-subtest" onchange="app.renderQuestions()" class="w-full p-2 border rounded bg-slate-50 text-sm"></select></div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-slate-400">Domain</label>
+                            <select id="sel-domain" class="w-full p-2 border rounded bg-slate-50 text-sm"></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-slate-400">Subtest</label>
+                            <select id="sel-subtest" class="w-full p-2 border rounded bg-slate-50 text-sm"></select>
+                        </div>
                     </div>
+
                     <div class="bg-white rounded-lg shadow-sm border overflow-hidden min-h-[300px]">
                         <div id="q-list" class="divide-y"></div>
-                        <div id="q-empty" class="p-10 text-center text-slate-400 text-sm">No questions selected.</div>
+                        <div id="q-empty" class="p-10 text-center text-slate-400 text-sm">
+                            No questions selected.
+                        </div>
                     </div>
                 </div>
 
+                <!-- TAB: CURRICULUM -->
                 <div id="tab-curriculum" class="hidden tab-content max-w-4xl mx-auto">
-                    <h2 class="text-xl font-bold mb-4 pl-12 md:pl-0">Curriculum</h2>
+                    <h2 class="text-xl font-bold mb-4 pl-12 md:pl-0">Curriculum Setup</h2>
                     <div class="bg-white p-6 rounded-lg shadow-sm border mb-6">
-                        <h3 class="font-bold text-sm mb-2">Add Subject</h3>
-                        <div class="flex gap-2"><input type="text" id="new-subj" class="flex-1 p-2 border rounded text-sm" placeholder="Subject Name"><button onclick="app.addSubject()" class="bg-blue-600 text-white px-4 rounded text-sm font-bold">Add</button></div>
+                        <h3 class="font-bold text-sm mb-2">Add New Subject</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-subj" class="flex-1 p-2 border rounded text-sm" placeholder="Subject Name">
+                            <button id="do-add-subj" class="bg-blue-600 text-white px-4 rounded text-sm font-bold">Add</button>
+                        </div>
                         <div id="list-subj" class="mt-4 flex flex-wrap gap-2"></div>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
-                        <h3 class="font-bold text-sm mb-2">Create Course</h3>
-                        <div class="flex gap-2 mb-4"><input type="text" id="new-course" class="flex-1 p-2 border rounded text-sm" placeholder="Course Name"><button onclick="app.addCourse()" class="bg-green-600 text-white px-4 rounded text-sm font-bold">Save</button></div>
+                        <h3 class="font-bold text-sm mb-2">Create Grade Level / Course</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-course" class="flex-1 p-2 border rounded text-sm" placeholder="Course Name (e.g. Grade 10)">
+                            <button id="do-add-course" class="bg-green-600 text-white px-4 rounded text-sm font-bold">Save</button>
+                        </div>
                         <div id="chk-subj" class="grid grid-cols-2 gap-2 mb-4 text-sm"></div>
                         <div id="list-course" class="space-y-2"></div>
                     </div>
                 </div>
 
+                <!-- TAB: RECORDS -->
                 <div id="tab-records" class="hidden tab-content max-w-4xl mx-auto">
                     <h2 class="text-xl font-bold mb-4 pl-12 md:pl-0">Student Records</h2>
                     <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
-                        <table class="w-full text-sm text-left"><thead class="bg-slate-50 border-b"><tr><th class="p-3">Name</th><th class="p-3">Score</th><th class="p-3">Date</th></tr></thead><tbody id="table-records"></tbody></table>
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 border-b">
+                                <tr>
+                                    <th class="p-3">Name</th>
+                                    <th class="p-3">Score</th>
+                                    <th class="p-3">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-records"></tbody>
+                        </table>
                     </div>
                 </div>
             </main>
         </div>
 
-        <!-- STUDENT LOGIN -->
+        <!-- VIEW 4: STUDENT LOGIN & EXAM -->
         <div id="view-student-login" class="hidden flex-1 flex items-center justify-center p-4 fade-in bg-slate-50">
             <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-6 relative">
-                <button onclick="app.setMode('landing')" class="absolute top-4 right-4 text-slate-400"><i class="fas fa-times"></i></button>
+                <button id="close-student" class="absolute top-4 right-4 text-slate-400"><i class="fas fa-times"></i></button>
                 <h2 class="text-lg font-bold mb-4">Student Access</h2>
                 <div class="space-y-3">
                     <input type="text" id="st-name" class="w-full p-3 border rounded text-sm" placeholder="Full Name">
                     <input type="text" id="st-lrn" class="w-full p-3 border rounded text-sm" placeholder="LRN Number">
                     <select id="st-course" class="w-full p-3 border rounded text-sm bg-white"></select>
-                    <button onclick="app.startExam()" class="w-full bg-blue-600 text-white font-bold py-3 rounded mt-2 hover:bg-blue-700">Start Exam</button>
+                    <button id="do-start-exam" class="w-full bg-blue-600 text-white font-bold py-3 rounded mt-2 hover:bg-blue-700">Start Exam</button>
                 </div>
             </div>
         </div>
 
-        <!-- EXAM PORTAL -->
+        <!-- VIEW 5: EXAM PORTAL -->
         <div id="view-exam" class="hidden flex-1 flex flex-col bg-white fade-in">
             <header class="p-4 border-b flex justify-between items-center bg-slate-50">
-                <div><h1 class="font-bold">Exam Portal</h1><p class="text-xs text-slate-500" id="exam-student-info">--</p></div>
+                <div>
+                    <h1 class="font-bold">Exam Portal</h1>
+                    <p class="text-xs text-slate-500" id="exam-student-info">--</p>
+                </div>
                 <div class="font-mono font-bold text-xl" id="timer">00:00</div>
             </header>
             <main class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
                 <div class="max-w-2xl w-full">
-                    <div class="mb-6"><span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded" id="exam-tag">SUBJ</span><h2 class="text-lg font-medium mt-2" id="exam-q-text">Loading...</h2></div>
+                    <div class="mb-6">
+                        <span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded" id="exam-tag">SUBJ</span>
+                        <h2 class="text-lg font-medium mt-2" id="exam-q-text">Loading...</h2>
+                    </div>
                     <div class="space-y-3" id="exam-opts"></div>
-                    <div class="mt-8 flex justify-between items-center"><span class="text-xs text-slate-400" id="exam-progress">1 / 10</span><button onclick="app.nextQ()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">Next</button></div>
+                    <div class="mt-8 flex justify-between items-center">
+                        <span class="text-xs text-slate-400" id="exam-progress">1 / 10</span>
+                        <button id="do-next-q" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">Next</button>
+                    </div>
                 </div>
             </main>
         </div>
+
     </div>
 
-    <!-- MAIN LOGIC (INITIALIZES EVERYTHING IMMEDIATELY) -->
-    <script>
-        // 1. CONFIGURATION
+    <!-- MODULE SCRIPT (THIS IS THE KEY FIX) -->
+    <script type="module">
+        // Import explicitly from Google's CDN. This forces the browser to wait.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // YOUR KEYS
         const firebaseConfig = {
             apiKey: "AIzaSyA7Sa9kkTFLF_cHS00DPzo8l847awBkBms",
             authDomain: "ncae-exam.firebaseapp.com",
@@ -198,247 +239,256 @@
             appId: "1:560276612754:web:29169fa8f0d4752c28284b"
         };
 
-        // 2. GLOBAL VARIABLES
-        let fireApp, auth, db;
+        // --- 1. INITIALIZATION ---
+        // This runs immediately and blocks other logic until done.
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app); // We pass 'app' explicitly here
+        const db = getFirestore(app); // We pass 'app' explicitly here
 
-        // 3. STARTUP SEQUENCE
-        window.addEventListener('load', function() {
-            try {
-                // FORCE INITIALIZATION
-                if (!firebase.apps.length) {
-                    fireApp = firebase.initializeApp(firebaseConfig);
-                } else {
-                    fireApp = firebase.app();
-                }
+        // Update UI to show connection success
+        const statusEl = document.getElementById('status-indicator');
+        statusEl.innerHTML = '<i class="fas fa-wifi"></i> System Ready (Firebase v10)';
+        statusEl.classList.remove('text-yellow-300');
+        statusEl.classList.add('text-green-400');
 
-                // BIND TO SPECIFIC APP INSTANCE
-                auth = fireApp.auth(); 
-                db = fireApp.firestore();
+        // --- 2. STATE MANAGEMENT ---
+        let state = {
+            user: null,
+            data: {}, courses: {}, records: [],
+            session: { q: [], a: {}, idx: 0, student: {} }
+        };
 
-                // UPDATE UI - GREEN LIGHT
-                const statusEl = document.getElementById('db-status');
-                statusEl.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Connected';
-                statusEl.classList.remove('text-yellow-300');
-                statusEl.classList.add('text-green-300', 'font-bold');
+        // --- 3. EVENT LISTENERS (Replacing onclick in HTML) ---
+        // We bind events here inside the module to avoid global scope issues
+        
+        // Auth Events
+        document.getElementById('do-login').addEventListener('click', login);
+        document.getElementById('do-register').addEventListener('click', register);
+        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+        
+        // Navigation Events
+        document.getElementById('nav-teacher').addEventListener('click', () => setMode('teacher-login'));
+        document.getElementById('nav-student').addEventListener('click', () => { setMode('student-login'); renderStudentDropdown(); });
+        document.getElementById('show-register').addEventListener('click', () => toggleRegister(true));
+        document.getElementById('cancel-register').addEventListener('click', () => toggleRegister(false));
+        document.getElementById('close-login').addEventListener('click', () => setMode('landing'));
+        document.getElementById('close-student').addEventListener('click', () => setMode('landing'));
 
-                // ENABLE BUTTONS
-                document.getElementById('btn-login').disabled = false;
-                document.getElementById('btn-login').classList.remove('bg-slate-400', 'cursor-not-allowed');
-                document.getElementById('btn-login').classList.add('bg-blue-900', 'hover:bg-blue-800');
-                document.getElementById('btn-login').innerText = "Login";
+        // Dashboard Tabs
+        document.getElementById('tab-btn-manage').addEventListener('click', () => setTab('manage'));
+        document.getElementById('tab-btn-curriculum').addEventListener('click', () => setTab('curriculum'));
+        document.getElementById('tab-btn-records').addEventListener('click', () => setTab('records'));
+        document.getElementById('do-sync').addEventListener('click', syncCloud);
 
-                document.getElementById('btn-reg').disabled = false;
-                document.getElementById('btn-reg').classList.remove('bg-slate-400', 'cursor-not-allowed');
-                document.getElementById('btn-reg').classList.add('bg-green-600', 'hover:bg-green-700');
-                document.getElementById('btn-reg').innerText = "Register";
+        // Data Actions
+        document.getElementById('do-add-subj').addEventListener('click', addSubject);
+        document.getElementById('do-add-course').addEventListener('click', addCourse);
+        document.getElementById('sel-domain').addEventListener('change', updateSubtests);
+        document.getElementById('sel-subtest').addEventListener('change', renderQuestions);
+        document.getElementById('docx-upload').addEventListener('change', (e) => importDocx(e.target));
 
-                // START LISTENER
-                auth.onAuthStateChanged(user => {
-                    app.user = user;
-                    if(user) {
-                        statusEl.innerText = "Online: " + user.email;
-                        document.getElementById('logout-btn').classList.remove('hidden');
-                        app.fetchData();
-                    } else {
-                        statusEl.innerText = "Connected (Guest)";
-                        document.getElementById('logout-btn').classList.add('hidden');
-                        app.setMode('landing');
-                    }
-                });
+        // Exam Actions
+        document.getElementById('do-start-exam').addEventListener('click', startExam);
+        document.getElementById('do-next-q').addEventListener('click', nextQ);
 
-            } catch (e) {
-                console.error(e);
-                alert("CRITICAL ERROR: " + e.message);
-                document.getElementById('db-status').innerText = "Error: " + e.message;
+
+        // --- 4. CORE LOGIC ---
+
+        onAuthStateChanged(auth, (user) => {
+            state.user = user;
+            if(user) {
+                statusEl.innerText = "Online: " + user.email;
+                document.getElementById('btn-logout').classList.remove('hidden');
+                fetchData();
+            } else {
+                statusEl.innerText = "Offline Mode";
+                document.getElementById('btn-logout').classList.add('hidden');
+                setMode('landing');
             }
         });
 
-        // 4. APP OBJECT
-        const app = {
-            user: null,
-            data: {}, courses: {}, records: [],
-            session: { q: [], a: {}, idx: 0, student: {} },
-
-            // SYNC
-            fetchData() {
-                if(!this.user) return;
-                db.collection('teachers').doc(this.user.uid).get().then(doc => {
-                    if(doc.exists) {
-                        const d = doc.data();
-                        this.data = d.examData ? JSON.parse(d.examData) : {};
-                        this.courses = d.courses ? JSON.parse(d.courses) : {};
-                        this.records = d.records ? JSON.parse(d.records) : [];
-                        document.getElementById('dash-name').innerText = d.fullName || "Teacher";
-                        this.updateDomainList(); this.renderSubjList(); this.renderCourseList();
-                    }
-                });
-            },
-            syncCloud() {
-                if(!this.user) return;
-                const payload = {
-                    examData: JSON.stringify(this.data),
-                    courses: JSON.stringify(this.courses),
-                    records: JSON.stringify(this.records),
-                    lastSync: new Date().toISOString()
-                };
-                db.collection('teachers').doc(this.user.uid).update(payload)
-                    .then(() => alert("Saved to Cloud!"))
-                    .catch(e => alert("Save Error: " + e.message));
-            },
-
-            // AUTH ACTIONS
-            loginTeacher() {
-                const u = document.getElementById('login-user').value + "@ncae.com";
-                const p = document.getElementById('login-pass').value;
-                if(!document.getElementById('login-user').value || !p) return alert("Enter details");
-                
-                auth.signInWithEmailAndPassword(u, p)
-                    .then(() => this.setMode('dashboard'))
-                    .catch(e => alert("Login Failed: " + e.message));
-            },
-
-            registerTeacher() {
-                const n = document.getElementById('reg-name').value;
-                const u = document.getElementById('reg-user').value + "@ncae.com";
-                const p = document.getElementById('reg-pass').value;
-                if(!n || !p) return alert("Fill all fields");
-
-                auth.createUserWithEmailAndPassword(u, p).then(cred => {
-                    return db.collection('teachers').doc(cred.user.uid).set({
-                        fullName: n, username: document.getElementById('reg-user').value,
-                        examData: "{}", courses: "{}", records: "[]"
-                    });
-                }).then(() => {
-                    alert("Registered! You are now logged in.");
-                    this.setMode('dashboard');
-                }).catch(e => alert(e.message));
-            },
-
-            logout() { auth.signOut(); },
-            
-            toggleRegister(show) {
-                document.getElementById('form-login').classList.toggle('hidden', show);
-                document.getElementById('form-register').classList.toggle('hidden', !show);
-            },
-
-            // UI HELPERS
-            setMode(m) {
-                document.querySelectorAll('[id^="view-"]').forEach(e => e.classList.add('hidden'));
-                document.getElementById(`view-${m}`).classList.remove('hidden');
-                if(m === 'student-login') this.renderStudentDropdown();
-            },
-            setTab(t) {
-                document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
-                document.getElementById(`tab-${t}`).classList.remove('hidden');
-                if(t === 'records') this.renderRecords();
-            },
-
-            // DATA LOGIC
-            addSubject() {
-                const n = document.getElementById('new-subj').value;
-                if(n && !this.data[n]) { this.data[n] = {}; this.syncCloud(); this.renderSubjList(); document.getElementById('new-subj').value = ""; }
-            },
-            renderSubjList() {
-                const div = document.getElementById('list-subj'); const chk = document.getElementById('chk-subj');
-                div.innerHTML = ""; chk.innerHTML = "";
-                Object.keys(this.data).forEach(k => {
-                    div.innerHTML += `<span class="bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-800">${k}</span>`;
-                    chk.innerHTML += `<label><input type="checkbox" value="${k}" class="c-chk"> ${k}</label>`;
-                });
-                this.updateDomainList();
-            },
-            addCourse() {
-                const n = document.getElementById('new-course').value;
-                if(!n) return;
-                const selected = Array.from(document.querySelectorAll('.c-chk:checked')).map(c => c.value);
-                this.courses[n] = selected; this.syncCloud(); this.renderCourseList(); document.getElementById('new-course').value = "";
-            },
-            renderCourseList() {
-                const d = document.getElementById('list-course'); d.innerHTML = "";
-                Object.keys(this.courses).forEach(k => d.innerHTML += `<div class="p-2 border rounded bg-slate-50 flex justify-between"><span class="font-bold text-sm">${k}</span> <span class="text-xs text-slate-500">${this.courses[k].join(', ')}</span></div>`);
-            },
-            updateDomainList() {
-                const s = document.getElementById('sel-domain'); s.innerHTML = "<option value=''>Select Domain</option>";
-                Object.keys(this.data).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
-            },
-            updateSubtests() {
-                const d = document.getElementById('sel-domain').value;
-                const s = document.getElementById('sel-subtest'); s.innerHTML = "<option value=''>Select Subtest</option>";
-                if(this.data[d]) Object.keys(this.data[d]).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
-            },
-            renderQuestions() {
-                const d = document.getElementById('sel-domain').value;
-                const s = document.getElementById('sel-subtest').value;
-                const div = document.getElementById('q-list'); div.innerHTML = "";
-                if(!d || !s || !this.data[d][s]) { document.getElementById('q-empty').classList.remove('hidden'); return; }
-                document.getElementById('q-empty').classList.add('hidden');
-                this.data[d][s].forEach((q, i) => {
-                    div.innerHTML += `<div class="p-3 hover:bg-slate-50 relative group"><button onclick="app.delQ('${d}','${s}',${i})" class="absolute top-2 right-2 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><div class="font-bold text-sm text-slate-700">${i+1}. ${q.text}</div><div class="text-xs text-green-600 font-mono mt-1">Ans: ${q.correct}</div></div>`;
-                });
-            },
-            delQ(d,s,i) { if(confirm("Delete?")) { this.data[d][s].splice(i,1); this.syncCloud(); this.renderQuestions(); } },
-            importDocx(input) {
-                const d = document.getElementById('sel-domain').value;
-                if(!d) return alert("Select Domain First");
-                mammoth.extractRawText({arrayBuffer: input.files[0]}).then(r => {
-                    const lines = r.value.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-                    const qs = []; let c = null;
-                    lines.forEach(l => {
-                        if(l.match(/^(\d+[\.\)]|Q\d+)\s*(.+)/i)) { if(c) qs.push(c); c = {text:RegExp.$2,options:{},correct:'A'}; }
-                        else if(l.match(/^([A-D])[\.\)]\s*(.+)/i) && c) { c.options[RegExp.$1] = RegExp.$2; }
-                        else if(l.match(/^(?:Ans|Answer).*([A-D])/i) && c) { c.correct = RegExp.$1; }
-                    });
-                    if(c) qs.push(c);
-                    const s = "General"; if(!this.data[d][s]) this.data[d][s] = [];
-                    this.data[d][s].push(...qs); this.syncCloud(); this.updateSubtests(); alert("Imported " + qs.length);
-                });
-            },
-
-            // EXAM
-            renderStudentDropdown() {
-                const s = document.getElementById('st-course'); s.innerHTML = "<option value=''>Select Course</option>";
-                Object.keys(this.courses).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
-            },
-            startExam() {
-                const n = document.getElementById('st-name').value;
-                const c = document.getElementById('st-course').value;
-                if(!n || !c) return alert("Enter Details");
-                this.session = { student: {name:n, course:c}, q: [], a: {}, idx: 0 };
-                (this.courses[c]||[]).forEach(subj => {
-                    if(this.data[subj]) Object.keys(this.data[subj]).forEach(test => this.data[subj][test].forEach(q => this.session.q.push({...q, tag: subj})));
-                });
-                if(this.session.q.length === 0) return alert("No questions");
-                this.setMode('exam'); this.renderExamQ();
-            },
-            renderExamQ() {
-                const q = this.session.q[this.session.idx];
-                document.getElementById('exam-q-text').innerText = q.text;
-                document.getElementById('exam-tag').innerText = q.tag;
-                document.getElementById('exam-progress').innerText = `${this.session.idx+1}/${this.session.q.length}`;
-                const div = document.getElementById('exam-opts'); div.innerHTML = "";
-                ['A','B','C','D'].forEach(opt => {
-                    if(q.options[opt]) {
-                        const sel = this.session.a[this.session.idx] === opt ? 'bg-blue-100 border-blue-500' : '';
-                        div.innerHTML += `<button onclick="app.ans('${opt}')" class="w-full text-left p-3 border rounded hover:bg-blue-50 ${sel}"><span class="font-bold mr-2">${opt}</span> ${q.options[opt]}</button>`;
-                    }
-                });
-            },
-            ans(opt) { this.session.a[this.session.idx] = opt; this.renderExamQ(); },
-            nextQ() {
-                if(this.session.idx < this.session.q.length - 1) { this.session.idx++; this.renderExamQ(); }
-                else if(confirm("Submit?")) {
-                    let score = 0;
-                    this.session.q.forEach((q,i) => { if(this.session.a[i] === q.correct) score++; });
-                    this.records.push({name: this.session.student.name, score: `${score}/${this.session.q.length}`, date: new Date().toLocaleDateString()});
-                    if(this.user) this.syncCloud();
-                    alert("Score: " + score); this.setMode('landing');
+        async function fetchData() {
+            if(!state.user) return;
+            try {
+                const docRef = doc(db, "teachers", state.user.uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const d = docSnap.data();
+                    state.data = d.examData ? JSON.parse(d.examData) : {};
+                    state.courses = d.courses ? JSON.parse(d.courses) : {};
+                    state.records = d.records ? JSON.parse(d.records) : [];
+                    document.getElementById('dash-name').innerText = d.fullName || "Teacher";
+                    updateDomainList(); renderSubjList(); renderCourseList();
                 }
-            },
-            renderRecords() {
-                const t = document.getElementById('table-records'); t.innerHTML = "";
-                this.records.forEach(r => t.innerHTML += `<tr class="border-b"><td class="p-3">${r.name}</td><td class="p-3">${r.score}</td><td class="p-3">${r.date}</td></tr>`);
+            } catch(e) { console.error(e); }
+        }
+
+        async function syncCloud() {
+            if(!state.user) return;
+            const payload = {
+                examData: JSON.stringify(state.data),
+                courses: JSON.stringify(state.courses),
+                records: JSON.stringify(state.records),
+                lastSync: new Date().toISOString()
+            };
+            try {
+                await updateDoc(doc(db, "teachers", state.user.uid), payload);
+                alert("Saved to Cloud!");
+            } catch(e) { alert("Save Error: "+e.message); }
+        }
+
+        function login() {
+            const u = document.getElementById('login-user').value + "@ncae.com";
+            const p = document.getElementById('login-pass').value;
+            if(!document.getElementById('login-user').value || !p) return alert("Required");
+            signInWithEmailAndPassword(auth, u, p)
+                .then(() => setMode('dashboard'))
+                .catch(e => alert(e.message));
+        }
+
+        function register() {
+            const n = document.getElementById('reg-name').value;
+            const u = document.getElementById('reg-user').value + "@ncae.com";
+            const p = document.getElementById('reg-pass').value;
+            if(!n || !p) return alert("Required");
+
+            createUserWithEmailAndPassword(auth, u, p).then(cred => {
+                return setDoc(doc(db, "teachers", cred.user.uid), {
+                    fullName: n, username: document.getElementById('reg-user').value,
+                    examData: "{}", courses: "{}", records: "[]"
+                });
+            }).then(() => {
+                alert("Registered!");
+                setMode('dashboard');
+            }).catch(e => alert(e.message));
+        }
+
+        // --- UI HELPERS ---
+        function setMode(m) {
+            document.querySelectorAll('[id^="view-"]').forEach(e => e.classList.add('hidden'));
+            document.getElementById(`view-${m}`).classList.remove('hidden');
+        }
+        function toggleRegister(show) {
+            document.getElementById('form-login').classList.toggle('hidden', show);
+            document.getElementById('form-register').classList.toggle('hidden', !show);
+        }
+        function setTab(t) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
+            document.getElementById(`tab-${t}`).classList.remove('hidden');
+            if(t==='records') renderRecords();
+        }
+
+        // --- DATA LOGIC ---
+        function addSubject() {
+            const n = document.getElementById('new-subj').value;
+            if(n && !state.data[n]) { state.data[n] = {}; syncCloud(); renderSubjList(); document.getElementById('new-subj').value=""; }
+        }
+        function renderSubjList() {
+            const d = document.getElementById('list-subj'); const c = document.getElementById('chk-subj'); d.innerHTML=""; c.innerHTML="";
+            Object.keys(state.data).forEach(k => {
+                d.innerHTML += `<span class="bg-blue-100 px-2 rounded text-xs">${k}</span>`;
+                c.innerHTML += `<label><input type="checkbox" value="${k}" class="c-chk"> ${k}</label>`;
+            });
+            updateDomainList();
+        }
+        function addCourse() {
+            const n = document.getElementById('new-course').value;
+            if(!n) return;
+            state.courses[n] = Array.from(document.querySelectorAll('.c-chk:checked')).map(x=>x.value);
+            syncCloud(); renderCourseList(); document.getElementById('new-course').value="";
+        }
+        function renderCourseList() {
+            const d = document.getElementById('list-course'); d.innerHTML="";
+            Object.keys(state.courses).forEach(k => d.innerHTML += `<div class="p-2 border rounded text-sm">${k}</div>`);
+        }
+        function updateDomainList() {
+            const s = document.getElementById('sel-domain'); s.innerHTML = "<option value=''>Select</option>";
+            Object.keys(state.data).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+        function updateSubtests() {
+            const d = document.getElementById('sel-domain').value;
+            const s = document.getElementById('sel-subtest'); s.innerHTML = "<option value=''>Select</option>";
+            if(state.data[d]) Object.keys(state.data[d]).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+        function renderQuestions() {
+            const d = document.getElementById('sel-domain').value;
+            const s = document.getElementById('sel-subtest').value;
+            const div = document.getElementById('q-list'); div.innerHTML = "";
+            if(!d || !s || !state.data[d][s]) { document.getElementById('q-empty').classList.remove('hidden'); return; }
+            document.getElementById('q-empty').classList.add('hidden');
+            state.data[d][s].forEach((q, i) => {
+                const btn = document.createElement('button'); btn.className = "text-red-500 ml-auto"; btn.innerHTML="<i class='fas fa-trash'></i>";
+                btn.onclick = () => { if(confirm("Delete?")) { state.data[d][s].splice(i,1); syncCloud(); renderQuestions(); } };
+                const row = document.createElement('div'); row.className = "p-3 border-b flex items-center gap-2";
+                row.innerHTML = `<div><span class="font-bold">${i+1}.</span> ${q.text}</div>`;
+                row.appendChild(btn);
+                div.appendChild(row);
+            });
+        }
+        function importDocx(input) {
+            const d = document.getElementById('sel-domain').value;
+            if(!d) return alert("Select Domain First");
+            mammoth.extractRawText({arrayBuffer: input.files[0]}).then(r => {
+                const lines = r.value.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+                const qs = []; let c = null;
+                lines.forEach(l => {
+                    if(l.match(/^(\d+[\.\)]|Q\d+)\s*(.+)/i)) { if(c) qs.push(c); c = {text:RegExp.$2,options:{},correct:'A'}; }
+                    else if(l.match(/^([A-D])[\.\)]\s*(.+)/i) && c) { c.options[RegExp.$1] = RegExp.$2; }
+                    else if(l.match(/^(?:Ans|Answer).*([A-D])/i) && c) { c.correct = RegExp.$1; }
+                });
+                if(c) qs.push(c);
+                const s = "General"; if(!state.data[d][s]) state.data[d][s] = [];
+                state.data[d][s].push(...qs); syncCloud(); updateSubtests(); alert("Imported "+qs.length);
+            });
+        }
+
+        // --- EXAM LOGIC ---
+        function renderStudentDropdown() {
+            const s = document.getElementById('st-course'); s.innerHTML = "<option value=''>Select Course</option>";
+            Object.keys(state.courses).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+        function startExam() {
+            const n = document.getElementById('st-name').value;
+            const c = document.getElementById('st-course').value;
+            if(!n || !c) return alert("Required");
+            state.session = { student: {name:n, course:c}, q: [], a: {}, idx: 0 };
+            (state.courses[c]||[]).forEach(subj => {
+                if(state.data[subj]) Object.keys(state.data[subj]).forEach(t => state.data[subj][t].forEach(q => state.session.q.push({...q, tag: subj})));
+            });
+            if(state.session.q.length === 0) return alert("No Questions");
+            setMode('exam'); renderExamQ();
+        }
+        function renderExamQ() {
+            const q = state.session.q[state.session.idx];
+            document.getElementById('exam-q-text').innerText = q.text;
+            document.getElementById('exam-tag').innerText = q.tag;
+            document.getElementById('exam-progress').innerText = `${state.session.idx+1}/${state.session.q.length}`;
+            const div = document.getElementById('exam-opts'); div.innerHTML = "";
+            ['A','B','C','D'].forEach(opt => {
+                if(q.options[opt]) {
+                    const btn = document.createElement('button');
+                    const isSel = state.session.a[state.session.idx] === opt;
+                    btn.className = `w-full text-left p-3 border rounded hover:bg-blue-50 ${isSel ? 'bg-blue-100 border-blue-500' : ''}`;
+                    btn.innerHTML = `<span class="font-bold mr-2">${opt}</span> ${q.options[opt]}`;
+                    btn.onclick = () => { state.session.a[state.session.idx] = opt; renderExamQ(); };
+                    div.appendChild(btn);
+                }
+            });
+        }
+        function nextQ() {
+            if(state.session.idx < state.session.q.length - 1) { state.session.idx++; renderExamQ(); }
+            else if(confirm("Submit?")) {
+                let sc = 0; state.session.q.forEach((q,i) => { if(state.session.a[i] === q.correct) sc++; });
+                state.records.push({name: state.session.student.name, score: `${sc}/${state.session.q.length}`, date: new Date().toLocaleDateString()});
+                if(state.user) syncCloud();
+                alert("Score: "+sc); setMode('landing');
             }
-        };
+        }
+        function renderRecords() {
+            const t = document.getElementById('table-records'); t.innerHTML = "";
+            state.records.forEach(r => t.innerHTML += `<tr class="border-b"><td class="p-3">${r.name}</td><td class="p-3">${r.score}</td><td class="p-3">${r.date}</td></tr>`);
+        }
+
     </script>
 </body>
 </html>

@@ -3,226 +3,595 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NCAE System (Hierarchical)</title>
+    <title>Canvas LMS - Exam Builder</title>
+    
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Lato', 'sans-serif'] },
+                    colors: {
+                        canvas: {
+                            nav: '#2D3B45',       // Global Nav Dark
+                            primary: '#0374B5',   // Canvas Blue
+                            accent: '#F5F5F5',    // Background
+                            text: '#2D3B45',
+                            border: '#C7CDD1'
+                        }
+                    },
+                    boxShadow: {
+                        'card': '0 2px 5px rgba(0,0,0,0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- ICONS & LIBS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+    
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 8px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        /* UI Utilities */
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #C7CDD1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #2D3B45; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .global-nav-item:hover .icon-box { color: #0374B5; background-color: white; }
+        
+        /* Active Tab Styling */
+        .nav-tab-btn.active { 
+            background-color: #0374B5; 
+            color: white; 
+            border-color: #0374B5;
+        }
+
+        /* Calendar Grid */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .calendar-day.today { background-color: #0374B5; color: white; font-weight: bold; }
+        .calendar-day:not(.today):not(.empty):hover { background-color: #E2E8F0; }
+        .calendar-day.empty { background: transparent; cursor: default; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 h-screen flex flex-col font-sans overflow-hidden">
+<body class="bg-[#F5F5F5] text-[#2D3B45] h-screen flex overflow-hidden font-sans">
 
-    <div id="app" class="flex-1 flex flex-col h-full relative">
+    <!-- 1. GLOBAL NAVIGATION (Fixed Left Sidebar) -->
+    <nav class="w-[84px] bg-canvas-nav flex flex-col items-center py-4 z-50 shrink-0 text-white shadow-xl h-full">
+        <div class="mb-6 w-16 h-16 flex items-center justify-center">
+            <i class="fas fa-sun text-3xl text-yellow-500 animate-spin-slow"></i> 
+        </div>
+
+        <!-- Sidebar Links -->
+        <div id="nav-links" class="hidden space-y-4 w-full flex flex-col items-center">
+            <button id="nav-btn-dashboard" class="global-nav-item group w-full flex flex-col items-center justify-center py-2 relative">
+                <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 text-white">
+                    <i class="fas fa-tachometer-alt text-2xl"></i>
+                </div>
+                <span class="text-[10px] mt-1 font-bold group-hover:text-white/80">Dashboard</span>
+            </button>
+
+            <button id="nav-btn-courses" class="global-nav-item group w-full flex flex-col items-center justify-center py-2 relative">
+                <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 text-white">
+                    <i class="fas fa-book text-2xl"></i>
+                </div>
+                <span class="text-[10px] mt-1 font-bold group-hover:text-white/80">Courses</span>
+            </button>
+
+            <button id="nav-btn-calendar" class="global-nav-item group w-full flex flex-col items-center justify-center py-2 relative">
+                <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 text-white">
+                    <i class="fas fa-calendar text-2xl"></i>
+                </div>
+                <span class="text-[10px] mt-1 font-bold group-hover:text-white/80">Calendar</span>
+            </button>
+        </div>
+
+        <div class="mt-auto mb-4 w-full flex flex-col items-center">
+             <button id="btn-logout" class="hidden global-nav-item group w-full flex flex-col items-center justify-center py-2 relative">
+                <div class="icon-box w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 text-white bg-red-600/20 group-hover:bg-red-600 group-hover:text-white">
+                    <i class="fas fa-sign-out-alt text-xl"></i>
+                </div>
+                <span class="text-[10px] mt-1 font-bold">Logout</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 2. MAIN APP CONTAINER -->
+    <div id="app" class="flex-1 flex flex-col h-full overflow-hidden relative">
+        
         <!-- HEADER -->
-        <header class="bg-blue-900 text-white p-3 shadow-md flex justify-between items-center z-20">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-900 font-bold"><i class="fas fa-book"></i></div>
-                <div><h1 class="font-bold leading-tight">NCAE System</h1><p class="text-[10px] text-yellow-300 font-mono" id="status-indicator">Initializing...</p></div>
+        <header class="bg-white border-b border-canvas-border h-16 flex justify-between items-center px-6 shrink-0 z-30 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button class="text-canvas-primary md:hidden"><i class="fas fa-bars text-xl"></i></button>
+                <div>
+                    <h1 class="text-canvas-primary font-bold text-lg tracking-wide">Exam Builder <span class="text-slate-400 font-normal">v4.1</span></h1>
+                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                        <span id="header-role">User</span>
+                        <span>&gt;</span>
+                        <span id="header-context">Dashboard</span>
+                    </div>
+                </div>
             </div>
-            <button id="btn-logout" class="hidden text-xs bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white transition">Logout</button>
+            <div class="flex items-center gap-3">
+                 <button class="bg-canvas-accent text-slate-600 px-3 py-1 rounded border border-canvas-border text-xs font-bold hover:bg-slate-200 transition">
+                    <i class="fas fa-glasses mr-1"></i> Student View
+                </button>
+                 <span class="text-[10px] font-mono font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200" id="status-indicator">Connecting...</span>
+            </div>
         </header>
 
-        <!-- VIEW 1: LANDING -->
-        <div id="view-landing" class="flex-1 flex items-center justify-center p-4 fade-in">
-            <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center space-y-6">
-                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-3xl mx-auto"><i class="fas fa-user-graduate"></i></div>
-                <h2 class="text-xl font-bold">Select Portal</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <button id="nav-student" class="p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-500 transition"><i class="fas fa-user text-2xl text-blue-500 mb-2"></i><div class="font-bold text-sm">Student</div></button>
-                    <button id="nav-teacher" class="p-4 border rounded-xl hover:bg-blue-50 hover:border-blue-500 transition"><i class="fas fa-chalkboard-teacher text-2xl text-orange-500 mb-2"></i><div class="font-bold text-sm">Teacher</div></button>
-                </div>
-            </div>
+        <!-- NOTIFICATIONS -->
+        <div id="error-banner" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 m-4" role="alert">
+            <p class="font-bold">Security Alert</p>
+            <p>Domain not allowed. Add <span id="current-domain" class="font-mono bg-red-200 px-1"></span> to Firebase Console.</p>
         </div>
 
-        <!-- VIEW 2: TEACHER LOGIN -->
-        <div id="view-teacher-login" class="hidden flex-1 flex items-center justify-center p-4 fade-in">
-            <div class="max-w-sm w-full bg-white rounded-xl shadow-lg p-6 relative">
-                <button id="close-login" class="absolute top-4 right-4 text-slate-400"><i class="fas fa-times"></i></button>
-                <div id="form-login">
-                    <h2 class="text-lg font-bold mb-4">Teacher Login</h2>
-                    <button id="do-google-login" class="w-full bg-white border border-slate-300 text-slate-700 font-bold py-3 rounded mb-4 hover:bg-slate-50 flex items-center justify-center gap-2 shadow-sm"><i class="fab fa-google text-red-500"></i> Sign in with Google</button>
-                    <div class="relative flex py-2 items-center"><div class="flex-grow border-t border-gray-300"></div><span class="flex-shrink-0 mx-4 text-gray-400 text-xs">OR EMAIL</span><div class="flex-grow border-t border-gray-300"></div></div>
-                    <input type="text" id="login-user" class="w-full p-3 border rounded mb-3 text-sm" placeholder="Username">
-                    <input type="password" id="login-pass" class="w-full p-3 border rounded mb-4 text-sm" placeholder="Password">
-                    <button id="do-login" class="w-full bg-blue-900 text-white font-bold py-2 rounded hover:bg-blue-800 disabled:opacity-50">Login</button>
-                    <div class="text-center mt-4 text-xs">New? <button id="show-register" class="text-blue-600 font-bold">Create Account</button></div>
+        <!-- CONTENT VIEWS -->
+        <div class="flex-1 overflow-hidden flex flex-col relative bg-[#F5F5F5]">
+            
+            <!-- VIEW: LANDING -->
+            <div id="view-landing" class="flex-1 overflow-y-auto custom-scroll p-8 fade-in">
+                <h2 class="text-2xl font-light text-slate-700 mb-6 border-b pb-2">Select Portal</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <!-- Teacher Card -->
+                    <button id="nav-teacher" class="bg-white rounded-lg shadow-card overflow-hidden group hover:shadow-lg transition-all text-left h-64 flex flex-col border border-gray-200">
+                        <div class="h-32 bg-canvas-nav relative">
+                            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition"></div>
+                            <div class="absolute bottom-3 left-4 text-white font-bold text-shadow">
+                                <i class="fas fa-chalkboard-teacher mr-2"></i> TEACHER PORTAL
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-canvas-primary text-lg group-hover:underline">Instructor Access</h3>
+                                <p class="text-xs text-slate-500 mt-1">Manage Curriculum, Questions & Grades</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Student Card -->
+                    <button id="nav-student" class="bg-white rounded-lg shadow-card overflow-hidden group hover:shadow-lg transition-all text-left h-64 flex flex-col border border-gray-200">
+                        <div class="h-32 bg-canvas-primary relative">
+                            <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition"></div>
+                            <div class="absolute bottom-3 left-4 text-white font-bold text-shadow">
+                                <i class="fas fa-user-graduate mr-2"></i> STUDENT PORTAL
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-canvas-primary text-lg group-hover:underline">Student Access</h3>
+                                <p class="text-xs text-slate-500 mt-1">Take Quizzes & View History</p>
+                            </div>
+                        </div>
+                    </button>
                 </div>
+            </div>
+
+            <!-- VIEW: TEACHER LOGIN -->
+            <div id="view-teacher-login" class="hidden flex-1 flex items-center justify-center p-4 fade-in">
+                <div class="max-w-md w-full bg-white shadow-card rounded border border-gray-200 p-8 relative">
+                    <button id="close-login" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                    <div class="flex flex-col items-center mb-6">
+                        <div class="w-16 h-16 bg-canvas-primary rounded-full flex items-center justify-center text-white text-3xl mb-4 shadow-lg">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-700">Canvas Login</h2>
+                    </div>
+
+                    <div id="form-login">
+                        <button id="do-google-login" class="w-full bg-[#4285F4] text-white font-bold py-3 rounded shadow hover:bg-[#357ae8] transition mb-4 flex items-center justify-center gap-3">
+                            <i class="fab fa-google bg-white text-[#4285F4] p-1 rounded-full text-xs"></i> Sign in with Google
+                        </button>
+                        <div class="text-center text-xs text-slate-400 mb-4 border-b border-t py-2 border-slate-100">OR USE CREDENTIALS</div>
+                        <div class="space-y-4">
+                            <input type="text" id="login-user" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="Username">
+                            <input type="password" id="login-pass" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="Password">
+                        </div>
+                        <button id="do-login" class="w-full bg-canvas-nav text-white font-bold py-3 rounded mt-6 hover:bg-slate-800 transition">Log In</button>
+                        <div class="text-center mt-4 text-sm">
+                            <button id="show-register" class="text-canvas-primary hover:underline">Forgot Password? / Register</button>
+                        </div>
+                    </div>
+
+                    <div id="form-register" class="hidden">
+                        <h3 class="font-bold text-lg mb-4 text-slate-700 border-b pb-2">Create Account</h3>
+                        <input type="text" id="reg-name" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm" placeholder="Full Name">
+                        <input type="text" id="reg-user" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm" placeholder="Username (for login)">
+                        <input type="password" id="reg-pass" class="w-full p-2 border border-gray-300 rounded mb-4 text-sm" placeholder="Password (min 6 chars)">
+                        <button id="do-register" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Register</button>
+                        <button id="cancel-register" class="w-full text-slate-500 text-sm mt-3 hover:text-slate-700">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: TEACHER DASHBOARD -->
+            <div id="view-dashboard" class="hidden flex-1 flex flex-col overflow-hidden fade-in bg-white h-full">
                 
-                <div id="form-register" class="hidden">
-                    <h2 class="text-lg font-bold mb-1">Create Account</h2>
-                    <p class="text-xs text-slate-500 mb-4">Account setup.</p>
-                    <input type="text" id="reg-name" class="w-full p-2 border rounded mb-2 text-sm" placeholder="Full Name">
-                    <input type="text" id="reg-user" class="w-full p-2 border rounded mb-2 text-sm" placeholder="Username">
-                    <input type="password" id="reg-pass" class="w-full p-2 border rounded mb-4 text-sm" placeholder="Password">
-                    <button id="do-register" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700 disabled:opacity-50">Register</button>
-                    <div class="text-center mt-4 text-xs"><button id="cancel-register" class="text-slate-500">Cancel</button></div>
+                <!-- HEADER (Dashboard Info) -->
+                <div class="bg-white px-8 py-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 shrink-0">
+                    <div>
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Current Course</div>
+                        <h2 class="text-3xl font-light text-canvas-primary" id="dash-name">Teacher's Course</h2>
+                        <div class="text-sm text-slate-500 mt-1" id="dash-details">Loading details...</div>
+                    </div>
+                    <button id="do-sync" class="bg-slate-100 text-slate-600 px-4 py-2 rounded border border-gray-300 hover:bg-slate-200 text-sm font-bold flex items-center gap-2 transition">
+                        <i class="fas fa-cloud-upload-alt text-canvas-primary"></i> Sync Data
+                    </button>
+                </div>
+
+                <!-- NAVIGATION BAR -->
+                <div class="bg-gray-50 border-b border-gray-200 px-8 flex gap-2 overflow-x-auto shrink-0">
+                    <button id="tab-btn-students" class="nav-tab-btn active px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Students</button>
+                    <button id="tab-btn-curriculum" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Curriculum</button>
+                    <button id="tab-btn-manage" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Assessments</button>
+                    <button id="tab-btn-records" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Grades</button>
+                    <button id="tab-btn-settings" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Settings</button>
+                </div>
+
+                <!-- MAIN SCROLL AREA -->
+                <main class="flex-1 overflow-y-auto custom-scroll p-8 bg-white w-full">
+                    
+                    <!-- 1. STUDENTS TAB -->
+                    <div id="tab-students" class="tab-content h-full">
+                        <div class="flex justify-between items-end border-b border-gray-300 pb-4 mb-6">
+                            <h3 class="text-xl font-bold text-slate-700">Roster</h3>
+                            <button id="do-add-student" class="bg-canvas-primary text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 shadow-sm"><i class="fas fa-plus"></i> Add Student</button>
+                        </div>
+                        
+                        <div class="bg-slate-50 p-4 rounded border border-gray-200 mb-6 flex flex-wrap gap-3 items-end shadow-sm">
+                            <div class="flex-1 min-w-[200px]">
+                                <label class="text-xs font-bold text-slate-600 block mb-1">Student Name</label>
+                                <input type="text" id="new-st-name" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="Full Name">
+                            </div>
+                            <div class="w-32">
+                                <label class="text-xs font-bold text-slate-600 block mb-1">LRN / ID</label>
+                                <input type="text" id="new-st-lrn" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="ID Number">
+                            </div>
+                            <div class="flex-1 min-w-[200px]">
+                                <label class="text-xs font-bold text-slate-600 block mb-1">Section</label>
+                                <select id="new-st-course" class="w-full p-2 border border-gray-300 rounded text-sm bg-white"></select>
+                            </div>
+                        </div>
+
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-gray-300 text-slate-600">
+                                <tr>
+                                    <th class="p-3 border-r border-gray-200 w-1/3">Name</th>
+                                    <th class="p-3 border-r border-gray-200">SIS ID / LRN</th>
+                                    <th class="p-3 border-r border-gray-200">Section</th>
+                                    <th class="p-3 text-right"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-list-body" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                        <div id="no-students-msg" class="p-8 text-center text-slate-400 bg-slate-50 mt-2 rounded border border-dashed border-gray-300 hidden">No students enrolled.</div>
+                    </div>
+
+                    <!-- 2. CURRICULUM TAB -->
+                    <div id="tab-curriculum" class="hidden tab-content h-full">
+                        <div class="flex justify-between items-end border-b border-gray-300 pb-4 mb-6">
+                            <h3 class="text-xl font-bold text-slate-700">Course Structure</h3>
+                            <button id="do-add-course" class="bg-canvas-primary text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 shadow-sm"><i class="fas fa-plus"></i> Create Course</button>
+                        </div>
+
+                        <div class="bg-slate-50 border border-gray-200 rounded p-4 mb-6 shadow-sm">
+                            <h3 class="font-bold text-slate-700 mb-3 text-sm">Structure Builder</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-slate-500">1. Grade Level</label>
+                                    <div class="flex gap-1 mt-1">
+                                        <input id="new-grade" class="flex-1 p-2 text-sm border border-gray-300 rounded" placeholder="e.g. Grade 10">
+                                        <button id="do-add-grade" class="bg-white border border-gray-300 px-3 rounded hover:bg-slate-100"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="list-grade" class="mt-2 text-xs space-y-1 flex flex-wrap gap-1"></div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-slate-500">2. Term/Quarter</label>
+                                    <select id="cur-grade-select" class="w-full p-2 text-sm border border-gray-300 rounded mt-1 mb-1 hidden"></select>
+                                    <div class="flex gap-1">
+                                        <input id="new-quarter" class="flex-1 p-2 text-sm border border-gray-300 rounded" placeholder="e.g. Q1">
+                                        <button id="do-add-quarter" class="bg-white border border-gray-300 px-3 rounded hover:bg-slate-100"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="list-quarter" class="mt-2 text-xs space-y-1 flex flex-wrap gap-1"></div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-slate-500">3. Subject</label>
+                                    <select id="cur-quarter-select" class="w-full p-2 text-sm border border-gray-300 rounded mt-1 mb-1 hidden"></select>
+                                    <div class="flex gap-1">
+                                        <input id="new-subject" class="flex-1 p-2 text-sm border border-gray-300 rounded" placeholder="e.g. Math">
+                                        <button id="do-add-subject" class="bg-white border border-gray-300 px-3 rounded hover:bg-slate-100"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="list-subject" class="mt-2 text-xs space-y-1 flex flex-wrap gap-1"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-4 mt-2">
+                                <label class="text-[10px] uppercase font-bold text-slate-500 mb-2 block">4. Finalize Course Section</label>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <input id="new-course" class="flex-1 min-w-[200px] p-2 text-sm border border-gray-300 rounded" placeholder="Section Name (e.g. Grade 10 - Newton)">
+                                    <input id="new-course-time" type="number" class="w-24 p-2 text-sm border border-gray-300 rounded" placeholder="60 mins">
+                                </div>
+                                <div id="chk-subjects" class="max-h-32 overflow-y-auto bg-white border border-gray-300 rounded p-2 text-xs grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+                            </div>
+                        </div>
+
+                        <div id="list-course" class="space-y-4"></div>
+                    </div>
+
+                    <!-- 3. QUIZZES TAB -->
+                    <div id="tab-manage" class="hidden tab-content h-full flex flex-col">
+                        <div class="flex justify-between items-end border-b border-gray-300 pb-4 mb-6">
+                            <h3 class="text-xl font-bold text-slate-700">Question Banks</h3>
+                            <div class="flex gap-2">
+                                <button id="do-get-template" class="bg-white border border-gray-300 text-slate-600 px-3 py-1 rounded text-sm hover:bg-gray-50"><i class="fas fa-download"></i> Template</button>
+                                <input type="file" id="docx-upload" class="hidden" accept=".docx">
+                                <button onclick="document.getElementById('docx-upload').click()" class="bg-white border border-gray-300 text-slate-600 px-3 py-1 rounded text-sm hover:bg-gray-50"><i class="fas fa-file-import"></i> Import DOCX</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 border border-gray-200 rounded flex gap-2 mb-4 text-sm shadow-sm">
+                            <select id="sel-grade" class="flex-1 p-2 border border-gray-300 rounded bg-white" onchange="window.app.renderQs()"></select>
+                            <select id="sel-quarter" class="flex-1 p-2 border border-gray-300 rounded bg-white" onchange="window.app.renderQs()"></select>
+                            <select id="sel-subject" class="flex-1 p-2 border border-gray-300 rounded bg-white" onchange="window.app.renderQs()"></select>
+                        </div>
+
+                        <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+                            <!-- Editor -->
+                            <div class="w-full lg:w-1/3 flex flex-col">
+                                <div class="bg-white border border-gray-300 rounded overflow-hidden flex flex-col h-full shadow-sm">
+                                    <div class="bg-gray-50 p-2 border-b border-gray-200 font-bold text-xs text-slate-600">Editor</div>
+                                    <div class="p-4 flex-1 overflow-y-auto">
+                                        <textarea id="q-text" class="w-full p-3 border border-gray-300 rounded text-sm h-32 mb-3 focus:border-canvas-primary outline-none resize-none" placeholder="Question Text..."></textarea>
+                                        <div class="space-y-2 mb-3">
+                                            <div class="flex items-center gap-1"><span class="w-6 text-center text-xs font-bold text-slate-500">A</span><input id="opt-a" class="flex-1 p-2 border border-gray-300 rounded text-sm"></div>
+                                            <div class="flex items-center gap-1"><span class="w-6 text-center text-xs font-bold text-slate-500">B</span><input id="opt-b" class="flex-1 p-2 border border-gray-300 rounded text-sm"></div>
+                                            <div class="flex items-center gap-1"><span class="w-6 text-center text-xs font-bold text-slate-500">C</span><input id="opt-c" class="flex-1 p-2 border border-gray-300 rounded text-sm"></div>
+                                            <div class="flex items-center gap-1"><span class="w-6 text-center text-xs font-bold text-slate-500">D</span><input id="opt-d" class="flex-1 p-2 border border-gray-300 rounded text-sm"></div>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                            <span class="text-xs font-bold">Correct Answer:</span>
+                                            <select id="correct-opt" class="p-1 border border-gray-300 rounded text-sm"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+                                        </div>
+                                    </div>
+                                    <div class="p-2 border-t border-gray-200">
+                                        <button id="do-save-manual" class="w-full bg-canvas-primary text-white py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Save Question</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- List -->
+                            <div class="flex-1 border border-gray-300 rounded bg-white overflow-hidden flex flex-col shadow-sm">
+                                <div class="bg-gray-50 p-2 border-b border-gray-200 font-bold text-xs text-slate-600 flex justify-between">
+                                    <span>Questions</span>
+                                    <span>Points: 1 each</span>
+                                </div>
+                                <div id="q-list" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+                                <div id="q-empty" class="flex-1 flex items-center justify-center text-slate-400 text-sm italic">No questions in selected bank.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. RECORDS TAB -->
+                    <div id="tab-records" class="hidden tab-content h-full">
+                        <div class="flex justify-between items-end border-b border-gray-300 pb-4 mb-6">
+                            <h3 class="text-xl font-bold text-slate-700">Gradebook</h3>
+                            <select id="filter-records-grade" class="p-2 border border-gray-300 rounded text-sm bg-white min-w-[200px]"></select>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded overflow-hidden shadow-sm">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 border-b border-gray-300 text-slate-600 font-bold">
+                                    <tr>
+                                        <th class="p-3 border-r border-gray-200">Student Name</th>
+                                        <th class="p-3 border-r border-gray-200">Grade/Section</th>
+                                        <th class="p-3 border-r border-gray-200">Assignment</th>
+                                        <th class="p-3 border-r border-gray-200">Score</th>
+                                        <th class="p-3 text-right">Date Submitted</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-records" class="divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 5. SETTINGS TAB -->
+                    <div id="tab-settings" class="hidden tab-content h-full max-w-2xl">
+                        <h3 class="text-xl font-bold text-slate-700 border-b border-gray-300 pb-4 mb-6">Course Details</h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="font-bold text-slate-700 block mb-1">Instructor Name</label>
+                                <input id="set-name" type="text" class="w-full p-2 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="flex-1">
+                                    <label class="font-bold text-slate-700 block mb-1">Grade Level</label>
+                                    <input id="set-grade" type="text" class="w-full p-2 border border-gray-300 rounded text-sm">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="font-bold text-slate-700 block mb-1">Subject Area</label>
+                                    <input id="set-subject" type="text" class="w-full p-2 border border-gray-300 rounded text-sm">
+                                </div>
+                            </div>
+                            
+                            <button id="do-save-profile" class="bg-canvas-primary text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 shadow-sm">Update Details</button>
+                            
+                            <hr class="border-gray-200 my-4">
+                            
+                            <div class="bg-red-50 border border-red-200 p-4 rounded">
+                                <h4 class="text-red-800 font-bold mb-2">Danger Zone</h4>
+                                <p class="text-xs text-red-600 mb-3">Resetting will delete all student data and grades. Content will be preserved.</p>
+                                <button id="do-reset-year" class="bg-white border border-red-300 text-red-600 px-3 py-1 rounded text-sm hover:bg-red-50">Reset School Year</button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- VIEW: COURSES (SHARED) -->
+            <div id="view-courses" class="hidden flex-1 overflow-y-auto custom-scroll p-8 fade-in">
+                <h2 class="text-2xl font-light text-slate-700 mb-6 border-b pb-2" id="courses-title">All Courses</h2>
+                <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <div id="courses-empty" class="text-center text-slate-400 italic mt-12">No courses available.</div>
+            </div>
+
+            <!-- VIEW: CALENDAR (SHARED) -->
+            <div id="view-calendar" class="hidden flex-1 overflow-y-auto custom-scroll p-8 fade-in">
+                <h2 class="text-2xl font-light text-slate-700 mb-6 border-b pb-2">Academic Calendar</h2>
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <div class="flex-1 bg-white p-6 rounded shadow-card border border-gray-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-4">
+                                <h3 id="calendar-month-label" class="font-bold text-slate-700 text-lg">Current Month</h3>
+                                <div class="flex gap-1">
+                                    <button id="cal-prev" class="text-slate-400 hover:text-canvas-primary w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition"><i class="fas fa-chevron-left"></i></button>
+                                    <button id="cal-next" class="text-slate-400 hover:text-canvas-primary w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded cursor-pointer hover:bg-blue-200" id="cal-today-btn">Today</span>
+                        </div>
+                        <div class="calendar-grid mb-4 text-center text-xs font-bold text-slate-400 uppercase">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="calendar-days" class="calendar-grid">
+                            <!-- Days generated by JS -->
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-80">
+                        <h3 class="font-bold text-slate-700 mb-4">Upcoming Schedule</h3>
+                        <div class="space-y-3" id="calendar-events">
+                            <div class="bg-white p-3 rounded border border-l-4 border-gray-200 border-l-canvas-primary shadow-sm">
+                                <div class="text-xs text-slate-400 font-bold mb-1">Today</div>
+                                <div class="text-sm font-bold text-slate-700">Exam Period Opens</div>
+                                <div class="text-xs text-slate-500">All Sections</div>
+                            </div>
+                            <div class="bg-white p-3 rounded border border-l-4 border-gray-200 border-l-orange-400 shadow-sm">
+                                <div class="text-xs text-slate-400 font-bold mb-1">Tomorrow</div>
+                                <div class="text-sm font-bold text-slate-700">Quarterly Assessment</div>
+                                <div class="text-xs text-slate-500">Grade 10 - Mathematics</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- VIEW 3: DASHBOARD -->
-        <div id="view-dashboard" class="hidden flex-1 flex overflow-hidden fade-in bg-slate-50">
-            <aside class="w-64 bg-white border-r flex flex-col z-10 hidden md:flex">
-                <div class="p-4 border-b">
-                    <div class="font-bold truncate" id="dash-name">Teacher</div>
-                    <div class="text-xs text-slate-500 truncate" id="dash-details">--</div>
-                    <div class="text-xs text-green-600 flex items-center gap-1 mt-1"><i class="fas fa-circle text-[8px]"></i> Online</div>
-                </div>
-                <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
-                    <button id="tab-btn-curriculum" class="w-full text-left px-4 py-3 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-book w-6 text-slate-400"></i> Curriculum</button>
-                    <button id="tab-btn-manage" class="w-full text-left px-4 py-3 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-edit w-6 text-slate-400"></i> Manage Questions</button>
-                    <button id="tab-btn-records" class="w-full text-left px-4 py-3 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-users w-6 text-slate-400"></i> Student Records</button>
-                    <button id="tab-btn-settings" class="w-full text-left px-4 py-3 rounded hover:bg-blue-50 text-sm font-medium"><i class="fas fa-cog w-6 text-slate-400"></i> Account Settings</button>
-                </nav>
-                <div class="p-4 border-t"><button id="do-sync" class="w-full bg-blue-100 text-blue-800 text-xs font-bold py-2 rounded hover:bg-blue-200"><i class="fas fa-cloud-upload-alt mr-1"></i> Sync to Cloud</button></div>
-            </aside>
-            <main class="flex-1 overflow-y-auto custom-scroll p-4 relative">
-                <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');" class="md:hidden absolute top-4 left-4 z-20 bg-white p-2 rounded shadow text-slate-600"><i class="fas fa-bars"></i></button>
+            <!-- VIEW: STUDENT LOGIN -->
+            <div id="view-student-login" class="hidden flex-1 flex items-center justify-center p-4 fade-in">
+                <div class="max-w-md w-full bg-white shadow-card rounded border border-gray-200 p-8 text-center relative">
+                    <button id="close-student" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
 
-                <!-- TAB: CURRICULUM -->
-                <div id="tab-curriculum" class="tab-content h-full p-2">
-                    <h2 class="text-xl font-bold text-slate-800 mb-6 pl-12 md:pl-0">Curriculum Setup</h2>
+                    <div class="w-16 h-16 bg-canvas-primary rounded-full flex items-center justify-center text-white text-3xl mb-6 mx-auto shadow-lg">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-700 mb-2">Student Access</h2>
+                    <p class="text-slate-500 text-sm mb-6">Enter details to access your dashboard.</p>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                        <!-- 1. Grade Level -->
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <h3 class="font-bold text-sm mb-2 text-blue-900">1. Grade Level</h3>
-                            <div class="flex gap-2 mb-2">
-                                <input type="text" id="new-grade" class="flex-1 p-2 border rounded text-sm" placeholder="e.g. Grade 7">
-                                <button id="do-add-grade" class="bg-blue-600 text-white px-3 rounded text-sm font-bold">+</button>
-                            </div>
-                            <div id="list-grade" class="space-y-1 max-h-40 overflow-y-auto"></div>
-                        </div>
-
-                        <!-- 2. Quarter/Semester -->
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <h3 class="font-bold text-sm mb-2 text-orange-700">2. Quarter / Sem</h3>
-                            <select id="cur-grade-select" class="w-full p-2 border rounded text-sm mb-2 bg-slate-50"></select>
-                            <div class="flex gap-2 mb-2">
-                                <input type="text" id="new-quarter" class="flex-1 p-2 border rounded text-sm" placeholder="e.g. 1st Quarter">
-                                <button id="do-add-quarter" class="bg-orange-500 text-white px-3 rounded text-sm font-bold">+</button>
-                            </div>
-                            <div id="list-quarter" class="space-y-1 max-h-40 overflow-y-auto"></div>
-                        </div>
-
-                        <!-- 3. Subject -->
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <h3 class="font-bold text-sm mb-2 text-green-700">3. Subject</h3>
-                            <div class="flex gap-2 mb-2">
-                                <select id="cur-quarter-select" class="flex-1 p-2 border rounded text-sm bg-slate-50"></select>
-                            </div>
-                            <div class="flex gap-2 mb-2">
-                                <input type="text" id="new-subject" class="flex-1 p-2 border rounded text-sm" placeholder="e.g. Math">
-                                <button id="do-add-subject" class="bg-green-600 text-white px-3 rounded text-sm font-bold">+</button>
-                            </div>
-                            <div id="list-subject" class="space-y-1 max-h-40 overflow-y-auto"></div>
-                        </div>
-                    </div>
-
-                    <!-- 4. Create Course (Student Grouping) -->
-                    <div class="bg-white p-4 rounded-lg shadow-sm border">
-                        <h3 class="font-bold text-sm mb-2 text-slate-700">4. Create Student Course (Section/Group)</h3>
-                        <p class="text-xs text-slate-400 mb-2">Select subjects from the hierarchy above to include in this course.</p>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="new-course" class="flex-1 p-2 border rounded text-sm" placeholder="E.g., Grade 7 - Section A">
-                            <button id="do-add-course" class="bg-slate-700 text-white px-4 rounded text-sm font-bold">Save</button>
-                        </div>
-                        <div id="chk-subjects" class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4 text-xs bg-slate-50 p-2 rounded max-h-60 overflow-y-auto"></div>
-                        <div id="list-course" class="space-y-1"></div>
-                    </div>
-                </div>
-
-                <!-- TAB: QUESTIONS -->
-                <div id="tab-manage" class="hidden tab-content h-full p-2">
-                    <div class="flex justify-between items-center mb-4 pl-12 md:pl-0">
-                        <h2 class="text-xl font-bold">Manage Questions</h2>
-                        <div class="flex gap-2"><input type="file" id="docx-upload" class="hidden" accept=".docx"><button onclick="document.getElementById('docx-upload').click()" class="bg-blue-600 text-white text-xs px-3 py-2 rounded font-bold shadow hover:bg-blue-700"><i class="fas fa-file-word mr-1"></i> Import .DOCX</button></div>
-                    </div>
+                    <input type="text" id="st-name" class="w-full p-3 border border-gray-300 rounded mb-3 text-sm focus:border-canvas-primary outline-none" placeholder="Full Name">
+                    <input type="text" id="st-lrn" class="w-full p-3 border border-gray-300 rounded mb-4 text-sm focus:border-canvas-primary outline-none" placeholder="LRN / Student ID">
                     
-                    <!-- 3-LEVEL FILTER -->
-                    <div class="bg-white p-4 rounded-lg shadow-sm border mb-4 grid grid-cols-3 gap-4">
-                        <div><label class="text-[10px] uppercase font-bold text-slate-400">1. Grade</label><select id="sel-grade" class="w-full p-2 border rounded bg-slate-50 text-sm"></select></div>
-                        <div><label class="text-[10px] uppercase font-bold text-slate-400">2. Period</label><select id="sel-quarter" class="w-full p-2 border rounded bg-slate-50 text-sm"></select></div>
-                        <div><label class="text-[10px] uppercase font-bold text-slate-400">3. Subject</label><select id="sel-subject" class="w-full p-2 border rounded bg-slate-50 text-sm"></select></div>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row gap-4 h-[calc(100%-150px)]">
-                        <div class="w-full md:w-1/3 bg-white p-4 rounded border overflow-y-auto">
-                            <h3 class="font-bold text-sm mb-2">Manual Entry</h3>
-                            <textarea id="q-text" class="w-full p-2 border rounded text-sm mb-2 h-20" placeholder="Question Text"></textarea>
-                            <div class="space-y-1 mb-2"><input id="opt-a" class="w-full p-1 border rounded text-xs" placeholder="Option A"><input id="opt-b" class="w-full p-1 border rounded text-xs" placeholder="Option B"><input id="opt-c" class="w-full p-1 border rounded text-xs" placeholder="Option C"><input id="opt-d" class="w-full p-1 border rounded text-xs" placeholder="Option D"></div>
-                            <select id="correct-opt" class="w-full p-1 border rounded text-sm mb-2"><option value="A">Answer: A</option><option value="B">Answer: B</option><option value="C">Answer: C</option><option value="D">Answer: D</option></select>
-                            <button id="do-save-manual" class="w-full bg-green-600 text-white py-1 rounded text-sm font-bold">Save Question</button>
-                        </div>
-                        <div class="flex-1 bg-white rounded border overflow-hidden flex flex-col">
-                            <div id="q-list" class="flex-1 overflow-y-auto custom-scroll"></div>
-                            <div id="q-empty" class="p-10 text-center text-slate-400 text-sm">Select Grade, Period, and Subject</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB: RECORDS -->
-                <div id="tab-records" class="hidden tab-content h-full p-2">
-                    <h2 class="text-xl font-bold mb-4 pl-12 md:pl-0">Student Records</h2>
-                    <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
-                        <table class="w-full text-sm text-left"><thead class="bg-slate-50 border-b"><tr><th class="p-3">Name</th><th class="p-3">Course</th><th class="p-3">Score</th><th class="p-3">Date</th></tr></thead><tbody id="table-records"></tbody></table>
-                    </div>
-                </div>
-
-                <!-- TAB: SETTINGS -->
-                <div id="tab-settings" class="hidden tab-content h-full p-2">
-                    <h2 class="text-xl font-bold mb-4 pl-12 md:pl-0">Account Settings</h2>
-                    <div class="max-w-md bg-white p-6 rounded-lg shadow-sm border">
-                        <div class="mb-4">
-                            <label class="text-xs font-bold text-slate-500 uppercase">Full Name</label>
-                            <input type="text" id="set-name" class="w-full p-2 border rounded mt-1">
-                        </div>
-                        <div class="mb-4">
-                            <label class="text-xs font-bold text-slate-500 uppercase">Grade Handled</label>
-                            <input type="text" id="set-grade" class="w-full p-2 border rounded mt-1" placeholder="e.g. Grade 10">
-                        </div>
-                        <div class="mb-6">
-                            <label class="text-xs font-bold text-slate-500 uppercase">Subject Handled</label>
-                            <input type="text" id="set-subject" class="w-full p-2 border rounded mt-1" placeholder="e.g. Science">
-                        </div>
-                        <button id="do-save-profile" class="w-full bg-blue-900 text-white font-bold py-2 rounded hover:bg-blue-800">Update Profile</button>
-                    </div>
-                </div>
-
-            </main>
-        </div>
-
-        <!-- VIEW 4: STUDENT LOGIN -->
-        <div id="view-student-login" class="hidden flex-1 flex items-center justify-center p-4 fade-in bg-slate-50">
-            <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-6 relative">
-                <button id="close-student" class="absolute top-4 right-4 text-slate-400"><i class="fas fa-times"></i></button>
-                <h2 class="text-lg font-bold mb-4">Student Access</h2>
-                <div class="space-y-3">
-                    <input type="text" id="st-name" class="w-full p-3 border rounded text-sm" placeholder="Full Name">
-                    <input type="text" id="st-lrn" class="w-full p-3 border rounded text-sm" placeholder="LRN Number">
-                    <select id="st-course" class="w-full p-3 border rounded text-sm bg-white"></select>
-                    <button id="do-start-exam" class="w-full bg-blue-600 text-white font-bold py-3 rounded mt-2 hover:bg-blue-700">Start Exam</button>
+                    <button id="do-student-login" class="w-full bg-canvas-primary text-white font-bold py-3 rounded hover:bg-blue-700 transition">Log In</button>
                 </div>
             </div>
-        </div>
 
-        <!-- VIEW 5: EXAM PORTAL -->
-        <div id="view-exam" class="hidden flex-1 flex flex-col bg-white fade-in">
-            <header class="p-4 border-b flex justify-between items-center bg-slate-50"><div><h1 class="font-bold">Exam Portal</h1><p class="text-xs text-slate-500" id="exam-student-info">--</p></div><div class="font-mono font-bold text-xl" id="timer">00:00</div></header>
-            <main class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto"><div class="max-w-2xl w-full"><div class="mb-6"><span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded" id="exam-tag">SUBJ</span><h2 class="text-lg font-medium mt-2" id="exam-q-text">Loading...</h2></div><div class="space-y-3" id="exam-opts"></div><div class="mt-8 flex justify-between items-center"><span class="text-xs text-slate-400" id="exam-progress">1 / 10</span><button id="do-next-q" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">Next</button></div></div></main>
+            <!-- VIEW: STUDENT DASHBOARD -->
+            <div id="view-student-dashboard" class="hidden flex-1 flex flex-col overflow-hidden fade-in bg-[#F5F5F5]">
+                <main class="flex-1 overflow-y-auto custom-scroll p-8 max-w-6xl mx-auto w-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-light text-slate-700">My Dashboard</h2>
+                    </div>
+
+                    <!-- Welcome Card -->
+                    <div class="bg-white p-6 rounded shadow-card mb-6 border border-gray-200">
+                        <h1 class="text-xl font-bold text-slate-700">Welcome, <span id="dash-st-name" class="text-canvas-primary">Student</span></h1>
+                        <p class="text-sm text-slate-500">ID: <span id="dash-st-lrn" class="font-mono">---</span></p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded shadow-card border-l-4 border-canvas-primary mb-8 flex flex-col md:flex-row gap-4 items-center">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg text-slate-800 mb-1">To Do</h3>
+                            <p class="text-sm text-slate-500">Select an assessment to begin.</p>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <select id="st-course" class="flex-1 p-2 border border-gray-300 rounded text-sm bg-white"></select>
+                            <button id="do-start-exam" class="bg-canvas-primary text-white px-4 py-2 rounded font-bold hover:bg-blue-700 text-sm whitespace-nowrap shadow-sm">Take Assessment</button>
+                        </div>
+                    </div>
+
+                    <h3 class="font-bold text-slate-700 text-lg mb-4 border-b pb-2">Recent Grades</h3>
+                    <div class="bg-white rounded shadow-card border border-gray-200 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 border-b border-gray-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4">Score</th>
+                                    <th class="p-4 text-right">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-results-table" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                        <div id="student-no-results" class="p-6 text-center text-slate-400 italic">No graded items yet.</div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- VIEW: EXAM PORTAL -->
+            <div id="view-exam" class="hidden flex-1 flex flex-col bg-white fade-in h-full z-50 absolute inset-0">
+                <header class="h-16 bg-white border-b border-gray-200 flex justify-between items-center px-6 shrink-0 shadow-sm">
+                    <h1 class="font-bold text-lg text-slate-700">Assessment: <span id="exam-tag" class="font-normal text-slate-500">Subject</span></h1>
+                    <div class="flex items-center gap-4">
+                        <div class="text-sm text-slate-500">Time: <span id="timer" class="font-bold text-red-600 font-mono text-lg">00:00</span></div>
+                        <button id="do-exit-exam" class="text-sm text-canvas-primary hover:underline">Submit Assessment</button>
+                    </div>
+                </header>
+                <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    <div class="flex-1 overflow-y-auto custom-scroll p-8 bg-white flex justify-center">
+                        <div class="max-w-3xl w-full">
+                            <div class="border border-gray-300 rounded mb-6">
+                                <div class="bg-slate-100 p-3 border-b border-gray-300 flex justify-between items-center">
+                                    <span class="font-bold text-slate-700" id="exam-progress">Question 1</span>
+                                    <span class="text-xs text-slate-500">1 pts</span>
+                                </div>
+                                <div class="p-6">
+                                    <div id="exam-passage" class="hidden bg-slate-50 p-4 border-l-4 border-slate-300 mb-4 text-sm font-serif italic text-slate-700"></div>
+                                    <div class="text-lg text-slate-800 mb-6" id="exam-q-text">Loading...</div>
+                                    <div class="space-y-3" id="exam-opts">
+                                        <!-- Options will be injected here -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end pt-4 border-t border-gray-200">
+                                <button id="do-next-q" class="bg-canvas-primary text-white px-6 py-2 rounded text-sm font-bold hover:bg-blue-700 shadow-sm">Next <i class="fas fa-chevron-right ml-1"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-64 border-l border-gray-200 bg-slate-50 p-4 overflow-y-auto hidden md:block">
+                        <h3 class="font-bold text-sm text-slate-700 mb-4">Questions</h3>
+                        <div id="question-grid" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </main>
+            </div>
+
         </div>
     </div>
 
-    <!-- MODULE LOGIC -->
+    <!-- LOGIC MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- 1. CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyA7Sa9kkTFLF_cHS00DPzo8l847awBkBms",
             authDomain: "ncae-exam.firebaseapp.com",
@@ -237,389 +606,701 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
+        // --- 2. GLOBAL STATE ---
         const statusEl = document.getElementById('status-indicator');
-        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Cloud Ready';
-        statusEl.classList.remove('text-yellow-300');
-        statusEl.classList.add('text-green-400');
+        const currentDomain = window.location.hostname;
 
-        let state = { user: null, data: {}, courses: {}, records: [], session: { q: [], a: {}, idx: 0, student: {} } };
-
-        // --- 1. DEFINITIONS ---
+        let state = {
+            user: null,         // Firebase User
+            userType: 'teacher', // 'teacher' or 'student'
+            data: {},
+            courses: {},
+            timeLimits: {},
+            students: [],
+            records: [],
+            session: { q: [], a: {}, idx: 0, student: {} },
+            calendarDate: new Date() // Initialize Calendar Date
+        };
         
+        let builder = { grades: [], quarters: [], subjects: [] };
+
+        // --- 3. HELPER FUNCTIONS ---
+        const getEl = (id) => document.getElementById(id);
+        const setTxt = (id, txt) => { const el = getEl(id); if(el) el.innerText = txt; }
+        const setVal = (id, val) => { const el = getEl(id); if(el) el.value = val; }
+        const getVal = (id) => { const el = getEl(id); return el ? el.value : ''; }
+        
+        // Helper to fake an email for username-based login
+        const toEmail = (u) => u.includes('@') ? u : `${u.toLowerCase().replace(/\s+/g,'')}@canvas.local`;
+
+        // --- 4. AUTHENTICATION LOGIC ---
         async function fetchData() {
             if(!state.user) return;
             try {
-                const snap = await getDoc(doc(db,"teachers",state.user.uid));
+                const snap = await getDoc(doc(db, "teachers", state.user.uid));
                 if(snap.exists()) {
                     const d = snap.data();
                     state.data = d.examData ? JSON.parse(d.examData) : {};
                     state.courses = d.courses ? JSON.parse(d.courses) : {};
+                    state.timeLimits = d.timeLimits ? JSON.parse(d.timeLimits) : {};
+                    state.students = d.students ? JSON.parse(d.students) : [];
                     state.records = d.records ? JSON.parse(d.records) : [];
                     
-                    const dName = d.fullName || state.user.displayName || "Teacher";
-                    document.getElementById('dash-name').innerText = dName;
+                    setTxt('dash-name', d.profileName || state.user.displayName || "Instructor's Course");
+                    setTxt('dash-details', `${Object.keys(state.courses).length} Courses • ${state.students.length} Students`);
                     
-                    document.getElementById('set-name').value = dName;
-                    document.getElementById('set-grade').value = d.gradeHandled || "";
-                    document.getElementById('set-subject').value = d.subjectHandled || "";
-                    
-                    if(d.gradeHandled || d.subjectHandled) {
-                        document.getElementById('dash-details').innerText = `${d.gradeHandled || ''} • ${d.subjectHandled || ''}`;
-                    } else {
-                        document.getElementById('dash-details').innerText = "Please update settings";
-                    }
-
-                    refreshCurriculumUI();
-                    renderManageQuestionsUI();
+                    // Populate builder dropdowns if they are empty
+                    if(builder.grades.length === 0) builder.grades = ['Grade 10', 'Grade 11', 'Grade 12']; 
+                    if(builder.quarters.length === 0) builder.quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+                    if(builder.subjects.length === 0) builder.subjects = ['Mathematics', 'Science', 'English'];
+                    renderBuilderLists();
+                } else {
+                    // Initialize empty user
+                    syncData();
                 }
-            } catch(e){console.error(e);}
+                renderAll();
+            } catch(e) { console.error("Fetch Error:", e); }
         }
 
-        async function syncCloud() {
+        async function syncData() {
             if(!state.user) return;
-            const p = {
-                examData: JSON.stringify(state.data),
-                courses: JSON.stringify(state.courses),
-                records: JSON.stringify(state.records),
-                lastSync: new Date().toISOString()
-            };
-            await setDoc(doc(db,"teachers",state.user.uid), p, {merge:true});
-        }
-
-        async function saveProfile() {
-            if(!state.user) return;
-            const n = document.getElementById('set-name').value;
-            const g = document.getElementById('set-grade').value;
-            const s = document.getElementById('set-subject').value;
+            setTxt('status-indicator', "Syncing...");
             try {
-                await setDoc(doc(db,"teachers",state.user.uid), { fullName: n, gradeHandled: g, subjectHandled: s }, {merge:true});
-                alert("Profile Updated!"); fetchData(); 
-            } catch(e) { alert("Error: "+e.message); }
+                await setDoc(doc(db, "teachers", state.user.uid), {
+                    examData: JSON.stringify(state.data),
+                    courses: JSON.stringify(state.courses),
+                    timeLimits: JSON.stringify(state.timeLimits),
+                    students: JSON.stringify(state.students),
+                    records: JSON.stringify(state.records),
+                    profileName: getVal('set-name') || state.user.displayName || "Instructor",
+                    lastSync: new Date().toISOString()
+                }, { merge: true });
+                setTxt('status-indicator', "Online");
+            } catch(e) { 
+                console.error(e);
+                setTxt('status-indicator', "Sync Failed");
+            }
         }
 
-        function login() {
-            const u = document.getElementById('login-user').value + "@ncae.com", p = document.getElementById('login-pass').value;
-            signInWithEmailAndPassword(auth, u, p).then(()=>setMode('dashboard')).catch(e=>alert(e.message));
-        }
-        function register() {
-            const n = document.getElementById('reg-name').value, u = document.getElementById('reg-user').value + "@ncae.com", p = document.getElementById('reg-pass').value;
-            createUserWithEmailAndPassword(auth, u, p).then(c => {
-                return setDoc(doc(db, "teachers", c.user.uid), { fullName: n, username: document.getElementById('reg-user').value, examData: "{}", courses: "{}", records: "[]" });
-            }).then(()=> { alert("Registered!"); setMode('dashboard'); }).catch(e=>alert(e.message));
+        // --- GLOBAL FUNCTIONS (Attached to window for inline onclicks) ---
+        window.deleteCourse = (name) => {
+            if(confirm('Delete this course?')) {
+                delete state.courses[name];
+                renderAll();
+                syncData();
+            }
+        };
+        
+        window.removeStudent = (i) => {
+            if(confirm('Remove this student?')) {
+                state.students.splice(i, 1);
+                renderAll();
+                syncData();
+            }
+        };
+        
+        window.deleteQuestion = (key, i) => {
+             if(state.data[key]) {
+                 state.data[key].splice(i, 1);
+                 renderQuestions();
+                 syncData();
+             }
+        };
+        
+        // --- 5. UI CONTROLLERS ---
+        function setMode(mode) {
+            // Hide all main views
+            ['landing', 'teacher-login', 'student-login', 'dashboard', 'student-dashboard', 'exam', 'courses', 'calendar'].forEach(v => {
+                const el = getEl('view-' + v);
+                if(el) el.classList.add('hidden');
+            });
+            getEl('view-' + mode).classList.remove('hidden');
+
+            // Update Header Context
+            setTxt('header-context', mode.charAt(0).toUpperCase() + mode.slice(1));
+            setTxt('header-role', state.userType === 'teacher' ? 'Teacher' : 'Student');
+
+            // Toggle Global Nav Visibility
+            const navLinks = getEl('nav-links');
+            const logoutBtn = getEl('btn-logout');
+            if(['dashboard', 'student-dashboard', 'courses', 'calendar'].includes(mode)) {
+                navLinks.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+            } else {
+                navLinks.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+            }
         }
 
-        // --- NEW DATA HIERARCHY: Grade -> Quarter -> Subject ---
-
-        function refreshCurriculumUI() {
-            renderGradeList();
-            updateCurGradeSelect(); // Updates quarter dropdown logic
-            // Subject list updates when quarter is selected
-            renderCourseList();
-            renderAllSubjectsCheckbox();
+        function navDashboard() {
+            setMode(state.userType === 'teacher' ? 'dashboard' : 'student-dashboard');
         }
 
-        function addGrade() {
-            const n = document.getElementById('new-grade').value;
-            if(n && !state.data[n]) { state.data[n] = {}; syncCloud(); refreshCurriculumUI(); document.getElementById('new-grade').value=""; }
-        }
-        function addQuarter() {
-            const g = document.getElementById('cur-grade-select').value;
-            const n = document.getElementById('new-quarter').value;
-            if(g && n && !state.data[g][n]) { state.data[g][n] = {}; syncCloud(); renderQuarterList(); updateCurQuarterSelect(); document.getElementById('new-quarter').value=""; }
-            else { alert("Select Grade & Enter Quarter"); }
-        }
-        function addSubject() {
-            const g = document.getElementById('cur-grade-select').value;
-            const q = document.getElementById('cur-quarter-select').value;
-            const n = document.getElementById('new-subject').value;
-            if(g && q && n && !state.data[g][q][n]) { state.data[g][q][n] = []; syncCloud(); renderSubjectList(); document.getElementById('new-subject').value=""; renderAllSubjectsCheckbox(); }
-            else { alert("Select Grade, Quarter & Enter Subject"); }
+        // --- 6. RENDERERS ---
+        function renderAll() {
+            renderCurriculum();
+            renderSelects();
+            renderStudents();
+            renderRecords();
+            renderCourseCards();
+            renderCalendar();
+            renderQuestions();
         }
 
-        function delGrade(g) { 
-            if(confirm("Delete Grade: " + g + "?")) { 
-                delete state.data[g]; syncCloud(); refreshCurriculumUI(); 
-            } 
-        }
-        function delQuarter(g, q) { 
-            if(confirm("Delete Quarter: " + q + "?")) { 
-                delete state.data[g][q]; syncCloud(); renderQuarterList(); updateCurQuarterSelect(); 
-            } 
-        }
-        function delSubject(g, q, s) { 
-            if(confirm("Delete Subject: " + s + "?")) { 
-                delete state.data[g][q][s]; syncCloud(); renderSubjectList(); renderAllSubjectsCheckbox(); 
-            } 
+        function renderCurriculum() {
+            const list = getEl('list-course');
+            list.innerHTML = '';
+            Object.keys(state.courses).forEach(cName => {
+                const div = document.createElement('div');
+                div.className = "bg-white border border-gray-200 rounded p-4 shadow-sm flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-canvas-primary">${cName}</div>
+                        <div class="text-xs text-slate-500">${state.courses[cName].join(', ')}</div>
+                    </div>
+                    <button class="text-red-400 hover:text-red-600 px-2" onclick="deleteCourse('${cName}')"><i class="fas fa-trash"></i></button>
+                `;
+                list.appendChild(div);
+            });
+            
+            // Populate student dropdown for adding new students
+            const newStCourse = getEl('new-st-course');
+            if(newStCourse) {
+                 newStCourse.innerHTML = Object.keys(state.courses).map(c => `<option value="${c}">${c}</option>`).join('');
+            }
         }
 
-        // Renderers with explicit event listeners
-        function renderGradeList() {
-            const d = document.getElementById('list-grade'); d.innerHTML="";
-            Object.keys(state.data).forEach(k => {
-                const row = document.createElement('div'); 
-                row.className="flex justify-between items-center text-sm p-1 hover:bg-slate-50";
-                
-                const span = document.createElement('span');
-                span.textContent = k;
-                
-                const btn = document.createElement('button');
-                btn.className = "text-red-400 hover:text-red-600";
-                btn.innerHTML = '<i class="fas fa-trash"></i>';
-                btn.onclick = () => delGrade(k); // Closure captures 'k' correctly
-                
-                row.appendChild(span);
-                row.appendChild(btn);
-                d.appendChild(row);
+        function renderSelects() {
+            // Logic for populating dropdowns from curriculum state
+        }
+
+        function renderStudents() {
+            const body = getEl('student-list-body');
+            body.innerHTML = '';
+            state.students.forEach((s, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 border-r border-gray-200 font-bold">${s.name}</td>
+                    <td class="p-3 border-r border-gray-200 font-mono text-xs">${s.lrn}</td>
+                    <td class="p-3 border-r border-gray-200">${s.course}</td>
+                    <td class="p-3 text-right"><button class="text-slate-300 hover:text-red-500" onclick="removeStudent(${i})"><i class="fas fa-times"></i></button></td>
+                `;
+                body.appendChild(tr);
+            });
+            getEl('no-students-msg').classList.toggle('hidden', state.students.length > 0);
+        }
+
+        function renderRecords() {
+            const body = getEl('table-records');
+            const filter = getVal('filter-records-grade');
+            body.innerHTML = '';
+            state.records.filter(r => !filter || r.course === filter).forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 border-r border-gray-200 font-bold">${r.name}</td>
+                    <td class="p-3 border-r border-gray-200">${r.course}</td>
+                    <td class="p-3 border-r border-gray-200">${r.exam}</td>
+                    <td class="p-3 border-r border-gray-200 font-bold ${r.score >= 75 ? 'text-green-600' : 'text-red-600'}">${r.score}%</td>
+                    <td class="p-3 text-right text-xs text-slate-400">${r.date}</td>
+                `;
+                body.appendChild(tr);
             });
         }
-        
-        function updateCurGradeSelect() {
-            const s = document.getElementById('cur-grade-select');
-            s.innerHTML = "<option value=''>Select Grade</option>" + Object.keys(state.data).map(k=>`<option value="${k}">${k}</option>`).join('');
-            s.onchange = () => { renderQuarterList(); updateCurQuarterSelect(); };
+
+        function renderCourseCards() {
+            const grid = getEl('courses-grid');
+            grid.innerHTML = '';
+            Object.keys(state.courses).forEach(cName => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded shadow-card overflow-hidden border border-gray-200 group hover:border-canvas-primary transition cursor-pointer";
+                card.innerHTML = `
+                    <div class="h-24 bg-slate-100 p-4 border-b flex justify-between items-start">
+                        <div class="w-12 h-12 bg-white rounded shadow flex items-center justify-center text-canvas-primary text-xl"><i class="fas fa-book-open"></i></div>
+                        <i class="fas fa-ellipsis-v text-slate-300"></i>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="font-bold text-canvas-primary group-hover:underline">${cName}</h4>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold mt-1">2023-2024 Semester 1</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            getEl('courses-empty').classList.toggle('hidden', Object.keys(state.courses).length > 0);
         }
-        
-        function renderQuarterList() {
-            const g = document.getElementById('cur-grade-select').value;
-            const d = document.getElementById('list-quarter'); d.innerHTML="";
-            if(g && state.data[g]) {
-                Object.keys(state.data[g]).forEach(k => {
-                    const row = document.createElement('div'); 
-                    row.className="flex justify-between items-center text-sm p-1 hover:bg-slate-50";
-                    
-                    const span = document.createElement('span');
-                    span.textContent = k;
-                    
-                    const btn = document.createElement('button');
-                    btn.className = "text-red-400 hover:text-red-600";
-                    btn.innerHTML = '<i class="fas fa-trash"></i>';
-                    btn.onclick = () => delQuarter(g, k);
-                    
-                    row.appendChild(span);
-                    row.appendChild(btn);
-                    d.appendChild(row);
-                });
+
+        function renderCalendar() {
+            const daysEl = getEl('calendar-days');
+            daysEl.innerHTML = '';
+
+            // Get Current State Date (or default to today)
+            if(!state.calendarDate) state.calendarDate = new Date();
+            const currDate = state.calendarDate;
+            const year = currDate.getFullYear();
+            const month = currDate.getMonth();
+            const todayDate = new Date();
+
+            // Month Names
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            setTxt('calendar-month-label', `${monthNames[month]} ${year}`);
+
+            // Logic: Days in month & First day index
+            const firstDayIndex = new Date(year, month, 1).getDay(); // 0 (Sun) - 6 (Sat)
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // 1. Render Empty Slots
+            for(let i=0; i<firstDayIndex; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-day empty';
+                daysEl.appendChild(empty);
+            }
+
+            // 2. Render Days
+            for(let i=1; i<=daysInMonth; i++) {
+                const day = document.createElement('div');
+                const isToday = i === todayDate.getDate() && month === todayDate.getMonth() && year === todayDate.getFullYear();
+                
+                day.className = `calendar-day ${isToday ? 'today' : 'bg-white border border-gray-100 text-slate-600'}`;
+                day.innerText = i;
+                
+                // Add click effect (just visual for now)
+                day.onclick = () => {
+                    document.querySelectorAll('.calendar-day').forEach(d => {
+                        if(d.classList.contains('today')) return;
+                        d.classList.remove('bg-blue-100', 'text-canvas-primary');
+                        d.classList.add('bg-white');
+                    });
+                    if(!isToday) {
+                        day.classList.remove('bg-white');
+                        day.classList.add('bg-blue-100', 'text-canvas-primary');
+                    }
+                };
+                
+                daysEl.appendChild(day);
             }
         }
         
-        function updateCurQuarterSelect() {
-            const g = document.getElementById('cur-grade-select').value;
-            const s = document.getElementById('cur-quarter-select');
-            s.innerHTML = "<option value=''>Select Quarter</option>";
-            if(g && state.data[g]) Object.keys(state.data[g]).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`);
-            s.onchange = renderSubjectList;
-        }
+        // --- 7. NEW LOGIC FUNCTIONS ---
         
-        function renderSubjectList() {
-            const g = document.getElementById('cur-grade-select').value;
-            const q = document.getElementById('cur-quarter-select').value;
-            const d = document.getElementById('list-subject'); d.innerHTML="";
-            if(g && q && state.data[g][q]) {
-                Object.keys(state.data[g][q]).forEach(k => {
-                    const row = document.createElement('div'); 
-                    row.className="flex justify-between items-center text-sm p-1 hover:bg-slate-50";
-                    
-                    const span = document.createElement('span');
-                    span.textContent = k;
-                    
-                    const btn = document.createElement('button');
-                    btn.className = "text-red-400 hover:text-red-600";
-                    btn.innerHTML = '<i class="fas fa-trash"></i>';
-                    btn.onclick = () => delSubject(g, q, k);
-                    
-                    row.appendChild(span);
-                    row.appendChild(btn);
-                    d.appendChild(row);
-                });
-            }
+        function addBuilderItem(type, val) {
+            if(!val) return;
+            builder[type+'s'].push(val);
+            setVal('new-'+type, ''); // Clear input
+            renderBuilderLists();
         }
 
-        // --- MANAGE QUESTIONS LOGIC ---
-        function renderManageQuestionsUI() {
-            const s = document.getElementById('sel-grade');
-            s.innerHTML = "<option value=''>Select Grade</option>" + Object.keys(state.data).map(k=>`<option value="${k}">${k}</option>`).join('');
-            s.onchange = updateManageQuarter;
-        }
-        function updateManageQuarter() {
-            const g = document.getElementById('sel-grade').value;
-            const s = document.getElementById('sel-quarter');
-            s.innerHTML = "<option value=''>Select Period</option>";
-            if(g && state.data[g]) Object.keys(state.data[g]).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`);
-            s.onchange = updateManageSubject;
-        }
-        function updateManageSubject() {
-            const g = document.getElementById('sel-grade').value;
-            const q = document.getElementById('sel-quarter').value;
-            const s = document.getElementById('sel-subject');
-            s.innerHTML = "<option value=''>Select Subject</option>";
-            if(g && q && state.data[g][q]) Object.keys(state.data[g][q]).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`);
-            s.onchange = renderQuestions;
+        function renderBuilderLists() {
+            // Render the small lists under inputs
+            ['grade', 'quarter', 'subject'].forEach(type => {
+                const list = getEl('list-' + type);
+                if(list) list.innerHTML = builder[type + 's'].map(x => `<span class="bg-gray-200 text-xs px-2 py-1 rounded text-slate-700">${x}</span>`).join('');
+                
+                // Also update dropdowns elsewhere if needed, but mainly 'chk-subjects'
+                if(type === 'subject') {
+                    const chk = getEl('chk-subjects');
+                    if(chk) {
+                        chk.innerHTML = builder.subjects.map(s => `
+                            <label class="flex items-center gap-1">
+                                <input type="checkbox" value="${s}" checked class="accent-canvas-primary"> ${s}
+                            </label>
+                        `).join('');
+                    }
+                }
+            });
+            
+            // Update dropdowns for Question Bank
+            renderBankSelects();
         }
 
-        function saveManualQ() {
-            const g = document.getElementById('sel-grade').value;
-            const q = document.getElementById('sel-quarter').value;
-            const s = document.getElementById('sel-subject').value;
-            if(!g||!q||!s) return alert("Select all filters");
-            const t=document.getElementById('q-text').value, a=document.getElementById('opt-a').value, b=document.getElementById('opt-b').value;
-            if(!t || !a) return alert("Fill fields");
-            state.data[g][q][s].push({ text:t, options:{A:a,B:b,C:document.getElementById('opt-c').value,D:document.getElementById('opt-d').value}, correct:document.getElementById('correct-opt').value });
-            syncCloud(); renderQuestions(); document.getElementById('q-text').value="";
+        function renderBankSelects() {
+             ['grade', 'quarter', 'subject'].forEach(type => {
+                const sel = getEl('sel-' + type);
+                if(sel) {
+                    sel.innerHTML = (builder[type+'s'].length ? builder[type+'s'] : ['Default']).map(x => `<option value="${x}">${x}</option>`).join('');
+                }
+             });
+             renderQuestions(); // Refresh questions when selects change (or init)
+        }
+
+        function saveQuestion() {
+            const key = `${getVal('sel-grade')}_${getVal('sel-quarter')}_${getVal('sel-subject')}`;
+            if(!state.data[key]) state.data[key] = [];
+            
+            const q = {
+                text: getVal('q-text'),
+                opts: [getVal('opt-a'), getVal('opt-b'), getVal('opt-c'), getVal('opt-d')],
+                ans: getVal('correct-opt')
+            };
+            
+            if(!q.text || !q.opts[0]) return alert("Please enter question text and at least option A.");
+            
+            state.data[key].push(q);
+            // Clear inputs
+            setVal('q-text', ''); ['a','b','c','d'].forEach(x => setVal('opt-'+x, ''));
+            renderQuestions();
+            syncData();
         }
 
         function renderQuestions() {
-            const g=document.getElementById('sel-grade').value, q=document.getElementById('sel-quarter').value, s=document.getElementById('sel-subject').value;
-            const l=document.getElementById('q-list'); l.innerHTML="";
-            if(!g||!q||!s||!state.data[g][q][s]) { document.getElementById('q-empty').classList.remove('hidden'); return; }
-            document.getElementById('q-empty').classList.add('hidden');
-            state.data[g][q][s].forEach((item,i)=>{
-                const btn = document.createElement('button'); btn.className="text-red-500 ml-auto"; btn.innerHTML="<i class='fas fa-trash'></i>";
-                btn.onclick = () => { if(confirm("Del?")){ state.data[g][q][s].splice(i,1); syncCloud(); renderQuestions(); }};
-                const r = document.createElement('div'); r.className="p-3 border-b flex gap-2";
-                r.innerHTML=`<div><span class="font-bold">${i+1}.</span> ${item.text}</div>`; r.appendChild(btn); l.appendChild(r);
-            });
-        }
-
-        function importDocx(inp) {
-            const g=document.getElementById('sel-grade').value, q=document.getElementById('sel-quarter').value, s=document.getElementById('sel-subject').value;
-            if(!g||!q||!s) return alert("Select Grade, Period & Subject first");
-            mammoth.extractRawText({arrayBuffer: inp.files[0]}).then(r=>{
-                const lines = r.value.split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
-                const qs=[]; let curr=null;
-                lines.forEach(l=>{
-                    if(l.match(/^(\d+[\.\)]|Q\d+)\s*(.+)/i)){ if(curr) qs.push(curr); curr={text:RegExp.$2,options:{},correct:'A'}; }
-                    else if(l.match(/^([A-D])[\.\)]\s*(.+)/i) && curr) curr.options[RegExp.$1]=RegExp.$2;
-                    else if(l.match(/^(?:Ans|Answer).*([A-D])/i) && curr) curr.correct=RegExp.$1;
-                });
-                if(curr) qs.push(curr);
-                state.data[g][q][s].push(...qs); syncCloud(); alert("Imported "+qs.length); renderQuestions();
-            });
-        }
-
-        // --- COURSE LOGIC (Flat Selection from Hierarchy) ---
-        function renderAllSubjectsCheckbox() {
-            const c = document.getElementById('chk-subjects'); c.innerHTML="";
-            Object.keys(state.data).forEach(grade => {
-                Object.keys(state.data[grade]).forEach(quart => {
-                    Object.keys(state.data[grade][quart]).forEach(subj => {
-                        const val = `${grade} > ${quart} > ${subj}`;
-                        c.innerHTML += `<label class="flex items-center gap-1 p-1 hover:bg-white rounded"><input type="checkbox" value="${val}" class="c-chk"> ${grade}-${quart}-${subj}</label>`;
-                    });
-                });
-            });
-        }
-        function addCourse() {
-            const n = document.getElementById('new-course').value;
-            if(!n) return;
-            state.courses[n] = Array.from(document.querySelectorAll('.c-chk:checked')).map(x=>x.value);
-            syncCloud(); renderCourseList(); document.getElementById('new-course').value="";
+             const key = `${getVal('sel-grade')}_${getVal('sel-quarter')}_${getVal('sel-subject')}`;
+             const list = getEl('q-list');
+             const qs = state.data[key] || [];
+             
+             if(qs.length === 0) {
+                 list.innerHTML = '';
+                 getEl('q-empty').classList.remove('hidden');
+                 return;
+             }
+             getEl('q-empty').classList.add('hidden');
+             
+             list.innerHTML = qs.map((q, i) => `
+                <div class="p-3 border border-gray-200 rounded hover:border-canvas-primary cursor-pointer text-xs relative group">
+                    <div class="font-bold mb-1 truncate">${q.text}</div>
+                    <div class="text-slate-500">Answer: ${q.ans}</div>
+                    <button class="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100" onclick="deleteQuestion('${key}', ${i})"><i class="fas fa-trash"></i></button>
+                </div>
+             `).join('');
         }
         
-        function renderCourseList() {
-            const d=document.getElementById('list-course'); d.innerHTML="";
-            Object.keys(state.courses).forEach(k=>{
-                const div=document.createElement('div'); div.className="p-2 border rounded bg-slate-50 flex justify-between items-center";
-                
-                const span = document.createElement('span');
-                span.className = "font-bold text-sm";
-                span.textContent = k;
-                
-                const btn = document.createElement('button');
-                btn.className = "text-red-400 hover:text-red-600";
-                btn.innerHTML = '<i class="fas fa-trash"></i>';
-                btn.onclick = () => { if(confirm("Delete Course " + k + "?")){ delete state.courses[k]; syncCloud(); renderCourseList(); }};
-                
-                div.appendChild(span);
-                div.appendChild(btn);
-                d.appendChild(div);
-            });
-        }
-
-        // --- EXAM ---
-        function renderStudentDropdown() { const s=document.getElementById('st-course'); s.innerHTML="<option value=''>Select Course</option>"; Object.keys(state.courses).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`); }
-        function startExam() {
-            const n = document.getElementById('st-name').value, c = document.getElementById('st-course').value;
-            if(!n||!c) return alert("Required");
-            state.session = { student:{name:n,course:c,lrn:document.getElementById('st-lrn').value}, q:[], a:{}, idx:0 };
+        function attemptStudentLogin() {
+            const name = getVal('st-name');
+            const lrn = getVal('st-lrn');
+            const found = state.students.find(s => s.name === name && s.lrn === lrn);
             
-            // Flatten questions based on selection string "Grade > Q > Subj"
-            (state.courses[c]||[]).forEach(pathStr => {
-                const [g, q, s] = pathStr.split(' > ');
-                if(state.data[g] && state.data[g][q] && state.data[g][q][s]) {
-                    state.data[g][q][s].forEach(quest => state.session.q.push({...quest, tag: s}));
-                }
-            });
-
-            if(state.session.q.length===0) return alert("No Qs");
-            setMode('exam'); renderExamQ();
-        }
-        function renderExamQ() {
-            const q=state.session.q[state.session.idx]; document.getElementById('exam-q-text').innerText=q.text;
-            document.getElementById('exam-tag').innerText = q.tag;
-            const d=document.getElementById('exam-opts'); d.innerHTML="";
-            ['A','B','C','D'].forEach(o=>{ if(q.options[o]) { const sel=state.session.a[state.session.idx]===o?'bg-blue-100 border-blue-500':'border-slate-200'; d.innerHTML+=`<button class="w-full text-left p-3 border rounded ${sel}" onclick="window.app.ans('${o}')">${o}. ${q.options[o]}</button>`; }});
-        }
-        function ans(o) { state.session.a[state.session.idx]=o; renderExamQ(); }
-        function nextQ() { 
-            if(state.session.idx<state.session.q.length-1){state.session.idx++;renderExamQ();} 
-            else if(confirm("Submit?")){
-                let sc=0; state.session.q.forEach((q,i)=>{if(state.session.a[i]===q.correct)sc++});
-                state.records.push({name:state.session.student.name, course:state.session.student.course, lrn:state.session.student.lrn, score:`${sc}/${state.session.q.length}`, date:new Date().toLocaleDateString()});
-                syncCloud(); alert("Score: "+sc); setMode('landing');
+            // Allow login for testing if empty, but prefer matching
+            if(found) {
+                state.userType = 'student';
+                state.session.student = found;
+                setTxt('dash-st-name', found.name);
+                setTxt('dash-st-lrn', found.lrn);
+                
+                const stCourseSelect = getEl('st-course');
+                stCourseSelect.innerHTML = Object.keys(state.courses).length > 0 ? Object.keys(state.courses).map(c => `<option value="${c}">${c}</option>`).join('') : '<option>No Courses</option>';
+                
+                setMode('student-dashboard');
+            } else if (name && lrn) {
+                 // Fallback for demo so user doesn't get stuck if they didn't create a student first
+                 if(confirm("Student not found in roster. Login as Guest?")) {
+                     state.userType = 'student';
+                     state.session.student = { name: name, lrn: lrn, course: 'Guest' };
+                     setTxt('dash-st-name', name);
+                     setTxt('dash-st-lrn', lrn);
+                     setMode('student-dashboard');
+                 }
+            } else {
+                alert("Please enter Name and LRN.");
             }
         }
-        function renderRecords() { const t=document.getElementById('table-records'); t.innerHTML=""; state.records.forEach(r=>t.innerHTML+=`<tr class="border-b"><td class="p-3">${r.name}</td><td class="p-3">${r.course}</td><td class="p-3">${r.score}</td><td class="p-3">${r.date}</td></tr>`); }
 
-        // --- BINDINGS ---
-        const bind = (id, fn) => { const el = document.getElementById(id); if(el) el.addEventListener('click', fn); };
-        const bindChange = (id, fn) => { const el = document.getElementById(id); if(el) el.addEventListener('change', fn); };
+        function startExam() {
+            const courseName = getVal('st-course'); // The section/course name
+            
+            // Gather questions. For this demo, we grab ALL questions for simplicity
+            let allQs = [];
+            Object.values(state.data).forEach(bank => allQs.push(...bank));
+            
+            if(allQs.length === 0) return alert("No questions available for this assessment.");
+            
+            // Take up to 10 random questions
+            state.session.q = allQs.sort(() => 0.5 - Math.random()).slice(0, 10);
+            state.session.idx = 0;
+            state.session.a = {};
+            
+            setTxt('exam-tag', courseName);
+            setMode('exam');
+            renderExamQ();
+            startTimer(60 * 60); // 1 hour default
+        }
 
-        bind('do-google-login', () => signInWithPopup(auth, googleProvider).then(r=>{ alert("Welcome "+r.user.displayName); setMode('dashboard'); }).catch(e=>alert(e.message)));
-        bind('do-login', login);
-        bind('do-register', register);
-        bind('btn-logout', () => signOut(auth));
-        bind('nav-teacher', () => setMode('teacher-login'));
-        bind('nav-student', () => { setMode('student-login'); renderStudentDropdown(); });
-        bind('show-register', () => toggleRegister(true));
-        bind('cancel-register', () => toggleRegister(false));
-        bind('close-login', () => setMode('landing'));
-        bind('close-student', () => setMode('landing'));
-        bind('tab-btn-curriculum', () => setTab('curriculum'));
-        bind('tab-btn-manage', () => setTab('manage'));
-        bind('tab-btn-records', () => setTab('records'));
-        bind('tab-btn-settings', () => setTab('settings')); 
-        bind('do-sync', syncCloud);
-        bind('do-save-profile', saveProfile); 
+        let timerInterval;
+        function startTimer(seconds) {
+            clearInterval(timerInterval);
+            let rem = seconds;
+            updateTimerDisplay(rem);
+            timerInterval = setInterval(() => {
+                rem--;
+                updateTimerDisplay(rem);
+                if(rem <= 0) finishExam(true);
+            }, 1000);
+        }
         
-        bind('do-add-grade', addGrade);
-        bind('do-add-quarter', addQuarter);
-        bind('do-add-subject', addSubject);
-        bind('do-add-course', addCourse);
-        bind('do-save-manual', saveManualQ);
-        bindChange('docx-upload', (e) => importDocx(e.target));
-        bind('do-start-exam', startExam);
-        bind('do-next-q', nextQ);
+        function updateTimerDisplay(s) {
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            const el = getEl('timer');
+            if(el) el.innerText = `${m}:${sec < 10 ? '0'+sec : sec}`;
+        }
 
-        // --- EXPOSE ---
-        window.app = { ans, nextQ, logout: () => signOut(auth), delGrade, delQuarter, delSubject };
+        function renderExamQ() {
+            const q = state.session.q[state.session.idx];
+            if(!q) return;
+            
+            setTxt('exam-progress', `Question ${state.session.idx + 1} of ${state.session.q.length}`);
+            setTxt('exam-q-text', q.text);
+            
+            const optsDiv = getEl('exam-opts');
+            const savedAns = state.session.a[state.session.idx];
+            
+            optsDiv.innerHTML = q.opts.map((opt, i) => {
+                const label = ['A','B','C','D'][i];
+                if(!opt) return '';
+                const isSelected = savedAns === label;
+                return `
+                <label class="flex items-center gap-3 p-3 rounded border ${isSelected ? 'border-canvas-primary bg-blue-50' : 'border-gray-200 hover:bg-gray-50'} cursor-pointer transition">
+                    <div class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-canvas-primary bg-canvas-primary text-white' : 'border-gray-300 text-gray-500'} flex items-center justify-center font-bold text-sm">
+                        ${label}
+                    </div>
+                    <div class="text-slate-700">${opt}</div>
+                    <input type="radio" name="qopts" class="hidden" onclick="window.app.ans('${label}')">
+                </label>
+                `;
+            }).join('');
+            
+            // Grid
+            const grid = getEl('question-grid');
+            grid.innerHTML = state.session.q.map((_, i) => `
+                <button onclick="window.app.jumpToQ(${i})" class="w-8 h-8 rounded text-xs font-bold ${i === state.session.idx ? 'bg-canvas-nav text-white' : (state.session.a[i] ? 'bg-blue-100 text-canvas-primary' : 'bg-white border border-gray-300 text-gray-500')}">
+                    ${i + 1}
+                </button>
+            `).join('');
+            
+            // Next Button text
+            const nextBtn = getEl('do-next-q');
+            if(nextBtn) nextBtn.innerHTML = state.session.idx === state.session.q.length - 1 ? 'Finish' : 'Next <i class="fas fa-chevron-right ml-1"></i>';
+        }
 
-        // --- HELPER ---
-        function setMode(m) { document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden')); document.getElementById(`view-${m}`).classList.remove('hidden'); }
-        function toggleRegister(s) { document.getElementById('form-login').classList.toggle('hidden', s); document.getElementById('form-register').classList.toggle('hidden', !s); }
-        function setTab(t) { document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden')); document.getElementById(`tab-${t}`).classList.remove('hidden'); if(t==='records') renderRecords(); }
+        function nextQ() {
+            if(state.session.idx < state.session.q.length - 1) {
+                state.session.idx++;
+                renderExamQ();
+            } else {
+                finishExam(false);
+            }
+        }
+
+        function finishExam(forced) {
+            clearInterval(timerInterval);
+            if(!forced && !confirm("Submit your assessment?")) return;
+            
+            // Calculate Score
+            let score = 0;
+            state.session.q.forEach((q, i) => {
+                if(state.session.a[i] === q.ans) score++;
+            });
+            const finalScore = Math.round((score / state.session.q.length) * 100) || 0;
+            
+            // Record
+            const record = {
+                name: state.session.student.name || 'Guest',
+                course: state.session.student.course || 'Unknown',
+                exam: 'Assessment',
+                score: finalScore,
+                date: new Date().toLocaleDateString()
+            };
+            
+            state.records.push(record);
+            
+            // Update Student Dashboard
+            const stTable = getEl('student-results-table');
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="p-4 font-bold">Assessment</td><td class="p-4 ${finalScore>=75?'text-green-600':'text-red-600'} font-bold">${finalScore}%</td><td class="p-4 text-right text-xs text-slate-500">${record.date}</td>`;
+            if(stTable) stTable.prepend(row);
+            const noRes = getEl('student-no-results');
+            if(noRes) noRes.classList.add('hidden');
+
+            syncData(); // Sync to teacher DB
+            
+            alert(`Assessment Submitted!\nScore: ${score}/${state.session.q.length} (${finalScore}%)`);
+            setMode('student-dashboard');
+        }
+
+        // --- 8. EVENT LISTENERS ---
+        document.addEventListener('click', e => {
+            const id = e.target.id || e.target.closest('button')?.id;
+            
+            // Navigation (Landing)
+            if(id === 'nav-teacher') setMode('teacher-login');
+            if(id === 'nav-student') setMode('student-login');
+            
+            // Navigation (Sidebar)
+            if(id === 'nav-btn-dashboard') navDashboard();
+            if(id === 'nav-btn-courses') setMode('courses');
+            if(id === 'nav-btn-calendar') { 
+                state.calendarDate = new Date(); 
+                setMode('calendar'); 
+                renderCalendar(); 
+            }
+            
+            // Login Modal Controls
+            if(id === 'close-login' || id === 'close-student') setMode('landing');
+            if(id === 'show-register') {
+                getEl('form-login').classList.add('hidden');
+                getEl('form-register').classList.remove('hidden');
+            }
+            if(id === 'cancel-register') {
+                getEl('form-register').classList.add('hidden');
+                getEl('form-login').classList.remove('hidden');
+            }
+            
+            // REAL REGISTER
+            if(id === 'do-register') {
+                const name = getVal('reg-name');
+                const user = getVal('reg-user');
+                const pass = getVal('reg-pass');
+                
+                if(name && user && pass.length >= 6) {
+                    const email = toEmail(user);
+                    createUserWithEmailAndPassword(auth, email, pass).then((res) => {
+                        // Success - Firebase handles state change
+                        // We also want to update the profile name if possible
+                        // But for now, we'll catch it in onAuthStateChanged
+                        alert("Account Created! You are now logged in.");
+                        getEl('form-register').classList.add('hidden');
+                        getEl('form-login').classList.remove('hidden');
+                    }).catch(err => {
+                        alert("Error: " + err.message);
+                    });
+                } else {
+                    alert("Please fill all fields. Password must be 6+ chars.");
+                }
+            }
+
+            // REAL LOGIN
+            if(id === 'do-login') {
+                const user = getVal('login-user');
+                const pass = getVal('login-pass');
+                if(user && pass) {
+                    const email = toEmail(user);
+                    signInWithEmailAndPassword(auth, email, pass).catch(err => {
+                        alert("Login Failed: " + err.message);
+                    });
+                } else {
+                    alert("Please enter username and password.");
+                }
+            }
+            
+            // Calendar Controls
+            if(id === 'cal-prev') {
+                state.calendarDate.setMonth(state.calendarDate.getMonth() - 1);
+                renderCalendar();
+            }
+            if(id === 'cal-next') {
+                state.calendarDate.setMonth(state.calendarDate.getMonth() + 1);
+                renderCalendar();
+            }
+            if(id === 'cal-today-btn') {
+                state.calendarDate = new Date();
+                renderCalendar();
+            }
+            
+            // Auth Actions (Google)
+            if(id === 'do-google-login') {
+                signInWithPopup(auth, googleProvider).catch(e => alert(e.message));
+            }
+            if(id === 'btn-logout') { signOut(auth).then(() => { state.user = null; location.reload(); }); }
+            
+            // Tab Switching
+            if(id?.startsWith('tab-btn-')) {
+                const target = id.replace('btn-', '');
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+                document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+                getEl(target).classList.remove('hidden');
+                getEl(id).classList.add('active');
+            }
+
+            // Dashboard Actions
+            if(id === 'do-sync') syncData();
+            if(id === 'do-add-student') {
+                const s = { name: getVal('new-st-name'), lrn: getVal('new-st-lrn'), course: getVal('new-st-course') };
+                if(s.name && s.lrn) { 
+                    state.students.push(s); 
+                    setVal('new-st-name', ''); setVal('new-st-lrn', '');
+                    renderStudents(); 
+                    syncData(); 
+                }
+            }
+            
+            // Curriculum Builder
+            if(id === 'do-add-grade') addBuilderItem('grade', getVal('new-grade'));
+            if(id === 'do-add-quarter') addBuilderItem('quarter', getVal('new-quarter'));
+            if(id === 'do-add-subject') addBuilderItem('subject', getVal('new-subject'));
+            
+            if(id === 'do-add-course') {
+                const cName = getVal('new-course');
+                // Collect selected subjects from checkboxes
+                const chk = getEl('chk-subjects');
+                const selectedSubs = [];
+                if(chk) {
+                    chk.querySelectorAll('input:checked').forEach(i => selectedSubs.push(i.value));
+                }
+                
+                if(cName && selectedSubs.length > 0) {
+                    state.courses[cName] = selectedSubs;
+                    setVal('new-course', '');
+                    renderCurriculum();
+                    renderCourseCards();
+                    syncData();
+                    alert("Course Created!");
+                } else {
+                    alert("Please enter a course name and select at least one subject.");
+                }
+            }
+            
+            // Question Editor
+            if(id === 'do-save-manual') saveQuestion();
+            
+            // Student Login
+            if(id === 'do-student-login') attemptStudentLogin();
+            
+            // Exam Logic
+            if(id === 'do-start-exam') startExam();
+            if(id === 'do-next-q') nextQ();
+            if(id === 'do-exit-exam') finishExam(false);
+            
+            // Settings
+            if(id === 'do-save-profile') syncData();
+            if(id === 'do-reset-year') {
+                if(confirm("DANGER: This will delete all student records. Proceed?")) {
+                    state.students = [];
+                    state.records = [];
+                    renderStudents();
+                    renderRecords();
+                    syncData();
+                }
+            }
+        });
+
+        document.addEventListener('change', e => {
+            // Placeholder for docx
+            if(e.target.id === 'docx-upload') {
+                alert("DOCX Import is a placeholder in this demo.");
+            }
+            if(e.target.id === 'filter-records-grade') renderRecords();
+        });
+
+        window.app = {
+            setMode,
+            navDashboard,
+            renderQs: renderQuestions,
+            ans: (o) => { state.session.a[state.session.idx]=o; renderExamQ(); },
+            jumpToQ: (i) => { state.session.idx=i; renderExamQ(); }
+        };
 
         onAuthStateChanged(auth, u => {
             state.user = u;
-            if(u) {
-                statusEl.innerText = "Online: "+(u.email||u.displayName);
-                document.getElementById('btn-logout').classList.remove('hidden');
-                fetchData();
-            } else {
-                statusEl.innerText = "Offline";
-                document.getElementById('btn-logout').classList.add('hidden');
-                setMode('landing');
+            if(u) { 
+                setTxt('status-indicator', "Online"); 
+                statusEl.className = "text-[10px] font-mono font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200";
+                
+                state.userType = 'teacher';
+                setMode('dashboard');
+                fetchData(); 
+            } else { 
+                setTxt('status-indicator', "Offline"); 
+                statusEl.className = "text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-gray-200";
+                setMode('landing'); 
             }
         });
+
     </script>
 </body>
 </html>

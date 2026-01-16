@@ -113,7 +113,7 @@
             <div class="flex items-center gap-4">
                 <button class="text-canvas-primary md:hidden"><i class="fas fa-bars text-xl"></i></button>
                 <div>
-                    <h1 class="text-canvas-primary font-bold text-lg tracking-wide">Exam Builder <span class="text-slate-400 font-normal">v4.1</span></h1>
+                    <h1 class="text-canvas-primary font-bold text-lg tracking-wide">Exam Builder <span class="text-slate-400 font-normal">v4.3</span></h1>
                     <div class="flex items-center gap-2 text-xs text-slate-500">
                         <span id="header-role">User</span>
                         <span>&gt;</span>
@@ -125,14 +125,14 @@
                  <button class="bg-canvas-accent text-slate-600 px-3 py-1 rounded border border-canvas-border text-xs font-bold hover:bg-slate-200 transition">
                     <i class="fas fa-glasses mr-1"></i> Student View
                 </button>
-                 <span class="text-[10px] font-mono font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200" id="status-indicator">Connecting...</span>
+                 <span class="text-[10px] font-mono font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200" id="status-indicator">Local Mode</span>
             </div>
         </header>
 
         <!-- NOTIFICATIONS -->
         <div id="error-banner" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 m-4" role="alert">
-            <p class="font-bold">Security Alert</p>
-            <p>Domain not allowed. Add <span id="current-domain" class="font-mono bg-red-200 px-1"></span> to Firebase Console.</p>
+            <p class="font-bold">System Alert</p>
+            <p id="error-msg">An error occurred.</p>
         </div>
 
         <!-- CONTENT VIEWS -->
@@ -193,7 +193,7 @@
                         </button>
                         <div class="text-center text-xs text-slate-400 mb-4 border-b border-t py-2 border-slate-100">OR USE CREDENTIALS</div>
                         <div class="space-y-4">
-                            <input type="text" id="login-user" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="Username">
+                            <input type="text" id="login-user" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="Email (Firebase)">
                             <input type="password" id="login-pass" class="w-full p-2 border border-gray-300 rounded text-sm focus:border-canvas-primary outline-none" placeholder="Password">
                         </div>
                         <button id="do-login" class="w-full bg-canvas-nav text-white font-bold py-3 rounded mt-6 hover:bg-slate-800 transition">Log In</button>
@@ -205,7 +205,7 @@
                     <div id="form-register" class="hidden">
                         <h3 class="font-bold text-lg mb-4 text-slate-700 border-b pb-2">Create Account</h3>
                         <input type="text" id="reg-name" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm" placeholder="Full Name">
-                        <input type="text" id="reg-user" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm" placeholder="Username">
+                        <input type="text" id="reg-user" class="w-full p-2 border border-gray-300 rounded mb-3 text-sm" placeholder="Email">
                         <input type="password" id="reg-pass" class="w-full p-2 border border-gray-300 rounded mb-4 text-sm" placeholder="Password">
                         <button id="do-register" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Register</button>
                         <button id="cancel-register" class="w-full text-slate-500 text-sm mt-3 hover:text-slate-700">Cancel</button>
@@ -224,7 +224,7 @@
                         <div class="text-sm text-slate-500 mt-1" id="dash-details">Loading details...</div>
                     </div>
                     <button id="do-sync" class="bg-slate-100 text-slate-600 px-4 py-2 rounded border border-gray-300 hover:bg-slate-200 text-sm font-bold flex items-center gap-2 transition">
-                        <i class="fas fa-cloud-upload-alt text-canvas-primary"></i> Sync Data
+                        <i class="fas fa-cloud text-canvas-primary"></i> Data Synced
                     </button>
                 </div>
 
@@ -233,7 +233,7 @@
                     <button id="tab-btn-students" class="nav-tab-btn active px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Students</button>
                     <button id="tab-btn-curriculum" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Curriculum</button>
                     <button id="tab-btn-manage" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Assessments</button>
-                    <button id="tab-btn-records" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Grades</button>
+                    <button id="tab-btn-records" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Grades & Analytics</button>
                     <button id="tab-btn-settings" class="nav-tab-btn px-5 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:text-canvas-primary transition-all whitespace-nowrap">Settings</button>
                 </div>
 
@@ -380,26 +380,47 @@
                         </div>
                     </div>
 
-                    <!-- 4. RECORDS TAB -->
-                    <div id="tab-records" class="hidden tab-content h-full">
-                        <div class="flex justify-between items-end border-b border-gray-300 pb-4 mb-6">
-                            <h3 class="text-xl font-bold text-slate-700">Gradebook</h3>
-                            <select id="filter-records-grade" class="p-2 border border-gray-300 rounded text-sm bg-white min-w-[200px]"></select>
+                    <!-- 4. RECORDS & ANALYTICS TAB -->
+                    <div id="tab-records" class="hidden tab-content h-full flex flex-col">
+                        <div class="flex justify-between items-end border-b border-gray-300 pb-4 mb-4">
+                            <div class="flex gap-4">
+                                <button id="btn-view-gradebook" class="text-xl font-bold text-slate-700 border-b-2 border-canvas-primary pb-1">Gradebook</button>
+                                <button id="btn-view-analytics" class="text-xl font-bold text-slate-400 hover:text-slate-600 pb-1">Item Analysis</button>
+                            </div>
+                            <div id="records-filters" class="flex gap-2">
+                                <select id="filter-records-grade" class="p-2 border border-gray-300 rounded text-sm bg-white min-w-[200px]" title="Filter by Section"></select>
+                            </div>
                         </div>
                         
-                        <div class="border border-gray-200 rounded overflow-hidden shadow-sm">
-                            <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-50 border-b border-gray-300 text-slate-600 font-bold">
-                                    <tr>
-                                        <th class="p-3 border-r border-gray-200">Student Name</th>
-                                        <th class="p-3 border-r border-gray-200">Grade/Section</th>
-                                        <th class="p-3 border-r border-gray-200">Assignment</th>
-                                        <th class="p-3 border-r border-gray-200">Score</th>
-                                        <th class="p-3 text-right">Date Submitted</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-records" class="divide-y divide-gray-200"></tbody>
-                            </table>
+                        <!-- GRADEBOOK VIEW -->
+                        <div id="view-gradebook" class="flex-1 overflow-hidden border border-gray-200 rounded shadow-sm flex flex-col">
+                            <div class="overflow-y-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-slate-50 border-b border-gray-300 text-slate-600 font-bold sticky top-0">
+                                        <tr>
+                                            <th class="p-3 border-r border-gray-200">Student Name</th>
+                                            <th class="p-3 border-r border-gray-200">Grade/Section</th>
+                                            <th class="p-3 border-r border-gray-200">Assignment</th>
+                                            <th class="p-3 border-r border-gray-200">Score</th>
+                                            <th class="p-3 text-right">Date Submitted</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-records" class="divide-y divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- ANALYTICS VIEW -->
+                        <div id="view-analytics" class="hidden flex-1 flex flex-col gap-4 overflow-hidden">
+                             <div class="flex gap-2 items-center bg-blue-50 p-4 rounded border border-blue-200">
+                                <span class="text-sm font-bold text-blue-800">Select Subject for Analysis:</span>
+                                <select id="filter-analytics-subject" class="p-2 border border-blue-300 rounded text-sm bg-white min-w-[200px]"></select>
+                            </div>
+                            <div class="flex-1 overflow-y-auto border border-gray-200 rounded bg-white shadow-sm p-4">
+                                <div id="analytics-container" class="space-y-4">
+                                    <div class="text-center text-slate-400 italic mt-8">Select a subject to view item analysis.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -492,6 +513,9 @@
                 <main class="flex-1 overflow-y-auto custom-scroll p-8 max-w-6xl mx-auto w-full">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-light text-slate-700">My Dashboard</h2>
+                        <button id="btn-student-logout" class="text-red-500 hover:text-red-700 font-bold text-sm flex items-center gap-2">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
                     </div>
 
                     <!-- Welcome Card -->
@@ -518,12 +542,26 @@
                                 <tr>
                                     <th class="p-4">Subject</th>
                                     <th class="p-4">Score</th>
-                                    <th class="p-4 text-right">Date</th>
+                                    <th class="p-4">Date</th>
+                                    <th class="p-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="student-results-table" class="divide-y divide-gray-200"></tbody>
                         </table>
                         <div id="student-no-results" class="p-6 text-center text-slate-400 italic">No graded items yet.</div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- VIEW: STUDENT REVIEW -->
+            <div id="view-student-review" class="hidden flex-1 flex flex-col bg-white fade-in h-full z-50 absolute inset-0">
+                <header class="h-16 bg-white border-b border-gray-200 flex justify-between items-center px-6 shrink-0 shadow-sm">
+                    <h1 class="font-bold text-lg text-slate-700">Exam Review</h1>
+                    <button id="do-close-review" class="bg-slate-100 text-slate-600 px-4 py-1 rounded text-sm font-bold hover:bg-slate-200">Back to Dashboard</button>
+                </header>
+                <main class="flex-1 overflow-y-auto custom-scroll p-8 bg-white flex justify-center">
+                    <div class="max-w-3xl w-full space-y-6" id="review-container">
+                        <!-- Review items injected here -->
                     </div>
                 </main>
             </div>
@@ -537,7 +575,6 @@
                         <button id="do-exit-exam" class="text-sm text-canvas-primary hover:underline">Submit Assessment</button>
                     </div>
                 </header>
-                
                 <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
                     <div class="flex-1 overflow-y-auto custom-scroll p-8 bg-white flex justify-center">
                         <div class="max-w-3xl w-full">
@@ -547,731 +584,757 @@
                                     <span class="text-xs text-slate-500">1 pts</span>
                                 </div>
                                 <div class="p-6">
-                                    <div id="exam-passage" class="hidden bg-slate-50 p-4 border-l-4 border-slate-300 mb-4 text-sm font-serif italic text-slate-700"></div>
+                                    <div id="exam-passage" class="hidden bg-slate-50 p-4 border-l-4 border-slate-300 mb-4 text-sm font-serif italic text-slate-700 whitespace-pre-line"></div>
                                     <div class="text-lg text-slate-800 mb-6" id="exam-q-text">Loading...</div>
-                                    
                                     <div class="space-y-3" id="exam-opts">
                                         <!-- Options will be injected here -->
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="flex justify-end pt-4 border-t border-gray-200">
                                 <button id="do-next-q" class="bg-canvas-primary text-white px-6 py-2 rounded text-sm font-bold hover:bg-blue-700 shadow-sm">Next <i class="fas fa-chevron-right ml-1"></i></button>
                             </div>
                         </div>
                     </div>
-
                     <div class="w-64 border-l border-gray-200 bg-slate-50 p-4 overflow-y-auto hidden md:block">
                         <h3 class="font-bold text-sm text-slate-700 mb-4">Questions</h3>
                         <div id="question-grid" class="flex flex-wrap gap-2"></div>
                     </div>
                 </main>
             </div>
+
         </div>
     </div>
 
-    <!-- LOGIC MODULE -->
+    <!-- OFFLINE LOGIC MODULE -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- 1. CONFIGURATION ---
-        const firebaseConfig = { 
-            apiKey: "AIzaSyA7Sa9kkTFLF_cHS00DPzo8l847awBkBms", 
-            authDomain: "ncae-exam.firebaseapp.com", 
-            projectId: "ncae-exam", 
-            storageBucket: "ncae-exam.firebasestorage.app", 
-            messagingSenderId: "560276612754", 
-            appId: "1:560276612754:web:29169fa8f0d4752c28284b" 
-        };
-        const app = initializeApp(firebaseConfig); 
-        const auth = getAuth(app); 
-        const db = getFirestore(app); 
-        const googleProvider = new GoogleAuthProvider();
-        
-        // --- 2. GLOBAL STATE ---
-        const statusEl = document.getElementById('status-indicator'); 
-        const currentDomain = window.location.hostname;
-        
-        let state = { 
-            user: null, // Firebase User
-            userType: 'teacher', // 'teacher' or 'student'
-            data: {}, 
-            courses: {}, 
-            timeLimits: {}, 
-            students: [], 
-            records: [], 
-            session: { q: [], a: {}, idx: 0, student: {} } 
+        const firebaseConfig = {
+            apiKey: "AIzaSyDL-tWmRKlSrJAzC-JoNrjRemjEslnuuLc",
+            authDomain: "exambuilder-418f6.firebaseapp.com",
+            projectId: "exambuilder-418f6",
+            storageBucket: "exambuilder-418f6.firebasestorage.app",
+            messagingSenderId: "764710378686",
+            appId: "1:764710378686:web:91120b3fbcf795334312ef"
         };
 
-        // --- 3. HELPER FUNCTIONS ---
-        const getEl = (id) => document.getElementById(id);
-        const setTxt = (id, txt) => { const el = getEl(id); if(el) el.innerText = txt; }
-        const setVal = (id, val) => { const el = getEl(id); if(el) el.value = val; }
-        const getVal = (id) => { const el = getEl(id); return el ? el.value : ''; }
-
-        // --- 4. AUTHENTICATION LOGIC ---
-        async function fetchData() {
-            if(!state.user) return;
-            try {
-                const snap = await getDoc(doc(db,"teachers",state.user.uid));
-                if(snap.exists()) {
-                    const d = snap.data();
-                    state.data = d.examData ? JSON.parse(d.examData) : {};
-                    state.courses = d.courses ? JSON.parse(d.courses) : {};
-                    state.timeLimits = d.timeLimits ? JSON.parse(d.timeLimits) : {}; 
-                    state.records = d.records ? JSON.parse(d.records) : [];
-                    state.students = d.students ? JSON.parse(d.students) : []; 
-                    
-                    setTxt('dash-name', d.fullName || state.user.displayName || "Teacher's Course");
-                    setVal('set-name', d.fullName || state.user.displayName);
-                    setVal('set-grade', d.gradeHandled || ""); 
-                    setVal('set-subject', d.subjectHandled || "");
-                    
-                    if(d.gradeHandled || d.subjectHandled) {
-                        setTxt('dash-details', `${d.gradeHandled||''} • ${d.subjectHandled||''}`);
-                    }
-
-                    refreshCurriculumUI(); 
-                    renderManageQuestionsUI(); 
-                    renderStudentRegistry();
-                    renderCourses(); // Initial render for Courses tab
-                    renderCalendar(); // Initial render for Calendar tab
-                }
-            } catch(e){ console.error("Fetch Error", e); }
-        }
-
-        async function syncCloud() { 
-            if(!state.user) return; 
-            const p = {
-                examData: JSON.stringify(state.data), 
-                courses: JSON.stringify(state.courses), 
-                timeLimits: JSON.stringify(state.timeLimits), 
-                records: JSON.stringify(state.records), 
-                students: JSON.stringify(state.students), 
-                lastSync: new Date().toISOString()
-            }; 
-            await setDoc(doc(db,"teachers",state.user.uid), p, {merge:true}); 
-        }
-
-        async function saveProfile() { 
-            if(!state.user) return; 
-            try { 
-                await setDoc(doc(db,"teachers",state.user.uid), {
-                    fullName: getVal('set-name'), 
-                    gradeHandled: getVal('set-grade'), 
-                    subjectHandled: getVal('set-subject')
-                }, {merge:true}); 
-                alert("Updated!"); 
-                fetchData(); 
-            } catch(e){ alert(e.message); } 
-        }
-
-        async function resetYear() {
-            if(confirm("DANGER: This will DELETE all student records and accounts. Content will be kept. Proceed?")){
-                state.records = [];
-                state.students = [];
-                syncCloud();
-                alert("School year reset.");
-                location.reload();
-            }
-        }
-
-        function login() { 
-            signInWithEmailAndPassword(auth, getVal('login-user')+"@ncae.com", getVal('login-pass'))
-            .then(()=> { state.userType = 'teacher'; setMode('dashboard'); })
-            .catch(e=>alert(e.message)); 
-        }
-
-        function register() { 
-            createUserWithEmailAndPassword(auth, getVal('reg-user')+"@ncae.com", getVal('reg-pass'))
-            .then(c=>{ 
-                return setDoc(doc(db,"teachers",c.user.uid), {
-                    fullName: getVal('reg-name'), 
-                    username: getVal('reg-user'), 
-                    examData:"{}", courses:"{}", records:"[]"
-                }); 
-            })
-            .then(()=>{ alert("Registered!"); state.userType = 'teacher'; setMode('dashboard'); })
-            .catch(e=>alert(e.message)); 
-        }
-
-        // --- 5. STUDENT MANAGEMENT ---
-        function addStudent() {
-            const n = getVal('new-st-name');
-            const l = getVal('new-st-lrn');
-            const c = getVal('new-st-course');
-            if(!n || !l || !c) return alert("Fill all fields");
-            state.students.push({ name: n, lrn: l, course: c });
-            syncCloud(); renderStudentRegistry();
-            setVal('new-st-name', ""); setVal('new-st-lrn', "");
-        }
-        function delStudent(idx) { if(confirm("Remove student?")) { state.students.splice(idx, 1); syncCloud(); renderStudentRegistry(); } }
-        function renderStudentRegistry() {
-            const tbody = getEl('student-list-body'); 
-            if(!tbody) return;
-            tbody.innerHTML = "";
-            const sel = getEl('new-st-course'); 
-            if(sel) {
-                sel.innerHTML = "<option value=''>Select Assigned Course</option>";
-                Object.keys(state.courses).forEach(k => sel.innerHTML += `<option value="COURSE:${k}">${k}</option>`);
-                Object.keys(state.data).forEach(k => { if(!state.courses[k]) sel.innerHTML += `<option value="GRADE:${k}">${k}</option>`; });
-            }
-
-            if(state.students.length === 0) { 
-                if(getEl('no-students-msg')) getEl('no-students-msg').classList.remove('hidden'); 
-            } else {
-                if(getEl('no-students-msg')) getEl('no-students-msg').classList.add('hidden');
-                state.students.forEach((s, i) => {
-                    const row = document.createElement('tr'); row.className = "hover:bg-slate-50 group";
-                    row.innerHTML = `<td class="p-3 border-r border-gray-200 text-slate-700 font-bold"><a href="#" class="text-canvas-primary hover:underline">${s.name}</a></td><td class="p-3 border-r border-gray-200 text-slate-500 font-mono text-xs">${s.lrn}</td><td class="p-3 border-r border-gray-200 text-slate-600">${s.course.split(':')[1]||s.course}</td><td class="p-3 text-right"><button class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button></td>`;
-                    row.querySelector('button').onclick = () => delStudent(i);
-                    tbody.appendChild(row);
-                });
-            }
-        }
-
-        // --- 6. CURRICULUM MANAGEMENT ---
-        function refreshCurriculumUI() { renderGradeList(); updateCurGradeSelect(); renderCourseList(); renderAllSubjectsCheckbox(); updateRecordFilters(); }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
-        function addGrade() { const n=getVal('new-grade'); if(n && !state.data[n]) { state.data[n]={}; syncCloud(); refreshCurriculumUI(); setVal('new-grade',""); } }
-        function addQuarter() { const g=getVal('cur-grade-select'), n=getVal('new-quarter'); if(g&&n&&!state.data[g][n]) { state.data[g][n]={}; syncCloud(); renderQuarterList(); updateCurQuarterSelect(); setVal('new-quarter',""); } }
-        function addSubject() { const g=getVal('cur-grade-select'), q=getVal('cur-quarter-select'), n=getVal('new-subject'); if(g&&q&&n&&!state.data[g][q][n]) { state.data[g][q][n]=[]; syncCloud(); renderSubjectList(); setVal('new-subject',""); renderAllSubjectsCheckbox(); } }
-        
-        function delGrade(g) { if(confirm("Delete "+g+"?")) { delete state.data[g]; syncCloud(); refreshCurriculumUI(); } }
-        function delQuarter(g,q) { if(confirm("Delete "+q+"?")) { delete state.data[g][q]; syncCloud(); renderQuarterList(); updateCurQuarterSelect(); } }
-        function delSubject(g,q,s) { if(confirm("Delete "+s+"?")) { delete state.data[g][q][s]; syncCloud(); renderSubjectList(); renderAllSubjectsCheckbox(); } }
+        // --- 2. LOCAL STORAGE "DB" ---
+        const DB_KEY = 'canvas_lms_db';
+        const DEFAULT_DB = {
+            profile: { name: "Instructor", grade: "Grade 10", subject: "General" },
+            students: [],
+            grades: [], 
+            quarters: [],
+            subjects: [],
+            courses: [], 
+            questions: [] 
+        };
 
-        function renderGradeList() { const d=getEl('list-grade'); if(!d)return; d.innerHTML=""; Object.keys(state.data).forEach(k=>{ const r=document.createElement('div'); r.className="flex justify-between items-center group"; r.innerHTML=`<span class="text-slate-700">${k}</span><button class="text-slate-300 hover:text-red-500 hidden group-hover:block"><i class="fas fa-times"></i></button>`; r.querySelector('button').onclick=()=>delGrade(k); d.appendChild(r); }); }
-        function updateCurGradeSelect() { const s=getEl('cur-grade-select'); if(!s)return; s.innerHTML="<option value=''>Select Grade</option>"+Object.keys(state.data).map(k=>`<option value="${k}">${k}</option>`).join(''); s.onchange=()=>{renderQuarterList(); updateCurQuarterSelect();} }
-        function renderQuarterList() { const g=getVal('cur-grade-select'), d=getEl('list-quarter'); if(!d)return; d.innerHTML=""; if(g&&state.data[g]) Object.keys(state.data[g]).forEach(k=>{ const r=document.createElement('div'); r.className="flex justify-between items-center group"; r.innerHTML=`<span class="text-slate-700">${k}</span><button class="text-slate-300 hover:text-red-500 hidden group-hover:block"><i class="fas fa-times"></i></button>`; r.querySelector('button').onclick=()=>delQuarter(g,k); d.appendChild(r); }); }
-        function updateCurQuarterSelect() { const g=getVal('cur-grade-select'), s=getEl('cur-quarter-select'); if(!s)return; s.innerHTML="<option value=''>Select Quarter</option>"; if(g&&state.data[g]) Object.keys(state.data[g]).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`); s.onchange=renderSubjectList; }
-        function renderSubjectList() { const g=getVal('cur-grade-select'), q=getVal('cur-quarter-select'), d=getEl('list-subject'); if(!d)return; d.innerHTML=""; if(g&&q&&state.data[g][q]) Object.keys(state.data[g][q]).forEach(k=>{ const r=document.createElement('div'); r.className="flex justify-between items-center group"; r.innerHTML=`<span class="text-slate-700">${k}</span><button class="text-slate-300 hover:text-red-500 hidden group-hover:block"><i class="fas fa-times"></i></button>`; r.querySelector('button').onclick=()=>delSubject(g,q,k); d.appendChild(r); }); }
-        function renderAllSubjectsCheckbox() { const c=getEl('chk-subjects'); if(!c)return; c.innerHTML=""; Object.keys(state.data).forEach(g=>{ Object.keys(state.data[g]).forEach(q=>{ Object.keys(state.data[g][q]).forEach(s=>{ const v=`${g} > ${q} > ${s}`; c.innerHTML+=`<label class="flex items-center gap-2 p-1 hover:bg-slate-100"><input type="checkbox" value="${v}" class="c-chk accent-canvas-primary"> <span class="truncate">${g} / ${s}</span></label>`; }); }); }); }
-        
-        function addCourse() { 
-            const n=getVal('new-course'), tm=getVal('new-course-time') || 60;
-            if(n){ state.courses[n]=Array.from(document.querySelectorAll('.c-chk:checked')).map(x=>x.value); state.timeLimits[n] = parseInt(tm); syncCloud(); renderCourseList(); setVal('new-course',""); } 
-        }
-        function renderCourseList() { 
-            const d=getEl('list-course'); if(!d)return; d.innerHTML=""; 
-            Object.keys(state.courses).forEach(k=>{ 
-                const t = state.timeLimits[k] || 60; const r=document.createElement('div'); r.className="p-3 border border-gray-200 rounded bg-white flex justify-between items-center shadow-sm"; 
-                r.innerHTML=`<div><div class="font-bold text-canvas-primary text-sm hover:underline cursor-pointer"><i class="fas fa-book mr-1"></i> ${k}</div><div class="text-slate-400 text-xs">${t} mins duration</div></div><button class="text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>`; 
-                r.querySelector('button').onclick=()=>{if(confirm("Delete Course?")){delete state.courses[k]; delete state.timeLimits[k]; syncCloud(); renderCourseList();}}; 
-                d.appendChild(r); 
-            }); 
-            updateRecordFilters();
+        const state = {
+            user: null, 
+            db: loadDB(),
+            session: null 
+        };
+
+        function loadDB() {
+            const raw = localStorage.getItem(DB_KEY);
+            return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DB));
         }
 
-        // --- 7. QUESTION BANK MANAGEMENT ---
-        function renderManageQuestionsUI() { const s=getEl('sel-grade'); if(!s)return; s.innerHTML="<option value=''>Select Grade</option>"+Object.keys(state.data).map(k=>`<option value="${k}">${k}</option>`).join(''); s.onchange=updateManageQuarter; }
-        function updateManageQuarter() { const g=getVal('sel-grade'), s=getEl('sel-quarter'); if(!s)return; s.innerHTML="<option value=''>Select Period</option>"; if(g&&state.data[g]) Object.keys(state.data[g]).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`); s.onchange=updateManageSubject; }
-        function updateManageSubject() { const g=getVal('sel-grade'), q=getVal('sel-quarter'), s=getEl('sel-subject'); if(!s)return; s.innerHTML="<option value=''>Select Subject</option>"; if(g&&q&&state.data[g][q]) Object.keys(state.data[g][q]).forEach(k=>s.innerHTML+=`<option value="${k}">${k}</option>`); s.onchange=renderQuestions; }
-        
-        function saveManualQ() { 
-            const g=getVal('sel-grade'), q=getVal('sel-quarter'), s=getVal('sel-subject'); 
-            if(!g||!q||!s) return alert("Select Filters"); 
-            const t=getVal('q-text'), a=getVal('opt-a'); 
-            if(!t||!a) return alert("Fill Q & Opts"); 
-            state.data[g][q][s].push({
-                text:t, 
-                options:{A:a, B:getVal('opt-b'), C:getVal('opt-c'), D:getVal('opt-d')}, 
-                correct:getVal('correct-opt')
-            }); 
-            syncCloud(); renderQuestions(); setVal('q-text',""); 
-        }
-
-        function renderQuestions() { 
-            const g=getVal('sel-grade'), q=getVal('sel-quarter'), s=getVal('sel-subject'), l=getEl('q-list'); 
-            if(!l)return; l.innerHTML=""; 
-            if(!g||!q||!s||!state.data[g][q][s]) { 
-                if(getEl('q-empty')) getEl('q-empty').classList.remove('hidden'); return; 
-            } 
-            if(getEl('q-empty')) getEl('q-empty').classList.add('hidden'); 
-            state.data[g][q][s].forEach((it,i)=>{ 
-                const r=document.createElement('div'); r.className="p-3 border border-gray-200 rounded flex justify-between items-start bg-slate-50"; 
-                r.innerHTML=`<div class="text-sm text-slate-700"><span class="font-bold mr-2">Q${i+1}</span> ${it.text}</div><button class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button>`; 
-                r.querySelector('button').onclick=()=>{if(confirm("Delete Q?")){state.data[g][q][s].splice(i,1); syncCloud(); renderQuestions();}}; 
-                l.appendChild(r); 
-            }); 
-        }
-
-        // --- 8. IMPORT/EXPORT ---
-        function downloadTemplate() {
-            const t = `FORMAT GUIDE:\n\n1. Who is the national hero?\nA. Andres Bonifacio\nB. Jose Rizal\nC. Mabini\nD. Aguinaldo\nAnswer: B\n\n2. Simple question?\nA. Yes\nB. No\nC. Maybe\nD. Sure\nAnswer: A`;
-            const b = new Blob([t],{type:"text/plain"});
-            const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download="Exam_Template.txt"; a.click();
-        }
-
-        function importDocx(inp) {
-            const g = getVal('sel-grade'), q = getVal('sel-quarter'), s = getVal('sel-subject');
-            if(!g||!q||!s) return alert("Select Filters First");
+        async function saveDB() {
+            localStorage.setItem(DB_KEY, JSON.stringify(state.db));
             
-            mammoth.extractRawText({arrayBuffer: inp.files[0]}).then(r => {
-                const questions = parseDocText(r.value);
-                if(questions.length === 0) return alert("No questions found.");
-                if(!state.data[g][q][s]) state.data[g][q][s] = [];
-                state.data[g][q][s].push(...questions); 
-                syncCloud(); 
-                alert("Imported "+questions.length+" questions!"); 
-                renderQuestions();
+            // Sync to Firebase if logged in
+            if(auth.currentUser) {
+                try {
+                    await setDoc(doc(db, 'users', auth.currentUser.uid), { data: state.db });
+                    console.log("Synced to cloud");
+                } catch (e) {
+                    console.error("Sync error", e);
+                }
+            }
+        }
+
+        // --- 3. UTILS ---
+        const get = (id) => document.getElementById(id);
+        const on = (id, event, fn) => {
+            const el = get(id);
+            if(el) el.addEventListener(event, fn);
+        };
+        const show = (id) => get(id)?.classList.remove('hidden');
+        const hide = (id) => get(id)?.classList.add('hidden');
+        const setTxt = (id, txt) => { const el = get(id); if(el) el.innerText = txt; };
+
+        // --- 4. NAVIGATION & VIEWS ---
+        const views = ['view-landing', 'view-teacher-login', 'view-student-login', 'view-dashboard', 'view-student-dashboard', 'view-exam', 'view-courses', 'view-calendar', 'view-student-review'];
+
+        function setView(viewId) {
+            views.forEach(v => hide(v));
+            show(viewId);
+            
+            // Sidebar handling
+            if (viewId === 'view-dashboard' || viewId === 'view-courses' || viewId === 'view-calendar') {
+                show('nav-links');
+                show('btn-logout');
+            } else if (viewId.includes('login') || viewId === 'view-landing') {
+                hide('nav-links');
+                hide('btn-logout');
+            }
+        }
+
+        // Global Nav
+        on('nav-btn-dashboard', 'click', () => {
+            if(state.user?.role === 'teacher') setView('view-dashboard');
+            else if(state.user?.role === 'student') setView('view-student-dashboard');
+        });
+        on('nav-btn-courses', 'click', () => { renderCoursesView(); setView('view-courses'); });
+        on('nav-btn-calendar', 'click', () => { renderCalendar(); setView('view-calendar'); });
+        on('btn-logout', 'click', () => {
+            state.user = null;
+            signOut(auth);
+            setView('view-landing');
+        });
+
+        // Portal Selection
+        on('nav-teacher', 'click', () => setView('view-teacher-login'));
+        on('nav-student', 'click', () => setView('view-student-login'));
+        on('close-login', 'click', () => setView('view-landing'));
+        on('close-student', 'click', () => setView('view-landing'));
+        on('do-close-review', 'click', () => setView('view-student-dashboard'));
+
+        // --- 5. AUTH (FIREBASE) ---
+        
+        // Listen for auth state
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Logged In
+                console.log("Logged in:", user.email);
+                state.user = { role: 'teacher', name: user.displayName || user.email };
+                setTxt('header-role', state.user.name);
+                
+                // Update UI Indicator
+                const ind = get('status-indicator');
+                if(ind) {
+                    ind.innerHTML = '<i class="fas fa-cloud"></i> Cloud Connected';
+                    ind.className = "text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200";
+                }
+
+                // FETCH DATA FROM FIREBASE
+                try {
+                    const docSnap = await getDoc(doc(db, 'users', user.uid));
+                    if (docSnap.exists()) {
+                        const cloudData = docSnap.data().data;
+                        if(cloudData) {
+                            state.db = cloudData;
+                            localStorage.setItem(DB_KEY, JSON.stringify(state.db)); // Sync back to local
+                            console.log("Loaded data from cloud");
+                        }
+                    }
+                } catch(e) {
+                    console.error("Error loading data", e);
+                }
+
+                renderDashboard();
+                setView('view-dashboard');
+            } else {
+                console.log("Logged out");
+                // Reset indicator
+                const ind = get('status-indicator');
+                if(ind) {
+                    ind.innerHTML = 'Local Mode';
+                    ind.className = "text-[10px] font-mono font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200";
+                }
+            }
+        });
+
+        // Email/Pass Login
+        on('do-login', 'click', () => {
+            const email = get('login-user').value;
+            const pass = get('login-pass').value;
+            signInWithEmailAndPassword(auth, email, pass)
+                .catch(error => alert("Login Failed: " + error.message));
+        });
+
+        // Google Login
+        on('do-google-login', 'click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .catch(error => alert("Google Sign-In Error: " + error.message));
+        });
+
+        // Student Login (Local only for now, or mock)
+        on('do-student-login', 'click', () => {
+            const name = get('st-name').value;
+            const lrn = get('st-lrn').value;
+            if(!name || !lrn) return alert("Please enter Name and ID");
+
+            const existing = state.db.students.find(s => s.lrn === lrn);
+            if(!existing) return alert("Student not found. Ask instructor to add you.");
+
+            state.user = { role: 'student', name: existing.name, lrn: existing.lrn, course: existing.course };
+            
+            setTxt('dash-st-name', state.user.name);
+            setTxt('dash-st-lrn', state.user.lrn);
+            renderStudentDashboard();
+            setView('view-student-dashboard');
+        });
+
+        on('btn-student-logout', 'click', () => {
+            if(confirm("Log out?")) {
+                state.user = null;
+                setView('view-landing');
+            }
+        });
+
+        // --- 6. TEACHER DASHBOARD LOGIC ---
+        
+        // Tabs
+        const tabs = ['students', 'curriculum', 'manage', 'records', 'settings'];
+        tabs.forEach(t => {
+            on(`tab-btn-${t}`, 'click', (e) => {
+                tabs.forEach(tb => {
+                    hide(`tab-${tb}`);
+                    get(`tab-btn-${tb}`).classList.remove('active');
+                });
+                show(`tab-${t}`);
+                e.target.classList.add('active');
+                if(t === 'records') renderRecords();
+            });
+        });
+
+        // Dashboard Init
+        function renderDashboard() {
+            setTxt('dash-name', state.db.profile.name + "'s Course");
+            setTxt('dash-details', `${state.db.profile.grade} | ${state.db.profile.subject}`);
+            
+            // Prefill Settings
+            get('set-name').value = state.db.profile.name;
+            get('set-grade').value = state.db.profile.grade;
+            get('set-subject').value = state.db.profile.subject;
+
+            renderStudentList();
+            renderStructure();
+            updateSelects();
+        }
+
+        // A. STUDENTS
+        on('do-add-student', 'click', async () => {
+            const name = get('new-st-name').value;
+            const lrn = get('new-st-lrn').value;
+            const course = get('new-st-course').value;
+            
+            if(name && lrn && course) {
+                state.db.students.push({ name, lrn, course });
+                await saveDB();
+                renderStudentList();
+                get('new-st-name').value = '';
+                get('new-st-lrn').value = '';
+            }
+        });
+
+        function renderStudentList() {
+            const tbody = get('student-list-body');
+            tbody.innerHTML = '';
+            
+            if(state.db.students.length === 0) show('no-students-msg');
+            else hide('no-students-msg');
+
+            state.db.students.forEach((s, i) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50";
+                tr.innerHTML = `
+                        <td class="p-3 border-r border-gray-200">${s.name}</td>
+                        <td class="p-3 border-r border-gray-200 font-mono text-xs">${s.lrn}</td>
+                        <td class="p-3 border-r border-gray-200">${s.course}</td>
+                        <td class="p-3 text-right">
+                            <button class="text-red-500 hover:text-red-700 btn-del-student"><i class="fas fa-trash"></i></button>
+                        </td>
+                `;
+                tr.querySelector('.btn-del-student').addEventListener('click', () => delStudent(i));
+                tbody.appendChild(tr);
+            });
+        }
+        
+        async function delStudent(i) {
+            if(confirm('Remove student?')) {
+                state.db.students.splice(i, 1);
+                await saveDB();
+                renderStudentList();
+            }
+        };
+
+        // B. CURRICULUM
+        on('do-add-grade', 'click', () => addItem('list-grade', 'new-grade', 'grades'));
+        on('do-add-quarter', 'click', () => addItem('list-quarter', 'new-quarter', 'quarters'));
+        on('do-add-subject', 'click', () => addItem('list-subject', 'new-subject', 'subjects'));
+
+        async function addItem(listId, inputId, arrayName) {
+            const val = get(inputId).value;
+            if(val) {
+                state.db[arrayName] = state.db[arrayName] || [];
+                if(!state.db[arrayName].includes(val)) {
+                    state.db[arrayName].push(val);
+                    await saveDB();
+                    renderStructure();
+                    updateSelects();
+                }
+                get(inputId).value = '';
+            }
+        }
+
+        // Render lists in structure builder
+        function renderStructure() {
+            ['grade','quarter','subject'].forEach(key => {
+                const list = get(`list-${key}`);
+                const arr = state.db[key+'s'] || [];
+                list.innerHTML = arr.map(item => `<div class="bg-gray-100 px-2 py-1 rounded flex justify-between">${item}</div>`).join('');
+                
+                // Update dropdowns in builder
+                if(key !== 'subject') {
+                    const sel = get(`cur-${key}-select`);
+                    if(sel) sel.innerHTML = arr.map(i => `<option value="${i}">${i}</option>`).join('');
+                }
+            });
+
+            // Populate subject checkboxes for course creation
+            const chk = get('chk-subjects');
+            const subs = state.db.subjects || [];
+            chk.innerHTML = subs.map(s => `
+                <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" value="${s}" name="course-subs"> ${s}
+                </label>
+            `).join('');
+
+            // Render existing courses
+            const cList = get('list-course');
+            cList.innerHTML = '';
+            state.db.courses.forEach((c, i) => {
+                const div = document.createElement('div');
+                div.className = "bg-white border border-gray-200 p-3 rounded flex justify-between items-center shadow-sm";
+                div.innerHTML = `
+                        <div>
+                            <div class="font-bold text-slate-700">${c.name}</div>
+                            <div class="text-xs text-slate-500">${c.grade} | ${c.quarter} | ${c.subjects.join(', ')}</div>
+                        </div>
+                        <button class="text-red-400 hover:text-red-600 btn-del-course"><i class="fas fa-trash"></i></button>
+                `;
+                div.querySelector('.btn-del-course').addEventListener('click', () => delCourse(i));
+                cList.appendChild(div);
             });
         }
 
-        function parseDocText(txt) {
-            const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-            const questions = [];
-            let currentQ = null;
-            let buffer = "";
-            let activePassage = "";
+        on('do-add-course', 'click', async () => {
+            const name = get('new-course').value;
+            const grade = get('cur-grade-select').value;
+            const quarter = get('cur-quarter-select').value;
+            const subs = Array.from(document.querySelectorAll('input[name="course-subs"]:checked')).map(c => c.value);
             
-            const regex = { qStart: /^(\d+)[\.\)]\s*(.+)/, opt: /^([A-D])[\.\)]\s*(.+)/i, ans: /^(?:Ans|Answer|Key).*([A-D])/i };
+            if(name && grade && quarter && subs.length > 0) {
+                state.db.courses.push({ name, grade, quarter, subjects: subs, time: get('new-course-time').value || 60 });
+                await saveDB();
+                renderStructure();
+                updateSelects();
+                get('new-course').value = '';
+            } else {
+                alert("Please fill all fields and select at least one subject.");
+            }
+        });
+
+        async function delCourse(i) {
+            if(confirm("Delete this section?")) {
+                state.db.courses.splice(i, 1);
+                await saveDB();
+                renderStructure();
+                updateSelects();
+            }
+        };
+
+        // C. QUESTIONS
+        function updateSelects() {
+            const grades = state.db.grades || [];
+            const qtrs = state.db.quarters || [];
+            const subs = state.db.subjects || [];
+            const courses = state.db.courses || [];
+
+            const fill = (id, arr) => {
+                const el = get(id);
+                if(el) el.innerHTML = arr.map(i => `<option value="${i}">${i}</option>`).join('');
+            };
+            
+            fill('sel-grade', grades);
+            fill('sel-quarter', qtrs);
+            fill('sel-subject', subs);
+            fill('new-st-course', courses.map(c => c.name));
+            fill('filter-records-grade', courses.map(c => c.name));
+            fill('filter-analytics-subject', subs);
+            fill('st-course', subs);
+
+            renderQuestions();
+        }
+
+        ['sel-grade', 'sel-quarter', 'sel-subject'].forEach(id => on(id, 'change', renderQuestions));
+
+        on('do-save-manual', 'click', async () => {
+            const text = get('q-text').value;
+            if(!text) return;
+            
+            const q = {
+                id: Date.now().toString(),
+                text: text,
+                opts: {
+                    A: get('opt-a').value,
+                    B: get('opt-b').value,
+                    C: get('opt-c').value,
+                    D: get('opt-d').value
+                },
+                correct: get('correct-opt').value,
+                grade: get('sel-grade').value,
+                quarter: get('sel-quarter').value,
+                subject: get('sel-subject').value
+            };
+            
+            state.db.questions.push(q);
+            await saveDB();
+            renderQuestions();
+            get('q-text').value = '';
+            ['a','b','c','d'].forEach(x => get('opt-'+x).value = '');
+        });
+
+        function renderQuestions() {
+            const g = get('sel-grade').value;
+            const q = get('sel-quarter').value;
+            const s = get('sel-subject').value;
+
+            const filtered = state.db.questions.filter(qi => qi.grade === g && qi.quarter === q && qi.subject === s);
+            const list = get('q-list');
+            list.innerHTML = '';
+
+            if(filtered.length === 0) show('q-empty');
+            else hide('q-empty');
+
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "p-3 border border-gray-200 rounded text-sm relative group hover:bg-slate-50";
+                div.innerHTML = `
+                        <div class="font-bold text-slate-700 mb-1 pr-6">${item.text}</div>
+                        <div class="grid grid-cols-2 gap-x-4 text-xs text-slate-500">
+                            <span class="${item.correct==='A'?'text-green-600 font-bold':''}">A: ${item.opts.A}</span>
+                            <span class="${item.correct==='B'?'text-green-600 font-bold':''}">B: ${item.opts.B}</span>
+                            <span class="${item.correct==='C'?'text-green-600 font-bold':''}">C: ${item.opts.C}</span>
+                            <span class="${item.correct==='D'?'text-green-600 font-bold':''}">D: ${item.opts.D}</span>
+                        </div>
+                        <button class="absolute top-2 right-2 text-gray-300 hover:text-red-500 btn-del-q"><i class="fas fa-times"></i></button>
+                `;
+                div.querySelector('.btn-del-q').addEventListener('click', () => delQuestion(item.id));
+                list.appendChild(div);
+            });
+        }
+        
+        async function delQuestion(id) {
+            state.db.questions = state.db.questions.filter(q => q.id !== id);
+            await saveDB();
+            renderQuestions();
+        };
+
+        // --- IMPORT/EXPORT ---
+        on('do-get-template', 'click', () => {
+            const template = `For items 1-5:\nMany people believe...\n\n1. What is the main idea?\nA. Option 1\nB. Option 2\nC. Option 3\nD. Option 4\nAnswer: B`;
+            const blob = new window.Blob([template], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.download = 'exam_template.txt'; 
+            anchor.click();
+        });
+
+        on('docx-upload', 'change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(loadEvent) {
+                const arrayBuffer = loadEvent.target.result;
+                mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                    .then(displayResult)
+                    .catch(handleError);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        async function displayResult(result) {
+            const text = result.value;
+            const questions = parseQuestions(text);
+            if(questions.length > 0) {
+                state.db.questions.push(...questions);
+                await saveDB();
+                renderQuestions();
+                alert(`Successfully imported ${questions.length} questions!`);
+            } else {
+                alert("No valid questions found.");
+            }
+        }
+
+        function handleError(err) { console.error(err); alert("Error reading file."); }
+
+        function parseQuestions(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            const parsed = [];
+            let currentQ = null;
+            let currentPassage = "";
+            let capturingPassage = false;
+
+            const isPassageStart = (l) => /^For item/i.test(l) || /^Passage:/i.test(l);
+            const isQuestionStart = (l) => /^\d+[\.\)]/.test(l); 
+            const isOption = (l) => /^[A-D][\.\)]/.test(l);
+            const isAnswer = (l) => /^Answer:/i.test(l);
 
             lines.forEach(line => {
-                const qMatch = line.match(regex.qStart);
-                if (qMatch) {
-                    if (currentQ) questions.push(currentQ);
-                    if (buffer) { activePassage = buffer; buffer = ""; }
-                    currentQ = { text: qMatch[2], options: {}, correct: 'A', passage: activePassage };
-                    return;
+                if (isPassageStart(line)) {
+                    capturingPassage = true;
+                    currentPassage = line + "\n";
+                } else if (isQuestionStart(line)) {
+                    if (currentQ) parsed.push(currentQ);
+                    capturingPassage = false; 
+                    currentQ = {
+                        id: Date.now() + Math.random().toString(),
+                        text: line.replace(/^\d+[\.\)]\s*/, ''),
+                        opts: { A:'', B:'', C:'', D:'' },
+                        correct: 'A',
+                        grade: get('sel-grade').value,
+                        quarter: get('sel-quarter').value,
+                        subject: get('sel-subject').value,
+                        passage: currentPassage.trim()
+                    };
+                } else if (isOption(line) && currentQ) {
+                    const char = line.charAt(0).toUpperCase();
+                    currentQ.opts[char] = line.substring(2).trim();
+                } else if (isAnswer(line) && currentQ) {
+                    currentQ.correct = line.split(':')[1].trim().toUpperCase().charAt(0);
+                } else if (capturingPassage) {
+                    currentPassage += line + "\n";
                 }
-                const optMatch = line.match(regex.opt);
-                if (optMatch && currentQ) { currentQ.options[optMatch[1].toUpperCase()] = optMatch[2]; return; }
-                const ansMatch = line.match(regex.ans);
-                if (ansMatch && currentQ) { currentQ.correct = ansMatch[1].toUpperCase(); return; }
-                if (buffer) buffer += "\n" + line; else buffer = line;
             });
-            if (currentQ) questions.push(currentQ);
-            return questions;
+            if (currentQ) parsed.push(currentQ);
+            return parsed;
         }
 
-        // --- 9. STUDENT DASHBOARD & EXAM ---
-        function enterStudentDashboard() {
-            const n = getVal('st-name').trim();
-            const l = getVal('st-lrn').trim();
-            if(!n || !l) return alert("Fill Name/LRN");
-            const match = state.students.find(s => s.lrn === l && s.name.toLowerCase() === n.toLowerCase());
-            if(!match) return alert("Access Denied: Not registered.");
-            
-            state.userType = 'student'; // Set Mode explicitly
-            state.session.student = { name: match.name, lrn: match.lrn, assignedCourse: match.course };
-            
-            setTxt('dash-st-name', match.name);
-            setTxt('dash-st-lrn', match.lrn);
-            
-            renderStudentResults(match.lrn);
-            renderStudentExamDropdown(match.course);
-            setMode('student-dashboard');
-        }
+        // D. RECORDS
+        on('btn-view-gradebook', 'click', () => {
+            show('view-gradebook'); hide('view-analytics');
+            get('btn-view-gradebook').classList.replace('text-slate-400', 'text-slate-700');
+            get('btn-view-gradebook').classList.add('border-b-2', 'border-canvas-primary');
+            get('btn-view-analytics').classList.replace('text-slate-700', 'text-slate-400');
+            get('btn-view-analytics').classList.remove('border-b-2', 'border-canvas-primary');
+        });
+        on('btn-view-analytics', 'click', () => {
+            hide('view-gradebook'); show('view-analytics');
+            get('btn-view-analytics').classList.replace('text-slate-400', 'text-slate-700');
+            get('btn-view-analytics').classList.add('border-b-2', 'border-canvas-primary');
+            get('btn-view-gradebook').classList.replace('text-slate-700', 'text-slate-400');
+            get('btn-view-gradebook').classList.remove('border-b-2', 'border-canvas-primary');
+        });
 
-        function renderStudentResults(lrn) {
-            const t = getEl('student-results-table'); if(!t)return; t.innerHTML = "";
-            const myRecords = state.records.filter(r => r.lrn === lrn);
-            if(myRecords.length === 0) { 
-                if(getEl('student-no-results')) getEl('student-no-results').classList.remove('hidden'); 
-            } else {
-                if(getEl('student-no-results')) getEl('student-no-results').classList.add('hidden');
-                myRecords.forEach(r => t.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-4 border-b border-gray-200 text-canvas-primary font-bold"><i class="fas fa-file-alt mr-1"></i> ${r.course}</td><td class="p-4 border-b border-gray-200 font-bold text-slate-700">${r.score}</td><td class="p-4 border-b border-gray-200 text-xs text-slate-500 text-right">${r.date}</td></tr>`);
-            }
-        }
-
-        function renderStudentExamDropdown(assignedCourse) { 
-            const s = getEl('st-course'); if(!s)return; s.innerHTML = "<option value=''>Select Subject to Take</option>"; 
-            const [type, val] = assignedCourse.split(':');
-            
-            if(type === 'COURSE') {
-                 const subjects = state.courses[val] || [];
-                 const timeLimit = state.timeLimits[val] || 60;
-                 subjects.forEach(subjPath => {
-                    const parts = subjPath.split(' > ');
-                    if(parts.length === 3) {
-                        const [g, q, sub] = parts;
-                        const opt = document.createElement('option');
-                        opt.value = `SUBJECT:${subjPath}::${timeLimit}`; 
-                        opt.text = `${sub} (${q}) - ${timeLimit} mins`;
-                        s.appendChild(opt);
-                    }
-                });
-            } else if (type === 'GRADE') {
-                const gradeData = state.data[val];
-                if(gradeData) {
-                    Object.keys(gradeData).forEach(quarter => {
-                        Object.keys(gradeData[quarter]).forEach(sub => {
-                            const opt = document.createElement('option');
-                            opt.value = `SUBJECT:${val} > ${quarter} > ${sub}::60`; 
-                            opt.text = `${sub} (${quarter})`;
-                            s.appendChild(opt);
-                        });
-                    });
-                }
-            }
-        }
-        
-        function startExam() {
-            const cVal = getVal('st-course');
-            if(!cVal) return alert("Select a subject");
-            
-            const [typePrefix, rest] = cVal.split(':');
-            if(typePrefix !== 'SUBJECT') return alert("Invalid Exam Type"); 
-            
-            const [path, timeStr] = rest.split('::');
-            const [g, q, s] = path.split(' > ');
-            
-            state.session.q = []; state.session.a = {}; state.session.idx = 0;
-            state.session.course = `${s} (${q})`; 
-            
-            if (state.data[g] && state.data[g][q] && state.data[g][q][s]) {
-                 state.data[g][q][s].forEach(quest => state.session.q.push({...quest, tag: s}));
-            }
-            
-            if(state.session.q.length===0) return alert("No questions in this subject.");
-            
-            const limit = parseInt(timeStr) || 60;
-            state.session.seconds = limit * 60; 
-            
-            clearInterval(window.examTimer); 
-            window.examTimer = setInterval(updateTimer, 1000);
-            setMode('exam'); 
-            renderExamQ();
-        }
-
-        function updateTimer() {
-            state.session.seconds--;
-            const m = Math.floor(state.session.seconds / 60), s = state.session.seconds % 60;
-            setTxt('timer', `${m}:${s < 10 ? '0'+s : s}`);
-            if(state.session.seconds <= 0) { clearInterval(window.examTimer); alert("Time's Up!"); finishExam(true); }
-        }
-
-        function renderNavigator() {
-            const grid = getEl('question-grid'); if(!grid)return; grid.innerHTML = "";
-            state.session.q.forEach((_, i) => {
-                const btn = document.createElement('button');
-                const isAns = state.session.a[i] !== undefined;
-                const isCurr = i === state.session.idx;
-                let cls = "w-8 h-8 rounded-sm text-xs font-bold flex items-center justify-center transition ";
-                cls += isAns ? "bg-slate-200 text-slate-600 " : "bg-white border border-gray-300 text-slate-500 hover:bg-slate-50 ";
-                if (isCurr) cls += "ring-2 ring-canvas-primary border-canvas-primary z-10 ";
-                btn.className = cls; btn.innerText = i + 1; btn.onclick = () => window.app.jumpToQ(i);
-                grid.appendChild(btn);
-            });
-        }
-
-        function renderExamQ() { 
-            const q=state.session.q[state.session.idx]; 
-            setTxt('exam-q-text', q.text); 
-            setTxt('exam-tag', q.tag); 
-            setTxt('exam-progress', `Question ${state.session.idx+1}`); 
-            
-            const passBox = getEl('exam-passage');
-            if(q.passage) { passBox.innerText = q.passage; passBox.classList.remove('hidden'); } 
-            else { passBox.classList.add('hidden'); }
-
-            const nextBtn = getEl('do-next-q');
-            if(nextBtn) {
-                if(state.session.idx === state.session.q.length - 1) { nextBtn.innerHTML = 'Submit Assessment'; } 
-                else { nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right ml-1"></i>'; }
-            }
-
-            const d=getEl('exam-opts'); if(!d)return; d.innerHTML=""; 
-            ['A','B','C','D'].forEach(o=>{ if(q.options[o]){ 
-                const isSelected = state.session.a[state.session.idx]===o;
-                const baseCls = "w-full text-left p-3 border rounded transition flex items-start gap-2 group relative";
-                const selCls = isSelected ? 'bg-slate-100 border-gray-400' : 'bg-white border-gray-300 hover:bg-slate-50';
-                
-                d.innerHTML+=`<button class="${baseCls} ${selCls}" onclick="window.app.ans('${o}')">
-                    <div class="mt-0.5 w-4 h-4 rounded-full border border-gray-400 flex items-center justify-center bg-white ${isSelected ? 'border-[5px] border-canvas-primary' : ''}"></div>
-                    <span class="text-sm text-slate-700">${q.options[o]}</span>
-                </button>`; 
-            }}); 
-            renderNavigator();
-        }
-
-        function nextQ() { if(state.session.idx<state.session.q.length-1){state.session.idx++;renderExamQ();} else { finishExam(false); } }
-
-        async function finishExam(force = false) {
-            if(force || confirm("Submit Assessment?")){ 
-                clearInterval(window.examTimer);
-                let sc=0; state.session.q.forEach((q,i)=>{if(state.session.a[i]===q.correct)sc++}); 
-                state.records.push({name:state.session.student.name, lrn:state.session.student.lrn, course:state.session.course, score:`${sc}/${state.session.q.length}`, date:new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString()}); 
-                if(state.user) syncCloud(); 
-                if(!force) alert("Assessment Submitted!\nScore: "+sc); 
-                renderStudentResults(state.session.student.lrn); setMode('student-dashboard'); 
-            }
-        }
-        
-        function updateRecordFilters() {
-            const s = getEl('filter-records-grade'); if(!s)return;
-            s.innerHTML = "<option value=''>All Grades/Courses</option>";
-            Object.keys(state.courses).forEach(k => s.innerHTML += `<option value="${k}">${k}</option>`);
-            Object.keys(state.data).forEach(k => { if(!state.courses[k]) s.innerHTML += `<option value="${k}">${k}</option>`; });
-        }
-        
         function renderRecords() {
-            const filter = getVal('filter-records-grade');
-            const t = getEl('table-records'); if(!t)return;
-            t.innerHTML = "";
-            state.records.forEach(r => {
-                // Find student for filter check
-                const st = state.students.find(s => s.lrn === r.lrn);
-                // Extract grade string, handling prefixes like 'COURSE:' or 'GRADE:'
-                const stGrade = st ? (st.course.split(':')[1] || st.course) : 'N/A';
-
-                if(filter && stGrade !== filter) return;
-
-                t.innerHTML += `<tr class="hover:bg-slate-50 border-b border-gray-200">
-                    <td class="p-3 border-r border-gray-200 text-slate-700 font-bold">${r.name}</td>
-                    <td class="p-3 border-r border-gray-200 text-slate-500 text-xs font-mono">${stGrade}</td>
-                    <td class="p-3 border-r border-gray-200 text-slate-600">${r.course}</td>
-                    <td class="p-3 border-r border-gray-200 font-bold text-slate-700">${r.score}</td>
-                    <td class="p-3 text-right text-xs text-slate-500">${r.date}</td>
-                </tr>`;
-            });
-        }
-
-        // --- 10. NEW FUNCTIONS: COURSES & CALENDAR ---
-
-        function renderCourses() {
-            const grid = getEl('courses-grid');
-            if(!grid) return;
-            grid.innerHTML = "";
-            let items = [];
-
-            if (state.userType === 'student') {
-                getEl('courses-title').innerText = "My Enrolled Courses";
-                // Show enrolled course
-                const assigned = state.session.student?.assignedCourse;
-                if(assigned) items.push(assigned.split(':')[1] || assigned);
-            } else {
-                getEl('courses-title').innerText = "All Active Courses";
-                // Show all created courses
-                items = Object.keys(state.courses);
-                // Also add raw Grade levels created
-                Object.keys(state.data).forEach(grade => {
-                    if(!items.includes(grade) && !state.courses[grade]) items.push(grade);
-                });
-            }
-
-            if(items.length === 0) {
-                getEl('courses-empty').classList.remove('hidden');
-            } else {
-                getEl('courses-empty').classList.add('hidden');
-                items.forEach(c => {
-                    grid.innerHTML += `
-                        <div class="bg-white rounded-lg shadow-card overflow-hidden group hover:shadow-lg transition-all border border-gray-200">
-                            <div class="h-24 bg-canvas-primary relative">
-                                <div class="absolute bottom-2 left-4 text-white font-bold text-lg text-shadow"><i class="fas fa-book mr-2"></i> ${c}</div>
-                            </div>
-                            <div class="p-4">
-                                <p class="text-xs text-slate-500 mb-4">Active Session</p>
-                                <button class="w-full bg-slate-100 text-slate-600 py-2 rounded text-sm font-bold hover:bg-slate-200">View Details</button>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-        }
-
-        function renderCalendar() {
-            const grid = getEl('calendar-days');
-            const events = getEl('calendar-events');
-            if(!grid || !events) return;
+            const filter = get('filter-records-grade').value; 
+            const tbody = get('table-records');
+            tbody.innerHTML = '';
             
-            grid.innerHTML = "";
-            const today = new Date();
-            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            const startDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+            const studentsInSection = state.db.students.filter(s => s.course === filter).map(s => s.lrn);
+            const records = state.db.grades.filter(g => studentsInSection.includes(g.studentId));
 
-            // Padding
-            for(let i=0; i<startDay; i++) grid.innerHTML += `<div></div>`;
-            
-            // Days
-            for(let i=1; i<=daysInMonth; i++) {
-                const isToday = i === today.getDate();
-                grid.innerHTML += `<div class="calendar-day ${isToday ? 'today' : 'bg-slate-50 text-slate-600'}">${i}</div>`;
-            }
-
-            // Mock Events
-            events.innerHTML = "";
-            const evtList = [
-                { title: "Midterm Assessment", date: "Tomorrow, 10:00 AM" },
-                { title: "Quarterly Review", date: "Oct 24, 2:00 PM" },
-                { title: "Grade Submission", date: "Oct 30, 5:00 PM" }
-            ];
-            
-            evtList.forEach(e => {
-                events.innerHTML += `
-                    <div class="flex gap-3 items-center p-3 bg-white rounded border border-gray-200 shadow-sm">
-                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded flex items-center justify-center font-bold text-xs flex-col leading-tight">
-                            <span>${today.toLocaleString('default', { month: 'short' })}</span>
-                            <span>${Math.floor(Math.random() * 28) + 1}</span>
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-700 text-sm">${e.title}</div>
-                            <div class="text-xs text-slate-500">${e.date}</div>
-                        </div>
-                    </div>
+            records.forEach(r => {
+                const st = state.db.students.find(s => s.lrn === r.studentId);
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 border-r border-gray-200">${st ? st.name : 'Unknown'}</td>
+                        <td class="p-3 border-r border-gray-200">${filter}</td>
+                        <td class="p-3 border-r border-gray-200">${r.subject}</td>
+                        <td class="p-3 border-r border-gray-200 font-bold">${r.score}/${r.total}</td>
+                        <td class="p-3 text-right text-xs text-slate-500">${new Date(r.date).toLocaleDateString()}</td>
+                    </tr>
                 `;
             });
+            renderAnalytics();
         }
+        on('filter-records-grade', 'change', renderRecords);
+        on('filter-analytics-subject', 'change', renderAnalytics);
 
-        // --- 11. SYSTEM BINDINGS ---
-        function setMode(m){
-            const view = getEl(`view-${m}`);
-            if(!view) return console.error('View not found:', m);
-            document.querySelectorAll('[id^="view-"]').forEach(e=>e.classList.add('hidden'));
-            view.classList.remove('hidden');
-            const ctx = getEl('header-context');
-            if(m==='landing') ctx.innerText = 'Dashboard';
-            if(m==='dashboard') ctx.innerText = 'Course';
-            if(m==='student-dashboard') ctx.innerText = 'My Dashboard';
-            if(m==='courses') ctx.innerText = 'All Courses';
-            if(m==='calendar') ctx.innerText = 'Calendar';
+        function renderAnalytics() {
+            const subject = get('filter-analytics-subject').value;
+            const container = get('analytics-container');
+            container.innerHTML = '';
 
-            // Sidebar Visibility Logic
-            const navLinks = getEl('nav-links');
-            const logoutBtn = getEl('btn-logout');
+            if(!subject) { container.innerHTML = '<div class="text-center text-slate-400 italic mt-8">Please create assessments first.</div>'; return; }
 
-            if(navLinks) {
-                // Show nav on dashboards, courses, calendar (Teacher OR Student)
-                if(['dashboard', 'student-dashboard', 'courses', 'calendar'].includes(m)) {
-                    navLinks.classList.remove('hidden');
-                    if(logoutBtn) logoutBtn.classList.remove('hidden');
-                } else {
-                    navLinks.classList.add('hidden');
-                    // Hide logout on landing/login screens
-                    if(logoutBtn) logoutBtn.classList.add('hidden');
+            const relevantGrades = state.db.grades.filter(g => g.subject === subject);
+            if(relevantGrades.length === 0) { container.innerHTML = `<div class="text-center text-slate-400 italic mt-8">No results for ${subject}.</div>`; return; }
+
+            const stats = {};
+            relevantGrades.forEach(g => {
+                const stName = state.db.students.find(s => s.lrn === g.studentId)?.name || "Unknown";
+                if(g.details && g.details.questions) {
+                    g.details.questions.forEach(q => {
+                        if(!stats[q.text]) stats[q.text] = { text: q.text, correct: 0, wrong: 0, correctSt: [], wrongSt: [] };
+                        const studentAns = g.details.answers[q.id];
+                        if(studentAns === q.correct) {
+                            stats[q.text].correct++;
+                            stats[q.text].correctSt.push(stName);
+                        } else {
+                            stats[q.text].wrong++;
+                            stats[q.text].wrongSt.push(stName);
+                        }
+                    });
                 }
+            });
+
+            Object.values(stats).forEach((stat, i) => {
+                const total = stat.correct + stat.wrong;
+                const pct = Math.round((stat.correct / total) * 100);
+                container.innerHTML += `
+                    <div class="border border-gray-200 rounded p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="font-bold text-slate-700 w-3/4"><span class="text-blue-600 mr-2">Q${i+1}.</span> ${stat.text}</div>
+                            <div class="text-right"><div class="text-2xl font-bold ${pct >= 75 ? 'text-green-600' : 'text-red-600'}">${pct}%</div></div>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-3"><div class="bg-blue-600 h-2 rounded-full" style="width: ${pct}%"></div></div>
+                        <details class="text-xs"><summary class="cursor-pointer text-slate-500">Breakdown</summary>
+                            <div class="grid grid-cols-2 gap-4 mt-2 bg-slate-50 p-2">
+                                <div><div class="text-green-700 font-bold">Correct</div>${stat.correctSt.join(', ')}</div>
+                                <div><div class="text-red-700 font-bold">Wrong</div>${stat.wrongSt.join(', ')}</div>
+                            </div>
+                        </details>
+                    </div>`;
+            });
+        }
+
+        // E. SETTINGS
+        on('do-save-profile', 'click', async () => {
+            state.db.profile = { name: get('set-name').value, grade: get('set-grade').value, subject: get('set-subject').value };
+            await saveDB();
+            alert("Settings Saved");
+            renderDashboard();
+        });
+        on('do-reset-year', 'click', async () => {
+            if(confirm("Resetting deletes ALL student data.")) {
+                state.db.students = []; state.db.grades = [];
+                await saveDB();
+                location.reload();
             }
-            
-            // Re-render shared views based on User Type
-            if(m === 'courses') renderCourses();
-            if(m === 'calendar') renderCalendar();
-        }
-
-        function toggleRegister(s){
-            const fl=getEl('form-login'), fr=getEl('form-register');
-            if(fl) fl.classList.toggle('hidden',s);
-            if(fr) fr.classList.toggle('hidden',!s);
-        }
-
-        function setTab(t){
-            const tab = getEl(`tab-${t}`);
-            if(!tab) return;
-            document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden'));
-            tab.classList.remove('hidden');
-            document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
-            const btn = getEl(`tab-btn-${t}`);
-            if(btn) btn.classList.add('active');
-            if(t==='records') { updateRecordFilters(); renderRecords(); } 
-            if(t==='students') renderStudentRegistry();
-        }
-
-        function handleLogout() {
-            if (state.userType === 'student') {
-                if(confirm("Log out of Student Portal?")) {
-                    state.userType = 'teacher'; // Revert context
-                    state.session.student = null;
-                    setMode('landing');
-                }
-            } else {
-                signOut(auth);
-            }
-        }
-
-        function navDashboard() {
-            if(state.userType === 'student') setMode('student-dashboard');
-            else setMode('dashboard');
-        }
-
-        // Global Event Listeners
-        document.addEventListener('click', e => {
-            const el = e.target.closest('[id]');
-            const id = el ? el.id : null;
-            if(!id) return;
-            
-            // Auth & Nav
-            if(id === 'do-login') login();
-            if(id === 'do-register') register();
-            if(id === 'btn-logout') handleLogout();
-            
-            // Sidebar Navigation (SMART LINKS)
-            if(id === 'nav-btn-dashboard') navDashboard();
-            if(id === 'nav-btn-courses') setMode('courses');
-            if(id === 'nav-btn-calendar') setMode('calendar');
-
-            if(id === 'do-google-login') {
-                signInWithPopup(auth,googleProvider)
-                .then(r=>{ 
-                    state.userType = 'teacher';
-                    alert("Welcome "+r.user.displayName); 
-                    setMode('dashboard'); 
-                })
-                .catch(err=>{ 
-                    if(err.code==='auth/unauthorized-domain'){ 
-                        getEl('error-banner').classList.remove('hidden');
-                        setTxt('current-domain', currentDomain);
-                    } else alert(err.message); 
-                });
-            }
-            if(id === 'nav-teacher') setMode('teacher-login');
-            if(id === 'nav-student') setMode('student-login');
-            if(id === 'close-login' || id === 'close-student') setMode('landing');
-            if(id === 'show-register') toggleRegister(true);
-            if(id === 'cancel-register') toggleRegister(false);
-            if(id.startsWith('tab-btn-')) setTab(id.replace('tab-btn-',''));
-            
-            // Actions
-            if(id === 'do-sync') syncCloud();
-            if(id === 'do-save-profile') saveProfile();
-            if(id === 'do-reset-year') resetYear();
-            if(id === 'do-add-grade') addGrade();
-            if(id === 'do-add-quarter') addQuarter();
-            if(id === 'do-add-subject') addSubject();
-            if(id === 'do-add-course') addCourse();
-            if(id === 'do-save-manual') saveManualQ();
-            if(id === 'do-add-student') addStudent();
-            if(id === 'do-get-template') downloadTemplate();
-            
-            // Student Actions
-            if(id === 'do-student-login') enterStudentDashboard();
-            if(id === 'do-start-exam') startExam();
-            if(id === 'do-next-q') nextQ();
-            if(id === 'do-exit-exam') finishExam(false);
         });
 
-        document.addEventListener('change', e => {
-            if(e.target.id === 'docx-upload') importDocx(e.target);
-            if(e.target.id === 'filter-records-grade') renderRecords();
+        // 6. STUDENT LOGIC
+        function renderStudentDashboard() {
+            const tbody = get('student-results-table');
+            tbody.innerHTML = '';
+            const myGrades = state.db.grades.filter(g => g.studentId === state.user.lrn).sort((a,b) => new Date(b.date) - new Date(a.date));
+            if(myGrades.length > 0) hide('student-no-results'); else show('student-no-results');
+
+            myGrades.forEach((g, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-700">${g.subject}</td>
+                    <td class="p-4">${g.score}/${g.total}</td>
+                    <td class="p-4 text-xs text-slate-500">${new Date(g.date).toLocaleDateString()}</td>
+                    <td class="p-4 text-right"><button class="bg-white border border-gray-300 text-slate-600 px-3 py-1 rounded text-xs hover:bg-slate-50 font-bold btn-review">Review</button></td>
+                `;
+                tr.querySelector('.btn-review').addEventListener('click', () => openReview(i));
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openReview(index) {
+            const myGrades = state.db.grades.filter(g => g.studentId === state.user.lrn).sort((a,b) => new Date(b.date) - new Date(a.date));
+            const g = myGrades[index];
+            const cont = get('review-container');
+            cont.innerHTML = '';
+            g.details.questions.forEach((q, idx) => {
+                const userAns = g.details.answers[q.id];
+                const isCorrect = userAns === q.correct;
+                cont.innerHTML += `
+                    <div class="border ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded p-4">
+                        <div class="flex justify-between mb-2"><span class="font-bold text-slate-700">Q${idx+1}</span><span class="text-xs font-bold ${isCorrect?'text-green-700':'text-red-700'}">${isCorrect?'Correct':'Incorrect'}</span></div>
+                        <p class="mb-3 text-sm text-slate-800">${q.text}</p>
+                        <div class="text-xs">Your Answer: <b>${userAns}</b> ${!isCorrect ? `| Correct: <b>${q.correct}</b>` : ''}</div>
+                    </div>`;
+            });
+            setView('view-student-review');
+        }
+
+        on('do-start-exam', 'click', () => {
+            const subject = get('st-course').value;
+            const questions = state.db.questions.filter(q => q.subject === subject);
+            if(questions.length === 0) return alert("No questions available for " + subject);
+            state.session = { subject, questions: questions.sort(() => 0.5 - Math.random()), answers: {}, idx: 0, startTime: Date.now() };
+            setTxt('exam-tag', subject);
+            renderExamQ();
+            setView('view-exam');
+            startTimer();
         });
 
-        window.app = {
-            setMode,
-            navDashboard,
-            ans: (o) => { state.session.a[state.session.idx]=o; renderExamQ(); },
-            jumpToQ: (i) => { state.session.idx=i; renderExamQ(); }
-        };
+        function renderExamQ() {
+            const q = state.session.questions[state.session.idx];
+            setTxt('exam-progress', `Q ${state.session.idx + 1} of ${state.session.questions.length}`);
+            get('exam-q-text').innerText = q.text;
+            const passEl = get('exam-passage');
+            if(q.passage && q.passage.length > 5) { passEl.innerText = q.passage; passEl.classList.remove('hidden'); } else passEl.classList.add('hidden');
+            
+            const optsDiv = get('exam-opts');
+            optsDiv.innerHTML = '';
+            ['A','B','C','D'].forEach(key => {
+                if(q.opts[key]) {
+                    const isSelected = state.session.answers[q.id] === key;
+                    const lbl = document.createElement('label');
+                    lbl.className = `flex items-center gap-3 p-3 border rounded cursor-pointer transition ${isSelected ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'hover:bg-gray-50 border-gray-200'}`;
+                    lbl.innerHTML = `<input type="radio" name="exam_opt" value="${key}" class="hidden" ${isSelected?'checked':''}><span class="w-6 h-6 rounded-full bg-white border border-gray-300 flex items-center justify-center text-xs font-bold text-slate-500 shadow-sm ${isSelected?'bg-blue-500 text-white border-blue-500':''}">${key}</span><span class="text-slate-700">${q.opts[key]}</span>`;
+                    lbl.querySelector('input').addEventListener('change', () => { state.session.answers[q.id] = key; renderExamQ(); });
+                    optsDiv.appendChild(lbl);
+                }
+            });
 
-        onAuthStateChanged(auth, u => {
-            state.user = u;
-            if(u) { 
-                setTxt('status-indicator', "Online"); 
-                statusEl.className = "text-[10px] font-mono font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200";
+            get('question-grid').innerHTML = state.session.questions.map((q, i) => `<button class="w-8 h-8 rounded text-xs font-bold ${state.session.answers[q.id] ? 'bg-blue-600 text-white' : (i===state.session.idx ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400' : 'bg-white border border-gray-300')}">${i+1}</button>`).join('');
+            const gridBtns = get('question-grid').querySelectorAll('button');
+            gridBtns.forEach((btn, i) => btn.addEventListener('click', () => { state.session.idx = i; renderExamQ(); }));
+        }
+
+        on('do-next-q', 'click', () => { if(state.session.idx < state.session.questions.length - 1) { state.session.idx++; renderExamQ(); } });
+
+        let timerInt;
+        function startTimer() {
+            clearInterval(timerInt);
+            timerInt = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - state.session.startTime) / 1000);
+                setTxt('timer', `${Math.floor(elapsed/60).toString().padStart(2,'0')}:${(elapsed%60).toString().padStart(2,'0')}`);
+            }, 1000);
+        }
+
+        on('do-exit-exam', 'click', async () => {
+            if(confirm("Submit assessment?")) {
+                clearInterval(timerInt);
+                let score = 0;
+                state.session.questions.forEach(q => { if(state.session.answers[q.id] === q.correct) score++; });
                 
-                // Set default to teacher, but DON'T force navigate if we are already somewhere else useful
-                // This allows 'student mode' to persist slightly better, though strict persistence needs localStorage
-                // For this request, we default to teacher dashboard on HARD Reload
-                state.userType = 'teacher';
-                setMode('dashboard');
-                fetchData(); 
-            } else { 
-                setTxt('status-indicator', "Offline"); 
-                state.userType = 'teacher';
-                setMode('landing'); 
+                state.db.grades.push({
+                    studentId: state.user.lrn,
+                    subject: state.session.subject,
+                    score, total: state.session.questions.length,
+                    date: new Date().toISOString(),
+                    details: { questions: state.session.questions, answers: state.session.answers }
+                });
+                await saveDB();
+                alert(`You scored ${score}/${state.session.questions.length}`);
+                setView('view-student-dashboard');
+                renderStudentDashboard();
             }
         });
+
+        // INIT
+        window.addEventListener('load', () => { setView('view-landing'); console.log("System Ready"); });
     </script>
 </body>
 </html>

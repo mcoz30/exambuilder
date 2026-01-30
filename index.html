@@ -774,32 +774,67 @@ window.updateBlock = (i, val) => { builderBlocks[i].content = val; }
 window.execCmd = (i, cmd, val=null) => { document.execCommand(cmd, false, val); builderBlocks[i].content = document.getElementById(`editor-${i}`).innerHTML; }
 window.uploadBlockFile = (i, input) => { if(input.files[0]) { const r = new FileReader(); r.onload = e => { builderBlocks[i].content = e.target.result; builderBlocks[i].name = input.files[0].name; renderBlocks(); }; r.readAsDataURL(input.files[0]); } }
 window.cancelModule = () => { currentView = 'course'; render(); }
-window.saveModule = () => { const t = $('mod-title-input').value; if(!t) return showToast('Title required','error'); if(!db.modules[currentCourseId]) db.modules[currentCourseId]=[]; const mod = { id: editingModuleId || 'm'+Date.now(), title: t, blocks: builderBlocks, date: new Date().toISOString() }; if(editingModuleId) { const idx = db.modules[currentCourseId].findIndex(m=>m.id===editingModuleId); db.modules[currentCourseId][idx] = mod; } else { db.modules[currentCourseId].push(mod); } saveDB(); currentView = 'course'; render(); showToast('Saved'); }
-function renderModuleBuilder(c) {
-    const title = editingModuleId ? db.modules[currentCourseId].find(m=>m.id===editingModuleId).title : "";
-    c.innerHTML = `<div class="max-w-4xl mx-auto pb-24"><div class="theme-panel flex justify-between items-center mb-6 bg-white p-4 rounded shadow-sm border"><input id="mod-title-input" value="${title}" class="text-xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mr-4" placeholder="Module Title"><div class="flex gap-2"><button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button><button onclick="saveModule()" class="px-4 py-2 bg-green-600 text-white font-bold rounded shadow">Save</button></div></div><div id="blocks-list" class="space-y-4"></div><div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 flex justify-center gap-4 shadow z-50"><button onclick="addBlock('text')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-font text-blue-500"></i> Text</button><button onclick="addBlock('image')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-image text-green-500"></i> Image</button><button onclick="addBlock('video')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-video text-red-500"></i> Video</button><button onclick="addBlock('file')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-paperclip text-gray-500"></i> File</button></div></div>`;
-    renderBlocks();
-}
-window.renderBlocks = () => {
-    const el = $('blocks-list'); if(!el) return;
-    el.innerHTML = builderBlocks.map((b, i) => `<div class="module-block group"><div class="block-actions"><button onclick="moveBlock(${i}, -1)" class="p-1 hover:text-blue-600"><i class="fas fa-arrow-up"></i></button><button onclick="moveBlock(${i}, 1)" class="p-1 hover:text-blue-600"><i class="fas fa-arrow-down"></i></button><button onclick="removeBlock(${i})" class="p-1 hover:text-red-500"><i class="fas fa-times"></i></button></div>${renderBlockContent(b, i)}</div>`).join('');
-}
-function renderBlockContent(b, i) {
-    if(b.type === 'text') return `<div class="rich-toolbar"><button class="rich-btn" onclick="execCmd(${i}, 'bold')">B</button><button class="rich-btn" onclick="execCmd(${i}, 'italic')">I</button><button class="rich-btn" onclick="execCmd(${i}, 'underline')">U</button><button class="rich-btn" onclick="execCmd(${i}, 'removeFormat')"><i class="fas fa-eraser"></i></button><select onchange="execCmd(${i}, 'fontSize', this.value)" class="rich-btn h-6 py-0"><option value="3">Normal</option><option value="5">Large</option><option value="7">Huge</option></select><div class="color-picker-wrapper rich-btn w-6" title="Text Color"><i class="fas fa-font"></i><input type="color" onchange="execCmd(${i}, 'foreColor', this.value)"></div><button class="rich-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800" onclick="execCmd(${i}, 'hiliteColor', 'yellow')" title="Highlight"><i class="fas fa-highlighter"></i></button></div><div id="editor-${i}" class="rich-content w-full bg-white border" contenteditable="true" oninput="updateBlock(${i}, this.innerHTML)">${b.content}</div>`;
-    else if (b.type === 'video') return `<label class="block text-xs font-bold text-gray-500 mb-2">YouTube URL</label><input class="w-full border p-2 rounded" value="${b.content}" onchange="updateBlock(${i}, this.value)" placeholder="https://youtube.com/watch?v=...">`;
-    else return `<div class="flex items-center gap-4"><input type="file" onchange="uploadBlockFile(${i}, this)">${b.content ? `<span class="text-green-600 text-xs font-bold">Uploaded</span>` : ''}</div>`;
-}
-window.viewModule = (mid) => {
-    const m = db.modules[currentCourseId].find(x=>x.id===mid);
-    const content = m.blocks.map(b => {
-        if(b.type === 'text') return `<div class="mb-4 text-gray-800">${b.content}</div>`;
-        if(b.type === 'image') return `<img src="${b.content}" class="w-full h-auto rounded mb-4 shadow">`;
-        if(b.type === 'video') return `<div class="embed-container mb-4"><iframe src="${b.content.replace('watch?v=', 'embed/')}" frameborder="0" allowfullscreen></iframe></div>`;
-        if(b.type === 'file') return `<a href="${b.content}" download="${b.name||'file'}" class="block bg-blue-50 border border-blue-200 p-3 rounded mb-4 text-blue-700 hover:bg-blue-100 font-bold"><i class="fas fa-paperclip mr-2"></i> Download ${b.name||'File'}</a>`;
-    }).join('');
-    renderModal('mod-view', m.title, `<div class="p-2">${content}</div>`);
-}
+// --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
+window.saveModule = () => {
+    const title = $('mod-title').value;
+    if (!title) return showToast('Please enter a module title', 'error');
 
+    const moduleData = {
+        id: editingModuleId || 'mod_' + Date.now(),
+        title: title,
+        courseId: currentCourseId,
+        blocks: [...builderBlocks] // Captures all text/image blocks
+    };
+
+    // Ensure the array exists for this specific course
+    if (!db.modules[currentCourseId]) db.modules[currentCourseId] = [];
+
+    // Logic to Update or Add
+    if (editingModuleId) {
+        const idx = db.modules[currentCourseId].findIndex(m => m.id === editingModuleId);
+        if(idx !== -1) db.modules[currentCourseId][idx] = moduleData;
+    } else {
+        db.modules[currentCourseId].push(moduleData);
+    }
+
+    // THIS IS THE FIX: Wait for Firebase to finish saving before closing
+    saveDB().then(() => {
+        showToast('Module successfully saved to Cloud');
+        goCourse(currentCourseId); // This refreshes the view so you see it immediately
+    });
+};
+
+// --- UPDATED ACTIVITY BUILDER (Replaces your old publishActivity) ---
+window.publishActivity = () => {
+    const title = $('act-title').value;
+    const type = $('act-type').value;
+    if (!title) return showToast('Please enter a title', 'error');
+
+    const activityData = {
+        id: editingActivityId || 'act_' + Date.now(),
+        title: title,
+        type: type,
+        content: builderBlocks.map(b => b.content).join('\n'),
+        blocks: [...builderBlocks],
+        date: new Date().toISOString(),
+        courseId: currentCourseId
+    };
+
+    if (!db.activities[currentCourseId]) db.activities[currentCourseId] = [];
+
+    if (editingActivityId) {
+        const idx = db.activities[currentCourseId].findIndex(a => a.id === editingActivityId);
+        if(idx !== -1) db.activities[currentCourseId][idx] = activityData;
+    } else {
+        db.activities[currentCourseId].push(activityData);
+    }
+
+    // THIS IS THE FIX: Forces Firebase to sync so students see it
+    saveDB().then(() => {
+        showToast('Activity Published & Visible to Students');
+        goCourse(currentCourseId);
+    });
+};
 // --- ACTIVITY BUILDER (NEW) ---
 window.createActivity = () => { builderBlocks = []; editingActivityId = null; currentView = 'activity_builder'; render(); }
 window.editActivity = (aid) => { const a = db.activities[currentCourseId].find(x=>x.id===aid); builderBlocks = JSON.parse(JSON.stringify(a.blocks || [])); editingActivityId = aid; currentView = 'activity_builder'; render(); }
@@ -1056,7 +1091,6 @@ render();
 </script>
 </body>
 </html>
-
 
 
 

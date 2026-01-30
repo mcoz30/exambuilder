@@ -83,7 +83,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #0374B5; }
         
         .nav-item.active { background: var(--nav-item-active-bg); color: var(--nav-item-active-color); border-right: 3px solid var(--nav-item-active-color); }
-
+        
         /* Global Nav */
         #global-nav { 
             width: 84px; flex-shrink: 0; 
@@ -91,10 +91,11 @@
             display: flex; flex-direction: column; align-items: center; padding-top: 1rem; z-index: 50; 
             border-right: var(--glass-border);
             backdrop-filter: var(--backdrop-blur);
+            transition: width 0.3s ease;
         }
-        .nav-item { color: var(--text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 0.75rem 0; cursor: pointer; transition: background 0.2s; position: relative; opacity: 0.8; }
+        .nav-item { color: var(--text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 0.75rem 0; cursor: pointer; transition: all 0.2s; position: relative; opacity: 0.7; }
         .nav-item:hover { background-color: rgba(0,0,0,0.05); opacity: 1; }
-        .nav-item.active { background-color: rgba(3, 116, 181, 0.1); color: #0374B5; border-left: 4px solid #0374B5; opacity: 1; }
+        .nav-item.active { opacity: 1; }
         .nav-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
         .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; }
 
@@ -114,12 +115,12 @@
         .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
         /* Module & Activity Builder Styles */
-        .module-block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.8); position: relative; transition: all 0.2s; }
-        .module-block:hover { border-color: #0374B5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .module-block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.9); position: relative; transition: all 0.2s; }
+        .module-block:hover { border-color: #0374B5; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .block-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s; }
         .module-block:hover .block-actions { opacity: 1; }
-        .rich-toolbar { background: rgba(0,0,0,0.02); padding: 6px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-        .rich-btn { padding: 4px 8px; border-radius: 4px; background: white; border: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #475569; display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 28px; }
+        .rich-toolbar { background: rgba(0,0,0,0.03); padding: 6px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .rich-btn { padding: 4px 8px; border-radius: 4px; background: white; border: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #475569; display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 28px; cursor: pointer; transition: background 0.1s; }
         .rich-btn:hover { background: #e2e8f0; color: #0f172a; }
         .rich-content { min-height: 80px; padding: 10px; outline: none; background: white; color: #334155; }
         .color-picker-wrapper { position: relative; display: inline-block; }
@@ -141,12 +142,12 @@
         .grade-table th { white-space: nowrap; }
     </style>
 </head>
-<body class="h-screen overflow-hidden text-sm font-sans">
+<body class="h-screen overflow-hidden text-sm font-sans antialiased">
 
-    <div id="loading-screen"><i class="fas fa-circle-notch fa-spin text-4xl"></i><p class="font-bold tracking-widest">CONNECTING...</p></div>
+    <div id="loading-screen"><i class="fas fa-circle-notch fa-spin text-4xl"></i><p class="font-bold tracking-widest mt-4">LOADING...</p></div>
     <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
     <div id="sync-status"><i class="fas fa-save"></i> Saved</div>
-    <div id="app" class="flex h-full w-full opacity-0 transition-opacity duration-500"></div>
+    <div id="app" class="flex h-full w-full opacity-0 transition-opacity duration-700"></div>
     <div id="modal-portal" class="relative z-[60]"></div>
 
 <script type="module">
@@ -154,6 +155,29 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// --- HELPERS ---
+const $ = (id) => document.getElementById(id);
+window.$ = $; // Ensure globally available
+
+const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const showToast = (msg, type='info') => {
+    const b = document.createElement('div');
+    b.className = `px-6 py-3 rounded-lg shadow-lg text-white font-bold transform transition-all duration-300 translate-y-4 pointer-events-auto flex items-center gap-2 ${type==='error'?'bg-red-500':'bg-blue-600'} animate-fade-in`;
+    b.innerHTML = `<i class="fas fa-${type==='error'?'exclamation-circle':'check-circle'}"></i> ${msg}`;
+    $('toast-container').appendChild(b); setTimeout(()=>b.remove(), 3000);
+};
+const showConfirm = (message, onYes) => {
+    const id = 'confirm-modal';
+    renderModal(id, 'Confirmation', `<div class="space-y-6"><p class="text-gray-700 text-lg">${message}</p><div class="flex justify-end gap-3"><button onclick="closeModal('${id}')" class="px-5 py-2 border rounded-lg hover:bg-gray-50 font-medium">Cancel</button><button id="confirm-yes" class="px-5 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 shadow-lg">Confirm</button></div></div>`);
+    setTimeout(() => { 
+        const btn = document.getElementById('confirm-yes');
+        if(btn) btn.onclick = () => { onYes(); closeModal(id); }; 
+    }, 50);
+};
+const renderAvatar = (user, size='w-8 h-8', text='text-xs') => {
+    if (user?.avatar?.startsWith('data:') || user?.avatar?.startsWith('http')) return `<img src="${user.avatar}" class="${size} rounded-full object-cover border-2 border-white shadow-sm bg-white">`;
+    return `<div class="${size} rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center ${text} font-bold border-2 border-white shadow-sm">${user?.name?.[0]||'?'}</div>`;
+};
 // --- FIREBASE CONFIGURATION ---
 let firebaseConfig, appId = 'schoollms-v1';
 const userConfig = { apiKey: "AIzaSyAZhN6M2AOAi_9NGgHw-lU-vZDDBGyIEAY", authDomain: "schoollms-475c9.firebaseapp.com", projectId: "schoollms-475c9", storageBucket: "schoollms-475c9.firebasestorage.app", messagingSenderId: "123401573481", appId: "1:123401573481:web:ca5179b069919236797ef8" };
@@ -165,7 +189,7 @@ const dbStore = getFirestore(app);
 const PUBLIC_DATA_PATH = `artifacts/${appId}/public/data/school_system`;
 const MASTER_DOC_ID = 'master_record';
 
-// --- DATA STORE ---
+/ --- DATA STORE ---
 const defaultData = {
     users: [
         { id: 'u1', name: 'Mrs. Anderson', role: 'teacher', username: 'teacher', password: '123', avatar: 'MA' },
@@ -184,11 +208,12 @@ const defaultData = {
     examSubmissions: {},
     modules: { 's1': [] },
     globalEvents: [],
-    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95 }
+    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95, navColor: '#2D3B45', accentColor: '#0374B5' }
 };
 
 let db = defaultData, currentUser = null, currentView = 'login', currentCourseId = null, activeExamId = null, currentTab = 'home', calendarDate = new Date(), importedText = '', tempPostImage = null, tempTeacherImage = null, adminCourseFilter = 'all', selectedLoginRole = null, firebaseUser = null; 
 let builderBlocks = [], editingModuleId = null, editingActivityId = null;
+
 
 // --- PH HOLIDAYS ---
 const phHolidays = [
@@ -284,6 +309,7 @@ function questionsToText(questions) {
     return textOutput.trim();
 }
 window.onManualInput = (val) => { const qs = parseQuizText(val); const label = $('manual-detected-label'); if(label) label.innerHTML = qs.length > 0 ? `<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> ${qs.length} Questions Detected</span>` : `<span class="text-gray-400">Typing...</span>`; }
+
 // --- ROUTER ---
 function render() {
     const app = $('app'); if (!app) return; app.innerHTML = '';
@@ -589,7 +615,7 @@ function renderThemeBuilder(c) {
         </div>
     `;
 
-    // File Handlers
+      // File Handlers
     setTimeout(() => {
         $('theme-logo-file').addEventListener('change', e => {
             const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-logo-url').value=ev.target.result; renderThemeBuilder(c);}; r.readAsDataURL(f); }
@@ -1134,8 +1160,3 @@ render();
 </script>
 </body>
 </html>
-
-
-
-
-

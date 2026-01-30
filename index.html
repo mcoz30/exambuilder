@@ -410,7 +410,7 @@ function renderCoursesList(c) {
     if(subs.length === 0) { c.innerHTML += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-book-open text-4xl mb-3 block"></i><p>No courses found.</p></div>`; } else {
         c.innerHTML += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${subs.map(s => {
             const t = db.users.find(u => u.id === s.teacherId);
-            return `<div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer h-64 flex flex-col group"><div class="course-header" style="background-image: url('${s.img}'); background-color: ${s.color}"><div class="absolute inset-0 bg-black/30 p-4 transition group-hover:bg-black/40"><span class="bg-white/90 text-xs font-bold px-2 py-1 rounded w-max text-gray-800 shadow-sm">${s.code}</span></div></div><div class="p-4 flex-1 flex flex-col justify-between"><div><h3 class="font-bold text-canvas-accent text-lg leading-tight mb-1 group-hover:underline">${s.name}</h3><p class="text-xs text-gray-500">${t ? t.name : 'Unknown Instructor'}</p></div><div class="flex items-center justify-between text-gray-400 text-sm"><span class="text-xs bg-gray-100 px-2 py-1 rounded">${s.students.length} Students</span></div></div></div>`;
+            return `<div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer h-64 flex flex-col group hover-lift"><div class="course-header" style="background-image: url('${s.img}'); background-color: ${s.color}"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end transition group-hover:from-black/80"><span class="bg-white/20 backdrop-blur-sm text-white border border-white/30 text-xs font-bold px-2 py-1 rounded w-max shadow-sm mb-1">${s.code}</span><h3 class="font-bold text-white text-lg leading-tight drop-shadow-sm">${s.name}</h3></div></div><div class="p-4 flex-1 flex flex-col justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Instructor</p><div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div></div><div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3"><span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span><i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-canvas-accent"></i></div></div></div>`;
         }).join('')}</div>`;
     }
 }
@@ -418,7 +418,6 @@ window.setAdminFilter = (val) => { adminCourseFilter = val; render(); }
 window.openAddCourseModal = () => { renderModal('modal-add-course', 'Add Course', `<div class="space-y-3"><input id="c-name" class="w-full border p-2 rounded" placeholder="Course Name"><input id="c-code" class="w-full border p-2 rounded" placeholder="Course Code"><div><label class="text-xs font-bold text-gray-500">Select Teacher</label><select id="c-teacher" class="w-full border p-2 rounded bg-white text-sm">${db.users.filter(u => u.role === 'teacher').map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div><button onclick="addCourse()" class="w-full bg-canvas-accent text-white py-2 rounded">Create</button></div>`); }
 window.addCourse = () => { const n=$('c-name').value, c=$('c-code').value; let tid=currentUser.id; if(currentUser.role==='admin') tid=$('c-teacher').value; if(n&&c){ db.subjects.push({id:'s'+Date.now(), name:n, code:c, teacherId:tid, students:[], color:'#0374B5', img:'', introTitle:'Welcome', introBody:'', gradingWeights:{ww:40,pt:40,qa:20}}); saveDB(); render(); closeModal('modal-add-course'); } }
 window.openCourse = (sid) => { currentCourseId = sid; currentView = 'course'; currentTab = 'home'; render(); }
-
 // --- CALENDAR ---
 function renderCalendar(c) {
     $('page-title').innerText = 'Calendar';
@@ -1115,6 +1114,7 @@ render();
 </script>
 </body>
 </html>
+
 
 
 

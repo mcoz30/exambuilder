@@ -165,7 +165,7 @@ const dbStore = getFirestore(app);
 const PUBLIC_DATA_PATH = `artifacts/${appId}/public/data/school_system`;
 const MASTER_DOC_ID = 'master_record';
 
-// --- DATA STORE ---
+/ --- DATA STORE ---
 const defaultData = {
     users: [
         { id: 'u1', name: 'Mrs. Anderson', role: 'teacher', username: 'teacher', password: '123', avatar: 'MA' },
@@ -184,11 +184,12 @@ const defaultData = {
     examSubmissions: {},
     modules: { 's1': [] },
     globalEvents: [],
-    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95 }
+    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95, navColor: '#2D3B45', accentColor: '#0374B5' }
 };
 
 let db = defaultData, currentUser = null, currentView = 'login', currentCourseId = null, activeExamId = null, currentTab = 'home', calendarDate = new Date(), importedText = '', tempPostImage = null, tempTeacherImage = null, adminCourseFilter = 'all', selectedLoginRole = null, firebaseUser = null; 
 let builderBlocks = [], editingModuleId = null, editingActivityId = null;
+
 
 // --- PH HOLIDAYS ---
 const phHolidays = [
@@ -284,6 +285,7 @@ function questionsToText(questions) {
     return textOutput.trim();
 }
 window.onManualInput = (val) => { const qs = parseQuizText(val); const label = $('manual-detected-label'); if(label) label.innerHTML = qs.length > 0 ? `<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> ${qs.length} Questions Detected</span>` : `<span class="text-gray-400">Typing...</span>`; }
+
 // --- ROUTER ---
 function render() {
     const app = $('app'); if (!app) return; app.innerHTML = '';
@@ -409,6 +411,7 @@ function renderDashboard(c) {
     }
     c.innerHTML = `<div class="max-w-4xl mx-auto"><div class="mb-6 flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white shadow-lg"><div class="bg-white/20 p-3 rounded-lg"><i class="fas fa-newspaper text-2xl"></i></div><div><h2 class="text-2xl font-bold">School News</h2><p class="text-blue-100 text-sm">Latest updates from the administration.</p></div></div><div class="space-y-6">${(db.globalPosts && db.globalPosts.length > 0) ? db.globalPosts.map(p => renderPostCard(p, false)).join('') : '<div class="theme-panel bg-white p-12 rounded-xl border border-dashed text-center text-gray-400"><i class="fas fa-inbox text-5xl mb-4 text-gray-200 block"></i>No announcements yet.</div>'}</div></div>`;
 }
+
 // --- COURSES ---
 function renderCoursesList(c) {
     $('page-title').innerText = 'Courses';
@@ -424,7 +427,7 @@ function renderCoursesList(c) {
         c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3><button onclick="openAddCourseModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Course</button></div>`;
     } else {
         subs = db.subjects.filter(s => s.students.includes(currentUser.id));
-        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3></div>`;
+        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg class="border p-2 rounded bg-white text-sm">Active Courses</h3></div>`;
     }
     if(subs.length === 0) { c.innerHTML += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-book-open text-4xl mb-3 block"></i><p>No courses found.</p></div>`; } else {
         c.innerHTML += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${subs.map(s => {
@@ -437,6 +440,7 @@ window.setAdminFilter = (val) => { adminCourseFilter = val; render(); }
 window.openAddCourseModal = () => { renderModal('modal-add-course', 'Add Course', `<div class="space-y-3"><input id="c-name" class="w-full border p-2 rounded" placeholder="Course Name"><input id="c-code" class="w-full border p-2 rounded" placeholder="Course Code"><div><label class="text-xs font-bold text-gray-500">Select Teacher</label><select id="c-teacher" class="w-full border p-2 rounded bg-white text-sm">${db.users.filter(u => u.role === 'teacher').map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div><button onclick="addCourse()" class="w-full bg-canvas-accent text-white py-2 rounded">Create</button></div>`); }
 window.addCourse = () => { const n=$('c-name').value, c=$('c-code').value; let tid=currentUser.id; if(currentUser.role==='admin') tid=$('c-teacher').value; if(n&&c){ db.subjects.push({id:'s'+Date.now(), name:n, code:c, teacherId:tid, students:[], color:'#0374B5', img:'', introTitle:'Welcome', introBody:'', gradingWeights:{ww:40,pt:40,qa:20}}); saveDB(); render(); closeModal('modal-add-course'); } }
 window.openCourse = (sid) => { currentCourseId = sid; currentView = 'course'; currentTab = 'home'; render(); }
+
 
 // --- CALENDAR ---
 function renderCalendar(c) {
@@ -589,7 +593,7 @@ function renderThemeBuilder(c) {
         </div>
     `;
 
-    // File Handlers
+      // File Handlers
     setTimeout(() => {
         $('theme-logo-file').addEventListener('change', e => {
             const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-logo-url').value=ev.target.result; renderThemeBuilder(c);}; r.readAsDataURL(f); }
@@ -1134,9 +1138,6 @@ render();
 </script>
 </body>
 </html>
-
-
-
 
 
 

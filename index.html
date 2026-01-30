@@ -47,6 +47,8 @@
             --backdrop-blur: none;
             --text-color: #2D3B45;
             --sidebar-bg: #ffffff;
+            --nav-item-active-bg: rgba(3, 116, 181, 0.1);
+            --nav-item-active-color: #0374B5;
         }
 
         body { 
@@ -56,15 +58,22 @@
             background-position: center;
             background-attachment: fixed;
             min-height: 100vh;
+            transition: background 0.3s ease;
         }
 
-        /* Glass/Glossy Class */
+        /* Professional Card Style */
         .theme-panel {
             background: var(--glass-bg);
             border: var(--glass-border);
             box-shadow: var(--glass-shadow);
             backdrop-filter: var(--backdrop-blur);
             -webkit-backdrop-filter: var(--backdrop-blur);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
         /* Scrollbar */
@@ -73,8 +82,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #0374B5; }
         
-        .nav-item.active { background: rgba(3, 116, 181, 0.1); color: #0374B5; border-right: 3px solid #0374B5; }
-        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .nav-item.active { background: var(--nav-item-active-bg); color: var(--nav-item-active-color); border-right: 3px solid var(--nav-item-active-color); }
 
         /* Global Nav */
         #global-nav { 
@@ -218,24 +226,17 @@ initFirebase();
 function applyTheme() {
     const t = db.theme || defaultData.theme;
     document.title = t.appName;
-    
-    // CSS Variables for dynamic styling
     const root = document.documentElement;
-    
-    if (t.bgType === 'image' && t.bgImage) {
-        root.style.setProperty('--bg-style', `url('${t.bgImage}')`);
-    } else if (t.bgType === 'gradient') {
-        root.style.setProperty('--bg-style', t.bgGradient);
-    } else {
-        root.style.setProperty('--bg-style', t.bgColor);
-    }
+    if (t.bgType === 'image' && t.bgImage) root.style.setProperty('--bg-style', `url('${t.bgImage}')`);
+    else if (t.bgType === 'gradient') root.style.setProperty('--bg-style', t.bgGradient);
+    else root.style.setProperty('--bg-style', t.bgColor);
 
     if (t.glassEffect) {
-        root.style.setProperty('--glass-bg', `rgba(255, 255, 255, ${t.glassOpacity})`);
-        root.style.setProperty('--glass-border', '1px solid rgba(255, 255, 255, 0.5)');
+        root.style.setProperty('--glass-bg', `rgba(255, 255, 255, ${t.glassOpacity || 0.8})`);
+        root.style.setProperty('--glass-border', '1px solid rgba(255, 255, 255, 0.4)');
         root.style.setProperty('--glass-shadow', '0 8px 32px 0 rgba(31, 38, 135, 0.15)');
-        root.style.setProperty('--backdrop-blur', 'blur(12px)');
-        root.style.setProperty('--sidebar-bg', `rgba(255, 255, 255, ${Math.max(0.5, t.glassOpacity - 0.1)})`);
+        root.style.setProperty('--backdrop-blur', 'blur(16px)');
+        root.style.setProperty('--sidebar-bg', `rgba(255, 255, 255, ${Math.max(0.5, (t.glassOpacity || 0.8) - 0.1)})`);
     } else {
         root.style.setProperty('--glass-bg', '#ffffff');
         root.style.setProperty('--glass-border', '1px solid #e2e8f0');
@@ -355,43 +356,39 @@ function renderDashboard(c) {
         c.innerHTML = `
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 space-y-6">
-                    <div class="theme-panel bg-white p-6 rounded shadow border border-gray-200">
-                        <h3 class="font-bold text-lg mb-4 text-gray-800">Post Global Announcement</h3>
+                    <div class="theme-panel bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-lift">
+                        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2"><i class="fas fa-bullhorn text-blue-500"></i> Post Announcement</h3>
                         <div class="space-y-3">
-                            <input id="gp-title" class="w-full border p-2 rounded text-sm" placeholder="Title">
-                            <textarea id="gp-content" class="w-full border p-2 rounded text-sm h-24" placeholder="Announcement body..."></textarea>
+                            <input id="gp-title" class="w-full border p-2 rounded text-sm bg-gray-50 focus:bg-white transition" placeholder="Title">
+                            <textarea id="gp-content" class="w-full border p-2 rounded text-sm h-24 bg-gray-50 focus:bg-white transition" placeholder="Announcement body..."></textarea>
                             <select id="gp-type" class="w-full border p-2 rounded text-sm bg-gray-50" onchange="toggleAdminMedia()"><option value="text">Text Only</option><option value="image_upload">Image (Upload Poster)</option><option value="image_url">Image (URL)</option><option value="video">Video (YouTube)</option></select>
                             <input id="gp-url" class="w-full border p-2 rounded text-sm hidden" placeholder="Media URL...">
                             <div id="gp-file-container" class="hidden"><label class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"><input type="file" id="gp-file" accept="image/*" class="w-full"></label></div>
-                            <button onclick="publishGlobalPost()" class="w-full bg-canvas-accent text-white py-2 rounded font-bold hover:bg-blue-700">Publish</button>
+                            <button onclick="publishGlobalPost()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded font-bold hover:shadow-md transition">Publish</button>
                         </div>
                     </div>
-                    <div class="theme-panel bg-white p-6 rounded shadow border border-gray-200">
-                        <h3 class="font-bold text-lg mb-4 text-gray-800">School Calendar Events</h3>
+                    <div class="theme-panel bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-lift">
+                        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-plus text-purple-500"></i> Calendar Events</h3>
                         <div class="space-y-3">
-                            <input id="ev-title" class="w-full border p-2 rounded text-sm" placeholder="Event Title (e.g. Sports Fest)">
-                            <input id="ev-date" type="date" class="w-full border p-2 rounded text-sm">
-                            <button onclick="addGlobalEvent()" class="w-full bg-purple-600 text-white py-2 rounded font-bold">Add Event</button>
+                            <input id="ev-title" class="w-full border p-2 rounded text-sm bg-gray-50" placeholder="Event Title (e.g. Sports Fest)">
+                            <input id="ev-date" type="date" class="w-full border p-2 rounded text-sm bg-gray-50">
+                            <button onclick="addGlobalEvent()" class="w-full bg-purple-600 text-white py-2 rounded font-bold hover:bg-purple-700 transition">Add Event</button>
                         </div>
-                        <div class="mt-4 pt-4 border-t space-y-2 max-h-40 overflow-y-auto">
-                            ${(db.globalEvents || []).map(e => `<div class="flex justify-between items-center text-sm p-2 bg-gray-50 rounded"><span><b>${e.date}</b>: ${e.title}</span><button onclick="deleteGlobalEvent('${e.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></div>`).join('')}
+                        <div class="mt-4 pt-4 border-t space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                            ${(db.globalEvents || []).map(e => `<div class="flex justify-between items-center text-sm p-2 bg-gray-50 rounded border border-gray-100"><span><b class="text-purple-700">${e.date}</b>: ${e.title}</span><button onclick="deleteGlobalEvent('${e.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></div>`).join('')}
                         </div>
-                    </div>
-                    <div class="theme-panel bg-white p-6 rounded shadow border border-gray-200">
-                        <h3 class="font-bold text-lg mb-4 text-gray-800">Register Teacher</h3>
-                        <div class="space-y-3"><input id="reg-t-name" class="w-full border p-2 rounded text-sm" placeholder="Full Name"><input id="reg-t-user" class="w-full border p-2 rounded text-sm" placeholder="Username"><input id="reg-t-pass" class="w-full border p-2 rounded text-sm" placeholder="Password"><button onclick="registerTeacher()" class="w-full bg-canvas-success text-white py-2 rounded font-bold">Create Account</button></div>
                     </div>
                 </div>
                 <div class="lg:col-span-2">
-                    <h3 class="font-bold text-gray-500 uppercase text-xs mb-4">Active Global Posts</h3>
-                    <div class="space-y-6">${(db.globalPosts || []).length === 0 ? '<p class="text-gray-400">No active posts.</p>' : ''}${(db.globalPosts || []).map(p => renderPostCard(p, true)).join('')}</div>
+                    <h3 class="font-bold text-gray-500 uppercase text-xs mb-4 tracking-wider">Active Global Posts</h3>
+                    <div class="space-y-6">${(db.globalPosts || []).length === 0 ? '<div class="theme-panel p-8 text-center text-gray-400 italic">No active posts.</div>' : ''}${(db.globalPosts || []).map(p => renderPostCard(p, true)).join('')}</div>
                 </div>
             </div>
         `;
         setTimeout(() => { const fileInput = document.getElementById('gp-file'); if(fileInput) { fileInput.addEventListener('change', function(e) { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(evt) { tempPostImage = evt.target.result; }; reader.readAsDataURL(file); } }); } }, 500); 
         return;
     }
-    c.innerHTML = `<div class="max-w-4xl mx-auto"><div class="mb-4 flex items-center gap-2"><div class="bg-canvas-accent text-white p-2 rounded"><i class="fas fa-newspaper"></i></div><div><h2 class="text-2xl font-bold text-gray-800">School News & Announcements</h2><p class="text-gray-500 text-sm">Latest updates from the administration.</p></div></div><div class="space-y-6">${(db.globalPosts && db.globalPosts.length > 0) ? db.globalPosts.map(p => renderPostCard(p, false)).join('') : '<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block"></i>No announcements yet.</div>'}</div></div>`;
+    c.innerHTML = `<div class="max-w-4xl mx-auto"><div class="mb-6 flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white shadow-lg"><div class="bg-white/20 p-3 rounded-lg"><i class="fas fa-newspaper text-2xl"></i></div><div><h2 class="text-2xl font-bold">School News</h2><p class="text-blue-100 text-sm">Latest updates from the administration.</p></div></div><div class="space-y-6">${(db.globalPosts && db.globalPosts.length > 0) ? db.globalPosts.map(p => renderPostCard(p, false)).join('') : '<div class="theme-panel bg-white p-12 rounded-xl border border-dashed text-center text-gray-400"><i class="fas fa-inbox text-5xl mb-4 text-gray-200 block"></i>No announcements yet.</div>'}</div></div>`;
 }
 
 // --- COURSES ---
@@ -483,69 +480,90 @@ function renderThemeBuilder(c) {
     const t = db.theme;
     
     c.innerHTML = `
-        <div class="max-w-4xl mx-auto bg-white p-8 rounded shadow-lg border">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Customize Interface</h2>
+        <div class="max-w-4xl mx-auto theme-panel bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Customize Interface</h2>
+                    <p class="text-gray-500 text-sm">Personalize the look and feel of your LMS.</p>
+                </div>
                 <div class="flex gap-2">
-                    <button onclick="resetTheme()" class="px-4 py-2 border rounded hover:bg-gray-50">Reset Default</button>
-                    <button onclick="saveTheme()" class="px-6 py-2 bg-canvas-accent text-white font-bold rounded shadow hover:bg-blue-700">Save Changes</button>
+                    <button onclick="resetTheme()" class="px-4 py-2 border rounded hover:bg-gray-50 transition">Reset Default</button>
+                    <button onclick="saveTheme()" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded shadow hover:shadow-lg transform hover:-translate-y-0.5 transition">Save Changes</button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <!-- Branding -->
-                <div class="space-y-4">
-                    <h3 class="font-bold border-b pb-2">Branding</h3>
+                <div class="space-y-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-tag text-blue-500"></i> Branding</h3>
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">App Name</label>
-                        <input id="theme-name" value="${t.appName}" class="w-full border p-2 rounded">
+                        <label class="block text-sm font-bold text-gray-600 mb-2">App Name</label>
+                        <input id="theme-name" value="${t.appName}" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">Logo</label>
-                        <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 border rounded bg-gray-50 flex items-center justify-center overflow-hidden">
+                        <label class="block text-sm font-bold text-gray-600 mb-2">Logo</label>
+                        <div class="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                            <div class="w-16 h-16 border rounded bg-white flex items-center justify-center overflow-hidden shadow-sm">
                                 ${t.logoUrl ? `<img src="${t.logoUrl}" class="w-full h-full object-contain">` : '<span class="text-xs text-gray-400">No Logo</span>'}
                             </div>
-                            <input type="file" id="theme-logo-file" accept="image/*" class="text-sm">
-                            <input type="hidden" id="theme-logo-url" value="${t.logoUrl}">
+                            <div class="flex-1">
+                                <input type="file" id="theme-logo-file" accept="image/*" class="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                                <input type="hidden" id="theme-logo-url" value="${t.logoUrl}">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Background -->
-                <div class="space-y-4">
-                    <h3 class="font-bold border-b pb-2">Background</h3>
-                    <div class="flex gap-4 mb-2">
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput()"> Solid Color</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput()"> Gradient</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput()"> Image</label>
+                <div class="space-y-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-paint-roller text-purple-500"></i> Background</h3>
+                    <div class="flex gap-4 mb-2 p-1 bg-gray-100 rounded-lg w-max">
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='color'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-fill-drip text-xs"></i> Solid
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='gradient'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-gradient text-xs"></i> Gradient
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='image'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-image text-xs"></i> Image
+                        </label>
                     </div>
                     
                     <div id="bg-input-color" class="${t.bgType!=='color'?'hidden':''}">
-                        <input type="color" id="theme-bgcolor" value="${t.bgColor}" class="w-full h-10 cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="theme-bgcolor" value="${t.bgColor}" class="h-12 w-12 p-1 border rounded cursor-pointer bg-white">
+                            <span class="text-gray-500 text-sm">Pick a solid color</span>
+                        </div>
                     </div>
                     
                     <div id="bg-input-gradient" class="${t.bgType!=='gradient'?'hidden':''}">
-                        <input type="text" id="theme-gradient" value="${t.bgGradient}" class="w-full border p-2 rounded" placeholder="linear-gradient(...)">
-                        <p class="text-xs text-gray-400 mt-1">CSS gradient syntax</p>
+                        <input type="text" id="theme-gradient" value="${t.bgGradient}" class="w-full border p-3 rounded-lg text-sm font-mono bg-gray-50" placeholder="linear-gradient(...)">
+                        <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Use standard CSS gradient syntax</p>
                     </div>
 
                     <div id="bg-input-image" class="${t.bgType!=='image'?'hidden':''}">
-                        <input type="text" id="theme-bgimage" value="${t.bgImage}" class="w-full border p-2 rounded mb-2" placeholder="Image URL">
-                        <input type="file" id="theme-bgfile" accept="image/*" class="w-full text-sm">
+                        <input type="text" id="theme-bgimage" value="${t.bgImage}" class="w-full border p-3 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Image URL (https://...)">
+                        <input type="file" id="theme-bgfile" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
                     </div>
                 </div>
 
                 <!-- Glassmorphism -->
-                <div class="space-y-4 md:col-span-2">
-                    <h3 class="font-bold border-b pb-2">Glassmorphism (Glossy Style)</h3>
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer font-bold">
-                            <input type="checkbox" id="theme-glass" ${t.glassEffect?'checked':''}> Enable Glass Effect
-                        </label>
-                        <div class="flex items-center gap-2 flex-1">
-                            <span class="text-sm">Opacity:</span>
-                            <input type="range" id="theme-opacity" min="0.1" max="1" step="0.05" value="${t.glassOpacity}" class="flex-1">
+                <div class="space-y-6 md:col-span-2 border-t pt-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-magic text-teal-500"></i> Interface Style</h3>
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer font-bold text-gray-700 mb-1">
+                                <input type="checkbox" id="theme-glass" ${t.glassEffect?'checked':''} class="w-5 h-5 text-blue-600 rounded"> 
+                                Enable Glassmorphism (Glossy UI)
+                            </label>
+                            <p class="text-xs text-gray-500 ml-8">Adds translucency and blur effects to containers.</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-64">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Opacity</span>
+                            <input type="range" id="theme-opacity" min="0.5" max="1" step="0.05" value="${t.glassOpacity}" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                         </div>
                     </div>
                 </div>
@@ -566,6 +584,13 @@ function renderThemeBuilder(c) {
 }
 
 window.toggleBgInput = () => {
+    // Update UI state for radio buttons
+    document.querySelectorAll('input[name="bg-type"]').forEach(r => {
+        r.parentElement.className = r.checked 
+            ? 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition bg-white shadow-sm text-blue-600 font-bold'
+            : 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition text-gray-600 hover:bg-gray-200';
+    });
+
     const type = document.querySelector('input[name="bg-type"]:checked').value;
     $('bg-input-color').classList.toggle('hidden', type!=='color');
     $('bg-input-gradient').classList.toggle('hidden', type!=='gradient');
@@ -1091,3 +1116,6 @@ render();
 </script>
 </body>
 </html>
+
+
+

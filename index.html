@@ -853,7 +853,7 @@ function renderCoursesList(c) {
         c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3><button onclick="openAddCourseModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Course</button></div>`;
     } else {
         subs = db.subjects.filter(s => s.students.includes(currentUser.id));
-        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3></div>`;
+        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg class="border p-2 rounded bg-white text-sm">Active Courses</h3></div>`;
     }
     if(subs.length === 0) { c.innerHTML += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-book-open text-4xl mb-3 block"></i><p>No courses found.</p></div>`; } else {
         c.innerHTML += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${subs.map(s => {
@@ -1564,3 +1564,722 @@ render();
 </script>
 </body>
 </html>
+
+
+
+>Active Courses</h3><button onclick="openAddCourseModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Course</button></div>`;
+    } else {
+        subs = db.subjects.filter(s => s.students.includes(currentUser.id));
+        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg class="border p-2 rounded bg-white text-sm">Active Courses</h3></div>`;
+    }
+    if(subs.length === 0) { c.innerHTML += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-book-open text-4xl mb-3 block"></i><p>No courses found.</p></div>`; } else {
+        c.innerHTML += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${subs.map(s => {
+            const t = db.users.find(u => u.id === s.teacherId);
+            return `<div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer h-64 flex flex-col group hover-lift"><div class="course-header" style="background-image: url('${s.img}'); background-color: ${s.color}"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end transition group-hover:from-black/80"><span class="bg-white/20 backdrop-blur-sm text-white border border-white/30 text-xs font-bold px-2 py-1 rounded w-max shadow-sm mb-1">${s.code}</span><h3 class="font-bold text-white text-lg leading-tight drop-shadow-sm">${s.name}</h3></div></div><div class="p-4 flex-1 flex flex-col justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Instructor</p><div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div></div><div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3"><span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span><i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-canvas-accent"></i></div></div></div>`;
+        }).join('')}</div>`;
+    }
+}
+window.setAdminFilter = (val) => { adminCourseFilter = val; render(); }
+window.openAddCourseModal = () => { renderModal('modal-add-course', 'Add Course', `<div class="space-y-3"><input id="c-name" class="w-full border p-2 rounded" placeholder="Course Name"><input id="c-code" class="w-full border p-2 rounded" placeholder="Course Code"><div><label class="text-xs font-bold text-gray-500">Select Teacher</label><select id="c-teacher" class="w-full border p-2 rounded bg-white text-sm">${db.users.filter(u => u.role === 'teacher').map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div><button onclick="addCourse()" class="w-full bg-canvas-accent text-white py-2 rounded">Create</button></div>`); }
+window.addCourse = () => { const n=$('c-name').value, c=$('c-code').value; let tid=currentUser.id; if(currentUser.role==='admin') tid=$('c-teacher').value; if(n&&c){ db.subjects.push({id:'s'+Date.now(), name:n, code:c, teacherId:tid, students:[], color:'#0374B5', img:'', introTitle:'Welcome', introBody:'', gradingWeights:{ww:40,pt:40,qa:20}}); saveDB(); render(); closeModal('modal-add-course'); } }
+window.openCourse = (sid) => { currentCourseId = sid; currentView = 'course'; currentTab = 'home'; render(); }
+
+
+// --- CALENDAR ---
+function renderCalendar(c) {
+    $('page-title').innerText = 'Calendar';
+    const year=calendarDate.getFullYear(), month=calendarDate.getMonth();
+    const firstDay=new Date(year,month,1).getDay(), days=new Date(year,month+1,0).getDate();
+    let html = `<div class="theme-panel bg-white p-4 rounded shadow mb-4 flex justify-between"><button onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button><h2 class="font-bold text-xl">${calendarDate.toLocaleString('default',{month:'long'})} ${year}</h2><button onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button></div>`;
+    html += `<div class="calendar-grid">${['S','M','T','W','T','F','S'].map(d=>`<div class="bg-gray-50 p-2 text-center text-xs font-bold">${d}</div>`).join('')}`;
+    for(let i=0; i<firstDay; i++) html+=`<div class="cal-cell bg-gray-50/50"></div>`;
+    for(let d=1; d<=days; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const monthDay = `${month+1}-${d}`; // For simple holiday check
+        let evts = '';
+        
+        // 1. Check Philippine Holidays
+        const hol = phHolidays.find(h => (h.m === month && h.d === d));
+        if(hol) evts += `<div class="event-pill text-white font-bold" style="background:${hol.c || 'red'}">🇵🇭 ${hol.t}</div>`;
+
+        // 2. Check Admin Global Events
+        (db.globalEvents || []).forEach(e => {
+            if(e.date === dateStr) evts += `<div class="event-pill bg-purple-600 text-white font-bold">${e.title}</div>`;
+        });
+
+        // 3. Check Course Events
+        db.subjects.forEach(s => {
+            if(currentUser.role==='student' && !s.students.includes(currentUser.id)) return;
+            if(currentUser.role==='teacher' && s.teacherId!==currentUser.id) return;
+            (db.exams[s.id]||[]).forEach(e => { 
+                if(e.dueDate.startsWith(dateStr)) 
+                    evts += `<div onclick="goToEvent('${s.id}', 'quizzes', '${e.id}', 'exam')" class="event-pill cursor-pointer hover:opacity-80" style="background:${s.color};color:white">Due: ${e.title}</div>`; 
+            });
+            (db.activities[s.id]||[]).forEach(a => { 
+                if(a.dueDate && a.dueDate.startsWith(dateStr)) 
+                    evts += `<div onclick="goToEvent('${s.id}', 'activities', '${a.id}', 'activity')" class="event-pill border border-gray-400 text-gray-600 bg-white cursor-pointer hover:bg-gray-50">Task: ${a.title}</div>`; 
+            });
+        });
+        html += `<div class="cal-cell">${d}<div class="flex flex-col gap-1 mt-1">${evts}</div></div>`;
+    }
+    html += `</div>`; c.innerHTML = html;
+}
+window.changeMonth = (d) => { calendarDate.setMonth(calendarDate.getMonth()+d); render(); }
+window.addGlobalEvent = () => {
+    const t = $('ev-title').value, d = $('ev-date').value;
+    if(t && d) {
+        if(!db.globalEvents) db.globalEvents = [];
+        db.globalEvents.push({ id: 'ev'+Date.now(), title: t, date: d });
+        saveDB(); render(); showToast('Event Added');
+    } else showToast('Title and Date required', 'error');
+}
+window.deleteGlobalEvent = (id) => {
+    db.globalEvents = db.globalEvents.filter(e => e.id !== id);
+    saveDB(); render();
+}
+
+// --- ADMIN THEME BUILDER ---
+function renderThemeBuilder(c) {
+    if(currentUser.role !== 'admin') return goDashboard();
+    $('page-title').innerText = 'Theme & Design';
+    const t = db.theme;
+    
+    c.innerHTML = `
+        <div class="max-w-4xl mx-auto theme-panel bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Customize Interface</h2>
+                    <p class="text-gray-500 text-sm">Personalize the look and feel of your LMS.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="resetTheme()" class="px-4 py-2 border rounded hover:bg-gray-50 transition">Reset Default</button>
+                    <button onclick="saveTheme()" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded shadow hover:shadow-lg transform hover:-translate-y-0.5 transition">Save Changes</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <!-- Branding -->
+                <div class="space-y-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-tag text-blue-500"></i> Branding</h3>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-2">App Name</label>
+                        <input id="theme-name" value="${t.appName}" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-2">Logo</label>
+                        <div class="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                            <div class="w-16 h-16 border rounded bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                                ${t.logoUrl ? `<img src="${t.logoUrl}" class="w-full h-full object-contain">` : '<span class="text-xs text-gray-400">No Logo</span>'}
+                            </div>
+                            <div class="flex-1">
+                                <input type="file" id="theme-logo-file" accept="image/*" class="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                                <input type="hidden" id="theme-logo-url" value="${t.logoUrl}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Background -->
+                <div class="space-y-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-paint-roller text-purple-500"></i> Background</h3>
+                    <div class="flex gap-4 mb-2 p-1 bg-gray-100 rounded-lg w-max">
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='color'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-fill-drip text-xs"></i> Solid
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='gradient'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-gradient text-xs"></i> Gradient
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='image'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-image text-xs"></i> Image
+                        </label>
+                    </div>
+                    
+                    <div id="bg-input-color" class="${t.bgType!=='color'?'hidden':''}">
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="theme-bgcolor" value="${t.bgColor}" class="h-12 w-12 p-1 border rounded cursor-pointer bg-white">
+                            <span class="text-gray-500 text-sm">Pick a solid color</span>
+                        </div>
+                    </div>
+                    
+                    <div id="bg-input-gradient" class="${t.bgType!=='gradient'?'hidden':''}">
+                        <input type="text" id="theme-gradient" value="${t.bgGradient}" class="w-full border p-3 rounded-lg text-sm font-mono bg-gray-50" placeholder="linear-gradient(...)">
+                        <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Use standard CSS gradient syntax</p>
+                    </div>
+
+                    <div id="bg-input-image" class="${t.bgType!=='image'?'hidden':''}">
+                        <input type="text" id="theme-bgimage" value="${t.bgImage}" class="w-full border p-3 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Image URL (https://...)">
+                        <input type="file" id="theme-bgfile" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                    </div>
+                </div>
+
+                <!-- Glassmorphism -->
+                <div class="space-y-6 md:col-span-2 border-t pt-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-magic text-teal-500"></i> Interface Style</h3>
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer font-bold text-gray-700 mb-1">
+                                <input type="checkbox" id="theme-glass" ${t.glassEffect?'checked':''} class="w-5 h-5 text-blue-600 rounded"> 
+                                Enable Glassmorphism (Glossy UI)
+                            </label>
+                            <p class="text-xs text-gray-500 ml-8">Adds translucency and blur effects to containers.</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-64">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Opacity</span>
+                            <input type="range" id="theme-opacity" min="0.5" max="1" step="0.05" value="${t.glassOpacity}" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+      // File Handlers
+    setTimeout(() => {
+        $('theme-logo-file').addEventListener('change', e => {
+            const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-logo-url').value=ev.target.result; renderThemeBuilder(c);}; r.readAsDataURL(f); }
+        });
+        const bgFile = $('theme-bgfile');
+        if(bgFile) bgFile.addEventListener('change', e => {
+            const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-bgimage').value=ev.target.result;}; r.readAsDataURL(f); }
+        });
+    }, 500);
+}
+
+window.toggleBgInput = () => {
+    // Update UI state for radio buttons
+    document.querySelectorAll('input[name="bg-type"]').forEach(r => {
+        r.parentElement.className = r.checked 
+            ? 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition bg-white shadow-sm text-blue-600 font-bold'
+            : 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition text-gray-600 hover:bg-gray-200';
+    });
+
+    const type = document.querySelector('input[name="bg-type"]:checked').value;
+    $('bg-input-color').classList.toggle('hidden', type!=='color');
+    $('bg-input-gradient').classList.toggle('hidden', type!=='gradient');
+    $('bg-input-image').classList.toggle('hidden', type!=='image');
+}
+
+window.saveTheme = () => {
+    const bgType = document.querySelector('input[name="bg-type"]:checked').value;
+    db.theme = {
+        appName: $('theme-name').value,
+        logoUrl: $('theme-logo-url').value,
+        bgType: bgType,
+        bgColor: $('theme-bgcolor').value,
+        bgGradient: $('theme-gradient').value,
+        bgImage: $('theme-bgimage').value,
+        glassEffect: $('theme-glass').checked,
+        glassOpacity: $('theme-opacity').value
+    };
+    saveDB();
+    applyTheme();
+    render(); // Re-render to update logo/name in nav
+    showToast('Theme Saved');
+}
+
+window.resetTheme = () => {
+    db.theme = defaultData.theme;
+    saveDB();
+    applyTheme();
+    renderThemeBuilder($('page-content'));
+    showToast('Theme Reset');
+}
+
+// --- EVENT NAVIGATION ---
+window.goToEvent = (cid, tab, id, type) => {
+    currentCourseId = cid;
+    currentView = 'course';
+    currentTab = tab;
+    render();
+    setTimeout(() => {
+        if(type === 'activity') openActivityDetail(id);
+        if(type === 'exam') openExamDetail(id);
+    }, 100);
+}
+window.openExamDetail = (eid) => {
+    const s = db.subjects.find(x => x.id === currentCourseId);
+    const ex = db.exams[s.id].find(e => e.id === eid);
+    if(currentUser.role !== 'student') { openCreateModal(eid); return; }
+    const sub = db.examSubmissions[eid]?.[currentUser.id];
+    const attemptsAllowed = ex.attempts || 1, attemptsTaken = sub ? (sub.attemptsTaken || 0) : 0, isAttemptLocked = attemptsTaken >= attemptsAllowed;
+    const now = new Date(), openDate = new Date(ex.openDate), dueDate = new Date(ex.dueDate), isUpcoming = now < openDate, isClosed = now > dueDate;
+    let actionBtn = '', statusMsg = '';
+    if (isUpcoming) { statusMsg = `<div class="bg-yellow-50 text-yellow-800 p-3 rounded mb-4 text-center font-bold">Opens: ${openDate.toLocaleString()}</div>`; actionBtn = `<button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded font-bold cursor-not-allowed">Not Open Yet</button>`; } 
+    else if (isClosed && !sub) { statusMsg = `<div class="bg-red-50 text-red-800 p-3 rounded mb-4 text-center font-bold">Closed on ${dueDate.toLocaleString()}</div>`; actionBtn = `<button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded font-bold cursor-not-allowed">Missed</button>`; } 
+    else if (isAttemptLocked || (isClosed && sub)) { statusMsg = `<div class="bg-blue-50 text-blue-800 p-3 rounded mb-4 text-center font-bold">Completed (Score: ${sub.score}%)</div>`; actionBtn = `<button onclick="closeModal('exam-detail'); reviewExam('${ex.id}')" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">Review Results</button>`; } 
+    else { statusMsg = `<div class="bg-green-50 text-green-800 p-3 rounded mb-4 text-center font-bold">Open until ${dueDate.toLocaleString()}</div>`; actionBtn = `<button onclick="closeModal('exam-detail'); startExam('${ex.id}')" class="w-full bg-canvas-accent text-white py-2 rounded font-bold hover:bg-blue-600">Start Quiz</button>`; }
+    renderModal('exam-detail', ex.title, `<div class="space-y-4">${statusMsg}<div class="grid grid-cols-2 gap-4 text-sm text-gray-600"><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Time Limit</span>${ex.timeLimit} Mins</div><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Attempts</span>${attemptsTaken} / ${attemptsAllowed}</div><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Questions</span>${ex.questions.length} Items</div><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Type</span>${ex.category === 'qa' ? 'Quarterly' : 'Written Work'}</div></div><div class="pt-4">${actionBtn}</div></div>`);
+}
+
+// --- TEACHERS & SETTINGS ---
+function renderTeachersList(c) {
+    if(currentUser.role !== 'admin') return goDashboard();
+    $('page-title').innerText = 'Teachers Directory';
+    const teachers = db.users.filter(u => u.role === 'teacher').sort((a,b) => b.id.localeCompare(a.id));
+    c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Registered Teachers (${teachers.length})</h3></div><div class="theme-panel bg-white border rounded shadow-sm overflow-hidden"><table class="w-full text-left text-sm"><thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b"><tr><th class="p-4">Name</th><th class="p-4">Username</th><th class="p-4">Password</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead><tbody class="divide-y divide-gray-100">${teachers.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-gray-400">No teachers found.</td></tr>' : ''}${teachers.map(t => `<tr class="hover:bg-gray-50"><td class="p-4 font-bold text-gray-800 flex items-center gap-3">${renderAvatar(t, 'w-8 h-8', 'text-xs')}${t.name}</td><td class="p-4 font-mono text-gray-600">${t.username}</td><td class="p-4 font-mono text-gray-400 text-xs">${t.password}</td><td class="p-4"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-bold">Active</span></td><td class="p-4 text-right"><button onclick="deleteUser('${t.id}')" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderSettings(c) {
+    $('page-title').innerText = 'Account Settings';
+    let html = `<div class="max-w-2xl mx-auto space-y-8"><div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Profile Picture</h3><div class="flex items-center gap-4"><div id="settings-avatar-preview">${renderAvatar(currentUser, 'w-16 h-16', 'text-2xl')}</div><div class="flex-1"><input type="file" id="profile-pic-upload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><p class="text-xs text-gray-400 mt-1">Recommended: Square JPG/PNG</p></div><button onclick="saveProfilePic()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm">Upload</button></div></div><div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Security</h3><div class="space-y-4"><div><label class="block text-sm font-bold text-gray-500 mb-1">New Password</label><input type="password" id="set-new-pass" class="w-full border p-2 rounded" placeholder="Enter new password"></div><button onclick="updatePassword()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm">Update Password</button></div></div>`;
+    if(currentUser.role === 'teacher') {
+        const myCourses = db.subjects.filter(s => s.teacherId === currentUser.id);
+        html += `<div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">My Course Details</h3><div class="space-y-4">${myCourses.map(s => `<div class="border rounded p-4 bg-gray-50"><h4 class="font-bold text-canvas-accent mb-2">${s.name} (${s.code})</h4><div class="grid grid-cols-2 gap-2 mb-2"><input id="edit-name-${s.id}" value="${s.name}" class="border p-1 rounded text-sm" placeholder="Name"><input id="edit-code-${s.id}" value="${s.code}" class="border p-1 rounded text-sm" placeholder="Code"></div><input id="edit-intro-${s.id}" value="${s.introTitle || ''}" class="w-full border p-1 rounded text-sm mb-2" placeholder="Intro Title"><button onclick="updateCourseDetails('${s.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">Save Changes</button></div>`).join('')}</div></div>`;
+    }
+    html += `</div>`;
+    c.innerHTML = html;
+}
+window.deleteUser = (uid) => { showConfirm('Delete user?', () => { db.users = db.users.filter(u => u.id !== uid); saveDB(); render(); }); }
+window.saveProfilePic = () => { const f=$('profile-pic-upload').files[0]; if(f){ const r=new FileReader(); r.onload=e=>{ const u=db.users.find(x=>x.id===currentUser.id); if(u){ u.avatar=e.target.result; saveDB(); render(); }}; r.readAsDataURL(f); } }
+window.updatePassword = () => { const p=$('set-new-pass').value; if(p){ const u=db.users.find(x=>x.id===currentUser.id); u.password=p; saveDB(); showToast('Password updated'); } }
+window.updateCourseDetails = (sid) => { const s=db.subjects.find(x=>x.id===sid); s.name=$(`edit-name-${sid}`).value; s.code=$(`edit-code-${sid}`).value; s.introTitle=$(`edit-intro-${sid}`).value; saveDB(); }
+window.registerTeacher = () => { const n=$('reg-t-name').value, u=$('reg-t-user').value, p=$('reg-t-pass').value; if(n&&u&&p){ db.users.push({id:'u'+Date.now(), name:n, username:u, password:p, role:'teacher'}); saveDB(); render(); }}
+window.registerStudent = () => { const n=$('reg-s-name').value, u=$('reg-s-user').value, p=$('reg-s-pass').value; if(n&&u&&p){ const newId='u'+Date.now(); db.users.push({id:newId, name:n, username:u, password:p, role:'student'}); if(currentCourseId){ const s=db.subjects.find(x=>x.id===currentCourseId); if(s)s.students.push(newId); } saveDB(); render(); closeModal('modal-reg-student'); }}
+
+// --- COURSE TABS IMPLEMENTATION ---
+function renderCourse(c) {
+    const s = db.subjects.find(x => x.id === currentCourseId);
+    if(!s) return goDashboard();
+    $('page-title').innerText = s.name;
+    c.innerHTML = `<div class="flex flex-col md:flex-row gap-6 h-full"><nav class="theme-panel w-full md:w-48 flex-shrink-0 flex md:flex-col gap-1 text-sm font-medium text-canvas-primary border-r border-gray-200 pb-4 md:pr-4"><a onclick="switchTab('home')" class="${currentTab==='home'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Home</a><a onclick="switchTab('modules')" class="${currentTab==='modules'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Modules</a><a onclick="switchTab('activities')" class="${currentTab==='activities'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Activities</a><a onclick="switchTab('quizzes')" class="${currentTab==='quizzes'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Quizzes/Exams</a><a onclick="switchTab('grades')" class="${currentTab==='grades'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Grades</a><a onclick="switchTab('people')" class="${currentTab==='people'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">People</a></nav><div id="course-content" class="flex-1"></div></div>`;
+    renderCourseTab();
+}
+window.switchTab = (t) => { currentTab=t; render(); }
+
+function renderCourseTab() {
+    const c=$('course-content'), s=db.subjects.find(x=>x.id===currentCourseId), isTeacher=currentUser.role==='teacher'||currentUser.role==='admin';
+    
+    // HOME (FEED)
+    if(currentTab === 'home') {
+        const posts = (db.posts||[]).filter(p=>p.courseId===s.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
+        c.innerHTML = `<div class="theme-panel bg-white p-6 rounded border border-gray-200 mb-6 relative group">${isTeacher ? `<button onclick="editIntro()" class="absolute top-4 right-4 text-gray-400 hover:text-canvas-accent"><i class="fas fa-edit"></i> Edit Info</button>` : ''}<h2 class="text-2xl font-bold text-gray-800 mb-2">${s.introTitle||`Welcome to ${s.name}`}</h2><p class="text-gray-600 leading-relaxed">${s.introBody||'No introduction provided yet.'}</p></div>${isTeacher?`<div class="theme-panel bg-white p-4 rounded border border-gray-200 mb-6 shadow-sm"><textarea id="post-content" class="w-full border p-3 rounded mb-2 text-sm focus:outline-none focus:border-canvas-accent" placeholder="Share an announcement..." rows="3"></textarea><div class="flex flex-col gap-2"><div class="flex gap-2"><select id="post-type" class="border p-2 rounded text-sm bg-gray-50 flex-1" onchange="toggleMediaInput()"><option value="text">Text Only</option><option value="link">Link</option><option value="video">Video</option><option value="image_upload">Image (Upload)</option><option value="image_url">Image (URL)</option><option value="gif">GIF (URL)</option></select><button onclick="publishPost()" class="bg-canvas-accent text-white px-6 py-2 rounded font-bold">Post</button></div><input id="post-url" class="border p-2 rounded text-sm hidden" placeholder="Paste URL here..."><div id="post-file-container" class="hidden border border-dashed border-gray-300 p-2 rounded bg-gray-50"><input type="file" id="post-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"></div></div></div>` : ''}<div class="space-y-6">${posts.map(p => renderPostCard(p, isTeacher)).join('')}</div>`;
+        setTimeout(() => { const fi=$('post-file'); if(fi) fi.addEventListener('change', e=>{ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=evt=>{tempTeacherImage=evt.target.result}; r.readAsDataURL(f); } }); }, 500);
+    }
+    // --- MODULES TAB ---
+    if(currentTab === 'modules') {
+        const modules = db.modules[s.id] || [];
+        c.innerHTML = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Learning Modules</h2></div>${isTeacher ? `<button onclick="openModuleBuilder()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm"><i class="fas fa-plus mr-2"></i>Create Module</button>` : ''}</div><div class="space-y-4">${modules.map(m => `<div class="theme-panel bg-white p-4 rounded border hover:shadow-md transition"><div class="flex justify-between items-center"><div class="cursor-pointer flex-1" onclick="viewModule('${m.id}')"><h3 class="font-bold text-lg text-canvas-primary">${m.title}</h3><p class="text-xs text-gray-500">${m.blocks.length} sections • Published ${new Date(m.date).toLocaleDateString()}</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="editModule('${m.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button><button onclick="deleteModule('${m.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button></div>` : '<i class="fas fa-chevron-right text-gray-300"></i>'}</div></div>`).join('')}</div>${modules.length===0?'<div class="text-center py-10 text-gray-400 border border-dashed rounded">No modules yet.</div>':''}`;
+    }
+    
+    // --- ACTIVITIES TAB (ENHANCED BUILDER) ---
+    if(currentTab === 'activities') {
+        const acts = db.activities[s.id] || [];
+        let html = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Class Activities</h2><p class="text-gray-500 text-xs">Performance Tasks & Written Work</p></div>${isTeacher ? `<button onclick="createActivity()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Activity</button>` : ''}</div>`;
+        if(acts.length === 0) { html += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-clipboard-list text-4xl mb-3 block"></i>No activities yet.</div>`; } 
+        else {
+            html += `<div class="grid grid-cols-1 gap-4">`;
+            acts.forEach(a => {
+                const badgeColor = a.category === 'pt' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700';
+                let statusText = `<span class="text-gray-400 text-xs"><i class="fas fa-clock"></i> Due: ${a.dueDate ? formatDate(a.dueDate) : 'None'}</span>`;
+                if (!isTeacher) {
+                    const sub = db.activitySubmissions[a.id]?.[currentUser.id];
+                    let isSub = false; 
+                    if(sub && (sub.submittedAt || typeof sub === 'number')) isSub = true; 
+                    if(isSub) statusText = `<span class="text-green-600 text-xs font-bold"><i class="fas fa-check-circle"></i> Submitted</span>`;
+                    else if(a.dueDate && new Date() > new Date(a.dueDate)) statusText = `<span class="text-red-500 text-xs font-bold"><i class="fas fa-exclamation-circle"></i> Missing</span>`;
+                }
+                html += `<div class="theme-panel bg-white p-4 rounded border flex justify-between items-center hover:bg-gray-50 transition cursor-pointer" onclick="openActivityDetail('${a.id}')"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-gray-500"><i class="fas fa-clipboard-check text-xl"></i></div><div><h4 class="font-bold text-gray-800 text-lg">${a.title}</h4><div class="flex gap-2 text-xs mt-1 items-center"><span class="${badgeColor} px-2 py-0.5 rounded font-bold uppercase">${a.category==='pt'?'Perf Task':'Written'}</span><span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Max: ${a.maxScore} pts</span>${statusText}</div></div></div>${isTeacher ? `<div class="flex gap-2"><button onclick="event.stopPropagation(); editActivity('${a.id}')" class="text-blue-400 hover:text-blue-600 px-2"><i class="fas fa-edit"></i></button><button onclick="event.stopPropagation(); deleteActivity('${a.id}')" class="text-gray-300 hover:text-red-500 px-2"><i class="fas fa-trash"></i></button></div>` : '<i class="fas fa-chevron-right text-gray-300"></i>'}</div>`;
+            });
+            html += `</div>`;
+        }
+        c.innerHTML = html;
+    }
+
+    // --- QUIZZES TAB (RESTORED) ---
+    if(currentTab === 'quizzes') {
+        const exams = db.exams[s.id] || [];
+        let html = `<div class="flex justify-between items-center mb-4 border-b pb-2"><div><h2 class="text-xl font-bold text-gray-800">Quizzes & Exams</h2><p class="text-xs text-gray-500">Auto-graded assessments</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="openImportModal()" class="bg-white border text-gray-700 px-3 py-1 rounded text-sm font-bold"><i class="fas fa-file-word"></i> Import DOCX</button><button onclick="openCreateModal()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">New Quiz</button></div>` : ''}</div><div class="space-y-3">${exams.map(e => {
+            const sub = db.examSubmissions[e.id]?.[currentUser.id];
+            const attemptsAllowed = e.attempts || 1, attemptsTaken = sub ? (sub.attemptsTaken || 0) : 0, isAttemptLocked = attemptsTaken >= attemptsAllowed;
+            const now = new Date(), openDate = new Date(e.openDate), dueDate = new Date(e.dueDate);
+            const isUpcoming = now < openDate, isClosed = now > dueDate;
+            let actionBtn = '';
+            if(isTeacher || currentUser.role === 'admin') {
+                actionBtn = `<div class="flex gap-2"><button onclick="showItemAnalysis('${e.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200" title="Analytics"><i class="fas fa-chart-bar"></i></button><button onclick="reviewExamContent('${e.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200" title="Review"><i class="fas fa-eye"></i></button><button onclick="openCreateModal('${e.id}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100" title="Edit"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteExam('${e.id}')" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded" title="Delete"><i class="fas fa-trash"></i></button></div>`;
+            } else {
+                if (isUpcoming) actionBtn = `<span class="text-xs text-gray-500">Opens ${formatDate(e.openDate)}</span>`;
+                else if (isClosed && !sub) actionBtn = `<span class="text-xs text-red-500">Closed</span>`;
+                else if (isAttemptLocked || (isClosed && sub)) actionBtn = `<button onclick="reviewExam('${e.id}')" class="text-xs bg-gray-100 px-2 py-1 rounded">Review</button>`;
+                else actionBtn = `<button onclick="startExam('${e.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">Take</button>`;
+            }
+            return `<div class="theme-panel bg-white p-4 border rounded flex justify-between items-center hover:bg-gray-50"><div class="flex gap-4 items-center"><div><h4 class="font-bold text-gray-800">${e.title}</h4><div class="text-xs text-gray-500">Due: ${formatDate(e.dueDate)} • ${e.questions.length} Qs</div></div></div>${actionBtn}</div>`;
+        }).join('')}</div>`;
+        c.innerHTML = html;
+    }
+
+    // GRADES
+    if(currentTab === 'grades') {
+        const enrolled = db.users.filter(u => s.students.includes(u.id));
+        const weights = s.gradingWeights || { ww: 40, pt: 40, qa: 20 };
+        const quizzes = db.exams[s.id] || [], activities = db.activities[s.id] || [];
+        const wwItems = [...quizzes.filter(q=>q.category!=='qa'), ...activities.filter(a=>a.category!=='pt')];
+        const ptItems = activities.filter(a=>a.category==='pt'), qaItems = quizzes.filter(q=>q.category==='qa');
+        
+        let html = `<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-gray-800">Class Record</h2>${isTeacher?`<div class="flex gap-2"><button onclick="openWeightsModal()" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-bold border">Weights</button><button onclick="resetGrades()" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs font-bold">Reset All</button></div>`:''}</div><div class="grid grid-cols-3 gap-4 mb-4 text-center"><div class="bg-orange-50 p-2 rounded border border-orange-100"><div class="text-xs font-bold text-orange-800">WW (${weights.ww}%)</div></div><div class="bg-purple-50 p-2 rounded border border-purple-100"><div class="text-xs font-bold text-purple-800">PT (${weights.pt}%)</div></div><div class="bg-blue-50 p-2 rounded border border-blue-100"><div class="text-xs font-bold text-blue-800">QA (${weights.qa}%)</div></div></div><div class="theme-panel overflow-x-auto bg-white border rounded shadow-sm"><table class="w-full text-left text-sm grade-table"><thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b"><tr><th class="p-4 sticky left-0 bg-gray-50 border-r">Student</th><th class="p-4 text-center bg-orange-50/50">WW</th><th class="p-4 text-center bg-purple-50/50">PT</th><th class="p-4 text-center bg-blue-50/50">QA</th><th class="p-4 text-center bg-gray-100 text-gray-800">Grade</th></tr></thead><tbody class="divide-y">`;
+        enrolled.forEach(stu => {
+            const calc = (items) => { let score=0, max=0; items.forEach(i => { 
+                let s=0, m=0;
+                if(i.questions) { m=i.questions.length; const sub=db.examSubmissions[i.id]?.[stu.id]; if(sub && sub.score!==undefined) { s=sub.score; m=100; } }
+                else { m=parseInt(i.maxScore); const sub=db.activitySubmissions[i.id]?.[stu.id]; if(typeof sub==='number') s=sub; else if(sub && typeof sub==='object') s=sub.score||0; }
+                score+=s; max+=m; 
+            }); return max===0 ? 0 : (score/max)*100; };
+            const ww=calc(wwItems), pt=calc(ptItems), qa=calc(qaItems), final = (ww*(weights.ww/100))+(pt*(weights.pt/100))+(qa*(weights.qa/100));
+            html += `<tr class="hover:bg-gray-50"><td class="p-4 font-bold text-gray-700 sticky left-0 bg-white border-r flex items-center gap-2">${renderAvatar(stu, 'w-6 h-6', 'text-[10px]')}${stu.name}</td><td class="p-4 text-center text-orange-700 font-mono bg-orange-50/20">${Math.round(ww)}%</td><td class="p-4 text-center text-purple-700 font-mono bg-purple-50/20">${Math.round(pt)}%</td><td class="p-4 text-center text-blue-700 font-mono bg-blue-50/20">${Math.round(qa)}%</td><td class="p-4 text-center font-bold text-gray-800 bg-gray-50 text-base">${Math.round(final)}</td></tr>`;
+        });
+        html += `</tbody></table></div>`; c.innerHTML = html;
+    }
+    
+    if(currentTab === 'people') {
+        const ppl = db.users.filter(u=>s.students.includes(u.id));
+        c.innerHTML = `<h2 class="text-xl font-bold mb-4">People</h2>${isTeacher ? `<div class="flex gap-2"><button onclick="openRegisterStudentModal()" class="bg-white border text-gray-600 px-3 py-1 rounded text-sm font-bold shadow-sm">New</button><button onclick="openAddStudentModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm">Enroll</button></div>` : ''}</div><div class="theme-panel bg-white border rounded overflow-hidden"><table class="w-full text-left"><thead class="bg-gray-50 border-b text-xs uppercase font-bold text-gray-500"><tr><th class="p-4">Name</th><th class="p-4">Role</th>${isTeacher?`<th class="p-4">User</th><th class="p-4">Pass</th><th class="p-4 text-right"></th>`:''}</tr></thead><tbody class="divide-y"><tr><td class="p-4 flex items-center gap-2 font-bold">${renderAvatar(db.users.find(u=>u.id===s.teacherId),'w-6 h-6')} ${db.users.find(u=>u.id===s.teacherId)?.name}</td><td class="p-4">Teacher</td>${isTeacher?`<td class="p-4 text-gray-400">-</td><td class="p-4 text-gray-400">-</td><td></td>`:''}</tr>${ppl.map(u=>`<tr><td class="p-4 flex items-center gap-2">${renderAvatar(u,'w-6 h-6')} ${u.name}</td><td class="p-4">Student</td>${isTeacher?`<td class="p-4 font-mono text-blue-600">${u.username}</td><td class="p-4 font-mono text-red-500">${u.password}</td><td class="p-4 text-right"><button onclick="removeStudentFromCourse('${s.id}','${u.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded"><i class="fas fa-user-minus"></i></button></td>`:''}</tr>`).join('')}</tbody></table></div>`;
+        c.innerHTML = html;
+    }
+}
+
+// Course Logic
+window.deletePost = (pid) => { showConfirm('Delete post?', ()=>{db.posts=db.posts.filter(p=>p.id!==pid); saveDB(); render();}); }
+window.togglePinPost = (pid) => { const p=db.posts.find(x=>x.id===pid); if(p){p.isPinned=!p.isPinned; saveDB(); render(); showToast(p.isPinned ? 'Post Pinned' : 'Post Unpinned'); } }
+window.removeStudentFromCourse = (sid,uid) => { showConfirm('Remove student?', ()=>{ const s=db.subjects.find(x=>x.id===sid); s.students=s.students.filter(i=>i!==uid); saveDB(); render(); }); }
+window.toggleMediaInput = () => { const t=$('post-type').value; $('post-url').classList.toggle('hidden', t!=='link'&&t!=='video'&&t!=='image_url'&&t!=='gif'); $('post-file-container').classList.toggle('hidden', t!=='image_upload'); }
+window.publishPost = () => { const c=$('post-content').value, t=$('post-type').value; let u=$('post-url').value; if(t==='image_upload') u=tempTeacherImage; if(c||u) { if(!db.posts) db.posts=[]; db.posts.push({id:'p'+Date.now(), courseId:currentCourseId, authorId:currentUser.id, authorName:currentUser.name, date:new Date().toISOString(), content:c, mediaType:t, mediaUrl:u, isPinned:false}); tempTeacherImage=null; saveDB(); render(); } }
+window.editIntro = () => { const s=db.subjects.find(x=>x.id===currentCourseId); const t=prompt('Title:',s.introTitle); if(t!==null){ const b=prompt('Body:',s.introBody); if(b!==null){ s.introTitle=t; s.introBody=b; saveDB(); render(); }}}
+function renderPostCard(p, isAdmin) {
+    let mediaHtml = '';
+    if(p.mediaType==='video' && p.mediaUrl) { let u=p.mediaUrl.replace('watch?v=','embed/'); mediaHtml=`<div class="embed-container mt-3"><iframe src="${u}" frameborder="0" allowfullscreen></iframe></div>`; }
+    else if((p.mediaType==='image_url' || p.mediaType==='image_upload' || p.mediaType === 'gif') && p.mediaUrl) { mediaHtml=`<img src="${p.mediaUrl}" class="w-full h-auto rounded mt-3 border object-contain bg-black/5" style="max-height: 600px;">`; }
+    else if(p.mediaType==='link') mediaHtml=`<a href="${p.mediaUrl}" target="_blank" class="block mt-2 bg-gray-50 p-3 rounded border text-canvas-accent font-bold"><i class="fas fa-link mr-2"></i> ${p.mediaUrl}</a>`;
+    return `<div class="theme-panel bg-white p-6 rounded border border-gray-200 shadow-sm relative group ${p.isPinned ? 'bg-yellow-50 border-yellow-200' : ''}">${p.isPinned ? '<div class="absolute top-2 left-2 text-xs font-bold text-yellow-600"><i class="fas fa-thumbtack mr-1"></i> Pinned</div>' : ''}${isAdmin ? `<div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition"><button onclick="togglePinPost('${p.id}')" class="${p.isPinned ? 'text-canvas-accent' : 'text-gray-300 hover:text-canvas-accent'}"><i class="fas fa-thumbtack"></i></button><button onclick="deletePost('${p.id}')" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash"></i></button></div>` : ''}<div class="flex gap-3 mb-3 mt-4">${renderAvatar({name:p.authorName}, 'w-10 h-10', 'text-sm')}<div><p class="font-bold text-sm">${p.authorName}</p><p class="text-xs text-gray-500">${new Date(p.date).toLocaleString()}</p></div></div><div class="text-gray-700 whitespace-pre-line">${p.content}</div>${mediaHtml}</div>`;
+}
+
+// --- MODULE BUILDER ---
+window.openModuleBuilder = () => { builderBlocks = []; editingModuleId = null; currentView = 'module_builder'; render(); }
+window.editModule = (mid) => { const m = db.modules[currentCourseId].find(x=>x.id===mid); builderBlocks = JSON.parse(JSON.stringify(m.blocks)); editingModuleId = mid; $('mod-title-input') ? $('mod-title-input').value=m.title : null; currentView = 'module_builder'; render(); }
+window.deleteModule = (mid) => { showConfirm("Delete Module?", () => { db.modules[currentCourseId] = db.modules[currentCourseId].filter(m=>m.id!==mid); saveDB(); render(); }); }
+window.addBlock = (type) => { builderBlocks.push({ type, content: '' }); renderBlocks(); }
+window.removeBlock = (i) => { builderBlocks.splice(i, 1); renderBlocks(); }
+window.moveBlock = (i, dir) => { if(i+dir>=0 && i+dir<builderBlocks.length) { [builderBlocks[i], builderBlocks[i+dir]] = [builderBlocks[i+dir], builderBlocks[i]]; renderBlocks(); } }
+window.updateBlock = (i, val) => { builderBlocks[i].content = val; }
+window.execCmd = (i, cmd, val=null) => { document.execCommand(cmd, false, val); builderBlocks[i].content = document.getElementById(`editor-${i}`).innerHTML; }
+window.uploadBlockFile = (i, input) => { if(input.files[0]) { const r = new FileReader(); r.onload = e => { builderBlocks[i].content = e.target.result; builderBlocks[i].name = input.files[0].name; renderBlocks(); }; r.readAsDataURL(input.files[0]); } }
+window.cancelModule = () => { currentView = 'course'; render(); }
+// --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
+window.saveModule = () => {
+    const title = $('mod-title').value;
+    if (!title) return showToast('Please enter a module title', 'error');
+
+    const moduleData = {
+        id: editingModuleId || 'mod_' + Date.now(),
+        title: title,
+        courseId: currentCourseId,
+        blocks: [...builderBlocks] // Captures all text/image blocks
+    };
+
+    // Ensure the array exists for this specific course
+    if (!db.modules[currentCourseId]) db.modules[currentCourseId] = [];
+
+    // Logic to Update or Add
+    if (editingModuleId) {
+        const idx = db.modules[currentCourseId].findIndex(m => m.id === editingModuleId);
+        if(idx !== -1) db.modules[currentCourseId][idx] = moduleData;
+    } else {
+        db.modules[currentCourseId].push(moduleData);
+    }
+
+    // THIS IS THE FIX: Wait for Firebase to finish saving before closing
+    saveDB().then(() => {
+        showToast('Module successfully saved to Cloud');
+        goCourse(currentCourseId); // This refreshes the view so you see it immediately
+    });
+};
+
+// --- UPDATED ACTIVITY BUILDER (Replaces your old publishActivity) ---
+window.publishActivity = () => {
+    const title = $('act-title').value;
+    const type = $('act-type').value;
+    if (!title) return showToast('Please enter a title', 'error');
+
+    const activityData = {
+        id: editingActivityId || 'act_' + Date.now(),
+        title: title,
+        type: type,
+        content: builderBlocks.map(b => b.content).join('\n'),
+        blocks: [...builderBlocks],
+        date: new Date().toISOString(),
+        courseId: currentCourseId
+    };
+
+    if (!db.activities[currentCourseId]) db.activities[currentCourseId] = [];
+
+    if (editingActivityId) {
+        const idx = db.activities[currentCourseId].findIndex(a => a.id === editingActivityId);
+        if(idx !== -1) db.activities[currentCourseId][idx] = activityData;
+    } else {
+        db.activities[currentCourseId].push(activityData);
+    }
+
+    // THIS IS THE FIX: Forces Firebase to sync so students see it
+    saveDB().then(() => {
+        showToast('Activity Published & Visible to Students');
+        goCourse(currentCourseId);
+    });
+};
+// --- ACTIVITY BUILDER (NEW) ---
+window.createActivity = () => { builderBlocks = []; editingActivityId = null; currentView = 'activity_builder'; render(); }
+window.editActivity = (aid) => { const a = db.activities[currentCourseId].find(x=>x.id===aid); builderBlocks = JSON.parse(JSON.stringify(a.blocks || [])); editingActivityId = aid; currentView = 'activity_builder'; render(); }
+window.cancelActivity = () => { currentView = 'course'; render(); }
+window.saveActivityBuilt = () => {
+    const t=$('act-build-title').value, max=parseInt($('act-build-max').value), cat=$('act-build-cat').value, start=$('act-build-start').value, due=$('act-build-due').value;
+    const subText = $('sub-opt-text').checked, subFile = $('sub-opt-file').checked;
+    if(!t) return showToast('Title required', 'error');
+    if(!db.activities[currentCourseId]) db.activities[currentCourseId] = [];
+    const actData = {
+        id: editingActivityId || 'a'+Date.now(), title: t, maxScore: max, category: cat, openDate: start, dueDate: due,
+        blocks: builderBlocks, submissionOptions: { text: subText, file: subFile },
+        date: new Date().toISOString() // creation date
+    };
+    if(editingActivityId) { const idx = db.activities[currentCourseId].findIndex(a=>a.id===editingActivityId); db.activities[currentCourseId][idx] = actData; }
+    else { db.activities[currentCourseId].push(actData); }
+    saveDB(); currentView = 'course'; render(); showToast('Activity Saved');
+}
+
+function renderActivityBuilder(c) {
+    const act = editingActivityId ? db.activities[currentCourseId].find(a=>a.id===editingActivityId) : {};
+    c.innerHTML = `
+        <div class="max-w-4xl mx-auto pb-24">
+            <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <input id="act-build-title" value="${act.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mr-4" placeholder="Activity Title">
+                    <div class="flex gap-2">
+                        <button onclick="cancelActivity()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button>
+                        <button onclick="saveActivityBuilt()" class="px-4 py-2 bg-green-600 text-white font-bold rounded shadow">Save Activity</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-xs font-bold text-gray-500">Category</label><select id="act-build-cat" class="w-full border p-2 rounded bg-white"><option value="ww" ${act.category==='ww'?'selected':''}>Written Work</option><option value="pt" ${act.category==='pt'?'selected':''}>Perf Task</option></select></div>
+                    <div><label class="block text-xs font-bold text-gray-500">Max Score</label><input id="act-build-max" type="number" value="${act.maxScore||100}" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-xs font-bold text-gray-500">Unlock Date</label><input id="act-build-start" type="datetime-local" value="${act.openDate||''}" class="w-full border p-2 rounded"></div>
+                    <div><label class="block text-xs font-bold text-gray-500">Due Date (Lock)</label><input id="act-build-due" type="datetime-local" value="${act.dueDate||''}" class="w-full border p-2 rounded"></div>
+                </div>
+                <div class="flex gap-6 border-t pt-4">
+                    <span class="text-sm font-bold text-gray-700">Student Submission Options:</span>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="sub-opt-text" ${(act.submissionOptions?.text !== false)?'checked':''}> Text Entry</label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="sub-opt-file" ${(act.submissionOptions?.file !== false)?'checked':''}> File Upload</label>
+                </div>
+            </div>
+
+            <div class="mb-2 font-bold text-gray-500 uppercase text-xs">Instructions / Content</div>
+            <div id="blocks-list" class="space-y-4"></div>
+
+            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 flex justify-center gap-4 shadow z-50">
+                <button onclick="addBlock('text')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-font text-blue-500"></i> Text</button>
+                <button onclick="addBlock('image')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-image text-green-500"></i> Image</button>
+                <button onclick="addBlock('video')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-video text-red-500"></i> Video</button>
+                <button onclick="addBlock('file')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-paperclip text-gray-500"></i> File</button>
+            </div>
+        </div>
+    `;
+    renderBlocks();
+}
+
+window.openActivityDetail = (aid) => {
+    const act = db.activities[currentCourseId].find(a => a.id === aid);
+    // Teacher View
+    if(currentUser.role !== 'student') {
+        const s = db.subjects.find(x => x.id === currentCourseId);
+        const students = db.users.filter(u => s.students.includes(u.id));
+        // Instructions Preview
+        let instrHtml = (act.blocks || []).map(b => {
+             if(b.type === 'text') return `<div class="mb-2">${b.content}</div>`;
+             if(b.type === 'image') return `<img src="${b.content}" class="w-full h-auto rounded mb-2">`;
+             if(b.type === 'video') return `<div class="embed-container mb-2"><iframe src="${b.content.replace('watch?v=', 'embed/')}" frameborder="0"></iframe></div>`;
+             if(b.type === 'file') return `<a href="${b.content}" download="${b.name}" class="text-blue-600 underline block mb-2">Download ${b.name}</a>`;
+        }).join('');
+        // Legacy support
+        if(!act.blocks && act.description) instrHtml = `<p>${act.description}</p>${act.instructionFile?`<a href="${act.instructionFile.data}" download="${act.instructionFile.name}">File</a>`:''}`;
+
+        renderModal('act-grade', act.title, `
+            <div class="bg-gray-50 p-3 rounded mb-4 max-h-40 overflow-y-auto border text-sm">${instrHtml || '<span class="text-gray-400">No instructions.</span>'}</div>
+            <div class="space-y-2 max-h-[50vh] overflow-y-auto border-t pt-2">
+                ${students.map(u => {
+                    const sub = db.activitySubmissions[aid]?.[u.id];
+                    let score = '-', status = '<span class="text-red-400 text-xs">Missing</span>';
+                    if(sub) {
+                        if(typeof sub==='object') { 
+                            score = sub.score !== undefined ? sub.score : '-'; 
+                            if(sub.submittedAt) status = '<span class="text-green-600 text-xs">Submitted</span>';
+                        } else { score = sub; status = '<span class="text-green-600 text-xs">Graded</span>'; }
+                    }
+                    return `<div onclick="viewStudentSubmission('${aid}','${u.id}')" class="p-2 border rounded hover:bg-gray-50 cursor-pointer flex justify-between items-center">
+                        <div class="flex items-center gap-2">${renderAvatar(u,'w-6 h-6','text-[10px]')} <span class="text-sm font-bold">${u.name}</span></div>
+                        <div class="text-right"><div>${status}</div><div class="font-bold text-sm">${score}/${act.maxScore}</div></div>
+                    </div>`;
+                }).join('')}
+            </div>
+        `);
+        return;
+    }
+    
+    // Student View
+    const sub = db.activitySubmissions[aid]?.[currentUser.id] || {};
+    const now = new Date();
+    const isLocked = (act.openDate && now < new Date(act.openDate)) || (act.dueDate && now > new Date(act.dueDate) && !sub.submittedAt);
+    if(isLocked) return showToast('Locked', 'error');
+
+    let instrHtml = (act.blocks || []).map(b => {
+             if(b.type === 'text') return `<div class="mb-4">${b.content}</div>`;
+             if(b.type === 'image') return `<img src="${b.content}" class="w-full h-auto rounded mb-4">`;
+             if(b.type === 'video') return `<div class="embed-container mb-4"><iframe src="${b.content.replace('watch?v=', 'embed/')}" frameborder="0"></iframe></div>`;
+             if(b.type === 'file') return `<a href="${b.content}" download="${b.name}" class="block bg-blue-50 p-2 rounded text-blue-700 font-bold mb-4"><i class="fas fa-paperclip"></i> ${b.name}</a>`;
+    }).join('');
+    // Legacy support
+    if(!act.blocks && act.description) instrHtml = `<p class="whitespace-pre-wrap">${act.description}</p>${act.instructionFile?`<a href="${act.instructionFile.data}" download="${act.instructionFile.name}" class="text-blue-600 underline">Download File</a>`:''}`;
+
+    const opts = act.submissionOptions || { text: true, file: true }; // Default true for legacy
+
+    renderModal('act-sub', act.title, `
+        <div class="space-y-4">
+            <div class="bg-gray-50 p-4 rounded text-sm border">${instrHtml}</div>
+            
+            ${opts.text ? `
+            <div class="border rounded p-2">
+                <div class="flex gap-2 mb-2 border-b pb-2 bg-gray-50 p-1">
+                    <button onclick="document.execCommand('bold',false,null)" class="font-bold border px-2 rounded bg-white">B</button>
+                    <button onclick="document.execCommand('italic',false,null)" class="italic border px-2 rounded bg-white">I</button>
+                    <button onclick="document.execCommand('underline',false,null)" class="underline border px-2 rounded bg-white">U</button>
+                    <button class="border px-2 rounded bg-yellow-100 hover:bg-yellow-200 text-yellow-800" onclick="document.execCommand('hiliteColor',false,'yellow')"><i class="fas fa-highlighter"></i></button>
+                    <button class="border px-2 rounded hover:bg-gray-100 text-gray-500" onclick="document.execCommand('removeFormat',false,null)" title="Clear Formatting"><i class="fas fa-eraser"></i></button>
+                </div>
+                <div id="sub-editor" contenteditable="true" class="h-32 outline-none overflow-y-auto p-2 bg-white" placeholder="Type answer...">${sub.textAnswer || ''}</div>
+            </div>` : ''}
+
+            ${opts.file ? `<div><label class="text-xs font-bold text-gray-500">Attach File</label><input type="file" id="sub-file" class="w-full text-sm border p-1 rounded"></div>` : ''}
+            
+            ${sub.fileUrl?`<div class="text-xs text-green-600 font-bold"><i class="fas fa-check"></i> File previously uploaded</div>`:''}
+
+            <button onclick="submitWork('${aid}')" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Submit Assignment</button>
+            ${sub.score!==undefined ? `<div class="text-center font-bold text-xl text-green-600 mt-2 border-t pt-2">Grade: ${sub.score}/${act.maxScore}</div>` : ''}
+        </div>
+    `);
+}
+window.submitWork = (aid) => {
+    const textEl = $('sub-editor');
+    const text = textEl ? textEl.innerHTML : '';
+    const fileInput = $('sub-file');
+    const file = fileInput && fileInput.files[0];
+
+    const save = (f) => {
+        if(!db.activitySubmissions[aid]) db.activitySubmissions[aid] = {};
+        const prev = db.activitySubmissions[aid][currentUser.id] || {};
+        const prevData = (typeof prev === 'object') ? prev : { score: prev };
+        
+        db.activitySubmissions[aid][currentUser.id] = { 
+            ...prevData, 
+            textAnswer: text, 
+            fileUrl: f ? f.data : (prevData.fileUrl || null), 
+            fileName: f ? f.name : (prevData.fileName || null), 
+            submittedAt: new Date().toISOString() 
+        };
+        saveDB(); closeModal('act-sub'); showToast('Submitted!');
+    };
+
+    if(file) { const r=new FileReader(); r.onload=e=>save({name:file.name, data:e.target.result}); r.readAsDataURL(file); } 
+    else save(null);
+}
+window.viewStudentSubmission = (aid, uid) => {
+    const act = db.activities[currentCourseId].find(a => a.id === aid);
+    const stu = db.users.find(u => u.id === uid);
+    const sub = db.activitySubmissions[aid]?.[uid];
+    
+    let subObj = { textAnswer: '', score: '' };
+    if (sub && typeof sub === 'object') subObj = sub;
+    else if (sub !== undefined) subObj = { score: sub };
+
+    let html = `<div class="space-y-4">
+        <div class="bg-gray-50 p-4 rounded border">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-2">Student Answer</p>
+            <div class="text-gray-800 whitespace-pre-wrap">${subObj.textAnswer || '<span class="italic text-gray-400">No text answer.</span>'}</div>
+            ${subObj.fileUrl ? `<div class="mt-4 border-t pt-2"><a href="${subObj.fileUrl}" download="${subObj.fileName||'file'}" class="text-blue-600 underline font-bold"><i class="fas fa-download"></i> Download ${subObj.fileName}</a></div>` : ''}
+        </div>
+        <div class="bg-white p-4 rounded border border-blue-200 shadow-sm">
+            <div class="flex gap-4 mb-3">
+                <div class="flex-1"><label class="block text-xs font-bold text-gray-500">Score</label><input id="grade-score" type="number" class="w-full border p-2 rounded text-center" value="${subObj.score !== undefined ? subObj.score : ''}" max="${act.maxScore}"></div>
+                <div class="flex-[3]"><label class="block text-xs font-bold text-gray-500">Feedback</label><input id="grade-comment" class="w-full border p-2 rounded" value="${subObj.teacherComment || ''}"></div>
+            </div>
+            <button onclick="saveGrade('${aid}', '${uid}')" class="w-full bg-green-600 text-white py-2 rounded font-bold">Save Grade</button>
+        </div>
+    </div>`;
+    renderModal('grade-view', `Grading: ${stu.name}`, html);
+}
+window.saveGrade = (aid, uid) => {
+    const s = $('grade-score').value, c = $('grade-comment').value;
+    if(!db.activitySubmissions[aid]) db.activitySubmissions[aid] = {};
+    const prev = db.activitySubmissions[aid][uid];
+    const prevData = (typeof prev === 'object') ? prev : {};
+    
+    db.activitySubmissions[aid][uid] = { 
+        ...prevData, 
+        score: s===''?undefined:parseInt(s), 
+        teacherComment: c 
+    };
+    saveDB(); closeModal('grade-view'); openActivityDetail(aid); showToast('Grade Saved');
+}
+window.deleteActivity = (aid) => { showConfirm('Delete?', () => { db.activities[currentCourseId] = db.activities[currentCourseId].filter(a => a.id !== aid); delete db.activitySubmissions[aid]; saveDB(); render(); }); }
+
+// --- QUIZZES (DETAILED) ---
+window.openCreateModal = (eid=null) => { 
+    let ex = { title:'', openDate:'', dueDate:'', timeLimit:30, attempts:1, category:'ww' }, content='', title='New Quiz', btn='Create';
+    if(eid) { ex=db.exams[currentCourseId].find(e=>e.id===eid); content=questionsToText(ex.questions); title='Edit Quiz'; btn='Save'; }
+    renderModal('quiz', title, `<div class="space-y-3"><input id="q-title" class="w-full border p-2" placeholder="Title" value="${ex.title}"><div class="grid grid-cols-2 gap-2"><input id="q-open" type="datetime-local" class="border p-2 w-full" value="${ex.openDate}"><input id="q-due" type="datetime-local" class="border p-2 w-full" value="${ex.dueDate}"></div><div class="grid grid-cols-2 gap-2"><input id="q-time" type="number" class="border p-2 w-full" value="${ex.timeLimit}" placeholder="Mins"><input id="q-att" type="number" class="border p-2 w-full" value="${ex.attempts}" placeholder="Attempts"></div><textarea id="q-content" class="w-full border p-2 h-40 font-mono text-sm" placeholder="1. Question\nA. Opt\nB. Opt\nAnswer: A">${content}</textarea><button onclick="saveQuiz('${eid||''}')" class="w-full bg-blue-600 text-white py-2 font-bold rounded">${btn}</button></div>`);
+}
+window.saveQuiz = (eid) => {
+    const t=$('q-title').value, o=$('q-open').value, d=$('q-due').value, time=$('q-time').value, att=$('q-att').value, content=$('q-content').value;
+    if(t&&o&&d){
+        const qs = parseQuizText(content);
+        if(!db.exams[currentCourseId]) db.exams[currentCourseId]=[];
+        const data = { id:eid||'e'+Date.now(), title:t, openDate:o, dueDate:d, timeLimit:parseInt(time), attempts:parseInt(att), category:'ww', questions:qs };
+        if(eid) { const idx=db.exams[currentCourseId].findIndex(e=>e.id===eid); db.exams[currentCourseId][idx]=data; } else db.exams[currentCourseId].push(data);
+        saveDB(); closeModal('quiz'); render();
+    }
+}
+window.openImportModal = () => { renderModal('modal-import', 'Import DOCX', `<div class="space-y-4"><input type="file" id="docx-upload" accept=".docx" class="w-full border p-2 rounded"><div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold">Open</label><input id="imp-open" type="datetime-local" class="border p-2 w-full rounded"></div><div><label class="text-xs font-bold">Due</label><input id="imp-due" type="datetime-local" class="border p-2 w-full rounded"></div></div><button onclick="processDocxImport()" class="w-full bg-canvas-accent text-white py-2 font-bold rounded">Import</button></div>`); }
+window.processDocxImport = () => { const o=$('imp-open').value, d=$('imp-due').value; if(importedText && o && d) { const q=parseQuizText(importedText); if(q.length>0) { if(!db.exams[currentCourseId]) db.exams[currentCourseId]=[]; db.exams[currentCourseId].push({id:'e'+Date.now(), title:'Imported Quiz', openDate:o, dueDate:d, timeLimit:30, attempts:1, category:'ww', questions:q}); saveDB(); closeModal('modal-import'); render(); showToast('Imported'); } } }
+document.addEventListener('change', async (e) => { if(e.target && e.target.id === 'docx-upload') { const reader = new FileReader(); reader.onload = function(evt) { mammoth.extractRawText({arrayBuffer: evt.target.result}).then(r => { importedText = r.value; showToast('File Parsed'); }); }; reader.readAsArrayBuffer(e.target.files[0]); } });
+
+window.startExam = (eid) => { activeExamId=eid; currentView='exam-take'; render(); }
+window.reviewExam = (eid) => { activeExamId=eid; currentView='exam-review'; render(); }
+window.deleteExam = (eid) => { showConfirm('Delete?', ()=>{ db.exams[currentCourseId]=db.exams[currentCourseId].filter(e=>e.id!==eid); delete db.examSubmissions[eid]; saveDB(); render(); }); }
+window.renderExamTake = (c) => { 
+    const ex=db.exams[currentCourseId].find(e=>e.id===activeExamId); let time=ex.timeLimit*60;
+    c.innerHTML = `<div class="max-w-3xl mx-auto bg-white p-8 min-h-screen"><div class="flex justify-between border-b pb-4 mb-6 sticky top-0 bg-white"><h2 class="text-2xl font-bold">${ex.title}</h2><div id="timer" class="text-xl font-mono text-red-600 font-bold"></div></div><div class="space-y-8">${ex.questions.map((q,i)=>`<div class="p-4 border rounded"><p class="font-bold mb-3">${i+1}. ${q.q}</p><div class="space-y-2">${q.options.map((o,oi)=>`<label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="radio" name="q${i}" value="${oi}"> ${o}</label>`).join('')}</div></div>`).join('')}</div><button onclick="submitExam()" class="mt-8 w-full bg-blue-600 text-white py-3 rounded font-bold">Submit</button></div>`;
+    const int = setInterval(()=>{ time--; const m=Math.floor(time/60),s=time%60; $('timer').innerText=`${m}:${s<10?'0':''}${s}`; if(time<=0){clearInterval(int);submitExam();} },1000);
+}
+window.submitExam = () => {
+    const ex=db.exams[currentCourseId].find(e=>e.id===activeExamId), ans=[]; let score=0;
+    ex.questions.forEach((q,i)=>{ const s=document.querySelector(`input[name="q${i}"]:checked`); const v=s?parseInt(s.value):-1; ans.push(v); if(v===q.ans)score++; });
+    const p=Math.round((score/ex.questions.length)*100);
+    if(!db.examSubmissions[activeExamId]) db.examSubmissions[activeExamId]={};
+    db.examSubmissions[activeExamId][currentUser.id] = { score:p, answers:ans, attemptsTaken:1 }; 
+    saveDB(); showToast(`Score: ${p}%`); reviewExam(activeExamId);
+}
+window.reviewExam = (eid) => {
+    const ex=db.exams[currentCourseId].find(e=>e.id===eid), sub=db.examSubmissions[eid][currentUser.id];
+    $('app').innerHTML = `<div class="max-w-3xl mx-auto bg-white p-8 min-h-screen"><div class="border-b pb-4 mb-6 flex justify-between"><div><h2 class="text-2xl font-bold">${ex.title} Results</h2><p class="text-xl font-bold text-blue-600">${sub.score}%</p></div><button onclick="goCourse()" class="text-gray-500 font-bold">Exit</button></div><div class="space-y-6">${ex.questions.map((q,i)=>{ const user=sub.answers[i], correct=q.ans; return `<div class="p-4 border rounded ${user===correct?'border-green-300 bg-green-50':'border-red-300 bg-red-50'}"><p class="font-bold mb-2">${i+1}. ${q.q}</p><div class="space-y-1">${q.options.map((o,oi)=>`<div class="${oi===correct?'text-green-700 font-bold':(oi===user?'text-red-600 font-bold':'')}">${String.fromCharCode(65+oi)}. ${o} ${oi===correct?'(Correct)':''}</div>`).join('')}</div></div>` }).join('')}</div></div>`;
+}
+window.reviewExamContent = (eid) => { const ex=db.exams[currentCourseId].find(e=>e.id===eid); renderModal('rev', ex.title, `<div class="space-y-4 max-h-[60vh] overflow-y-auto">${ex.questions.map((q,i)=>`<div class="p-3 border rounded"><p class="font-bold">${i+1}. ${q.q}</p><div class="ml-4 text-sm text-gray-600">${q.options.map((o,oi)=>`<div>${oi===q.ans?'*':''} ${o}</div>`).join('')}</div></div>`).join('')}</div>`); }
+window.showItemAnalysis = (eid) => { const ex=db.exams[currentCourseId].find(e=>e.id===eid), subs=db.examSubmissions[eid]||{}, total=Object.keys(subs).length; let html=`<div class="mb-2 font-bold">Taken: ${total}</div><div class="space-y-2 max-h-60 overflow-y-auto">`; ex.questions.forEach((q,i)=>{ let c=0; Object.values(subs).forEach(s=>{if(s.answers&&s.answers[i]===q.ans)c++}); const p=total>0?Math.round((c/total)*100):0; html+=`<div class="bg-gray-50 p-2 text-xs">Q${i+1}: ${p}% Correct</div>`; }); html+=`</div>`; renderModal('modal-analytics', 'Item Analysis', html); }
+window.openWeightsModal = () => { const s=db.subjects.find(x=>x.id===currentCourseId), w=s.gradingWeights; renderModal('w', 'Weights', `<div class="grid grid-cols-3 gap-2 mb-2"><input id="ww" value="${w.ww}" placeholder="WW"><input id="pt" value="${w.pt}" placeholder="PT"><input id="qa" value="${w.qa}" placeholder="QA"></div><button onclick="saveWeights()" class="w-full bg-blue-600 text-white py-2 rounded">Save</button>`); }
+window.saveWeights = () => { const ww=parseInt($('ww').value), pt=parseInt($('pt').value), qa=parseInt($('qa').value); if(ww+pt+qa!==100) return showToast('Total must be 100%','error'); const s=db.subjects.find(x=>x.id===currentCourseId); s.gradingWeights={ww,pt,qa}; saveDB(); closeModal('w'); render(); }
+window.resetGrades = () => { showConfirm('Reset ALL grades?', () => { (db.activities[currentCourseId]||[]).forEach(a=>delete db.activitySubmissions[a.id]); (db.exams[currentCourseId]||[]).forEach(e=>delete db.examSubmissions[e.id]); saveDB(); render(); }); }
+
+window.toggleModal = (id) => { if($(id)){ $(id).remove(); return; } }
+window.closeModal = (id) => { const el = document.getElementById(id); if (el) el.remove(); } 
+window.renderModal = (id,t,h) => { if($(id)) $(id).remove(); $('modal-portal').innerHTML=`<div id="${id}" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"><div class="bg-white p-6 rounded w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"><div class="flex justify-between mb-4"><h3 class="font-bold text-lg">${t}</h3><button onclick="closeModal('${id}')"><i class="fas fa-times"></i></button></div>${h}</div></div>`; }
+
+render();
+</script>
+</body>
+</html>
+
+

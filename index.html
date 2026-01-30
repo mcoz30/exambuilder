@@ -466,9 +466,9 @@ function renderCalendar(c) {
     $('page-title').innerText = 'Calendar';
     const year=calendarDate.getFullYear(), month=calendarDate.getMonth();
     const firstDay=new Date(year,month,1).getDay(), days=new Date(year,month+1,0).getDate();
-    let html = `<div class="theme-panel bg-white p-4 rounded shadow mb-4 flex justify-between"><button onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button><h2 class="font-bold text-xl">${calendarDate.toLocaleString('default',{month:'long'})} ${year}</h2><button onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button></div>`;
-    html += `<div class="calendar-grid">${['S','M','T','W','T','F','S'].map(d=>`<div class="bg-gray-50 p-2 text-center text-xs font-bold">${d}</div>`).join('')}`;
-    for(let i=0; i<firstDay; i++) html+=`<div class="cal-cell bg-gray-50/50"></div>`;
+    let html = `<div class="theme-panel bg-white p-6 rounded-xl shadow-sm mb-6 flex justify-between items-center"><button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full transition"><i class="fas fa-chevron-left"></i></button><h2 class="font-bold text-2xl text-gray-800">${calendarDate.toLocaleString('default',{month:'long'})} ${year}</h2><button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-full transition"><i class="fas fa-chevron-right"></i></button></div>`;
+    html += `<div class="calendar-grid rounded-xl overflow-hidden shadow-sm border border-gray-200">${['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d=>`<div class="bg-gray-50 p-3 text-center text-xs font-bold text-gray-400 tracking-widest">${d}</div>`).join('')}`;
+    for(let i=0; i<firstDay; i++) html+=`<div class="cal-cell bg-gray-50/30"></div>`;
     for(let d=1; d<=days; d++) {
         const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const monthDay = `${month+1}-${d}`; // For simple holiday check
@@ -476,11 +476,11 @@ function renderCalendar(c) {
         
         // 1. Check Philippine Holidays
         const hol = phHolidays.find(h => (h.m === month && h.d === d));
-        if(hol) evts += `<div class="event-pill text-white font-bold" style="background:${hol.c || 'red'}">🇵🇭 ${hol.t}</div>`;
+        if(hol) evts += `<div class="event-pill text-white font-bold shadow-sm mb-1 transform hover:scale-105" style="background:${hol.c || 'red'}">🇵🇭 ${hol.t}</div>`;
 
         // 2. Check Admin Global Events
         (db.globalEvents || []).forEach(e => {
-            if(e.date === dateStr) evts += `<div class="event-pill bg-purple-600 text-white font-bold">${e.title}</div>`;
+            if(e.date === dateStr) evts += `<div class="event-pill bg-purple-600 text-white font-bold shadow-sm mb-1 transform hover:scale-105"><i class="fas fa-star mr-1 text-[8px]"></i>${e.title}</div>`;
         });
 
         // 3. Check Course Events
@@ -489,14 +489,14 @@ function renderCalendar(c) {
             if(currentUser.role==='teacher' && s.teacherId!==currentUser.id) return;
             (db.exams[s.id]||[]).forEach(e => { 
                 if(e.dueDate.startsWith(dateStr)) 
-                    evts += `<div onclick="goToEvent('${s.id}', 'quizzes', '${e.id}', 'exam')" class="event-pill cursor-pointer hover:opacity-80" style="background:${s.color};color:white">Due: ${e.title}</div>`; 
+                    evts += `<div onclick="goToEvent('${s.id}', 'quizzes', '${e.id}', 'exam')" class="event-pill cursor-pointer hover:opacity-90 shadow-sm mb-1" style="background:${s.color};color:white"><i class="fas fa-clock mr-1 text-[8px]"></i>${e.title}</div>`; 
             });
             (db.activities[s.id]||[]).forEach(a => { 
                 if(a.dueDate && a.dueDate.startsWith(dateStr)) 
-                    evts += `<div onclick="goToEvent('${s.id}', 'activities', '${a.id}', 'activity')" class="event-pill border border-gray-400 text-gray-600 bg-white cursor-pointer hover:bg-gray-50">Task: ${a.title}</div>`; 
+                    evts += `<div onclick="goToEvent('${s.id}', 'activities', '${a.id}', 'activity')" class="event-pill border border-gray-300 text-gray-700 bg-white cursor-pointer hover:bg-gray-50 shadow-sm mb-1"><i class="fas fa-tasks mr-1 text-gray-400 text-[8px]"></i>${a.title}</div>`; 
             });
         });
-        html += `<div class="cal-cell">${d}<div class="flex flex-col gap-1 mt-1">${evts}</div></div>`;
+        html += `<div class="cal-cell group hover:bg-blue-50 transition-colors"><span class="text-sm font-bold text-gray-400 group-hover:text-blue-600">${d}</span><div class="flex flex-col gap-0.5 mt-1">${evts}</div></div>`;
     }
     html += `</div>`; c.innerHTML = html;
 }
@@ -521,69 +521,90 @@ function renderThemeBuilder(c) {
     const t = db.theme;
     
     c.innerHTML = `
-        <div class="max-w-4xl mx-auto bg-white p-8 rounded shadow-lg border">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Customize Interface</h2>
+        <div class="max-w-4xl mx-auto theme-panel bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Customize Interface</h2>
+                    <p class="text-gray-500 text-sm">Personalize the look and feel of your LMS.</p>
+                </div>
                 <div class="flex gap-2">
-                    <button onclick="resetTheme()" class="px-4 py-2 border rounded hover:bg-gray-50">Reset Default</button>
-                    <button onclick="saveTheme()" class="px-6 py-2 bg-canvas-accent text-white font-bold rounded shadow hover:bg-blue-700">Save Changes</button>
+                    <button onclick="resetTheme()" class="px-4 py-2 border rounded hover:bg-gray-50 transition">Reset Default</button>
+                    <button onclick="saveTheme()" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded shadow hover:shadow-lg transform hover:-translate-y-0.5 transition">Save Changes</button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <!-- Branding -->
-                <div class="space-y-4">
-                    <h3 class="font-bold border-b pb-2">Branding</h3>
+                <div class="space-y-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-tag text-blue-500"></i> Branding</h3>
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">App Name</label>
-                        <input id="theme-name" value="${t.appName}" class="w-full border p-2 rounded">
+                        <label class="block text-sm font-bold text-gray-600 mb-2">App Name</label>
+                        <input id="theme-name" value="${t.appName}" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">Logo</label>
-                        <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 border rounded bg-gray-50 flex items-center justify-center overflow-hidden">
+                        <label class="block text-sm font-bold text-gray-600 mb-2">Logo</label>
+                        <div class="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                            <div class="w-16 h-16 border rounded bg-white flex items-center justify-center overflow-hidden shadow-sm">
                                 ${t.logoUrl ? `<img src="${t.logoUrl}" class="w-full h-full object-contain">` : '<span class="text-xs text-gray-400">No Logo</span>'}
                             </div>
-                            <input type="file" id="theme-logo-file" accept="image/*" class="text-sm">
-                            <input type="hidden" id="theme-logo-url" value="${t.logoUrl}">
+                            <div class="flex-1">
+                                <input type="file" id="theme-logo-file" accept="image/*" class="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                                <input type="hidden" id="theme-logo-url" value="${t.logoUrl}">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Background -->
-                <div class="space-y-4">
-                    <h3 class="font-bold border-b pb-2">Background</h3>
-                    <div class="flex gap-4 mb-2">
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput()"> Solid Color</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput()"> Gradient</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput()"> Image</label>
+                <div class="space-y-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-paint-roller text-purple-500"></i> Background</h3>
+                    <div class="flex gap-4 mb-2 p-1 bg-gray-100 rounded-lg w-max">
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='color'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-fill-drip text-xs"></i> Solid
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='gradient'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-gradient text-xs"></i> Gradient
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='image'?'bg-white shadow-sm':''}">
+                            <input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
+                            <i class="fas fa-image text-xs"></i> Image
+                        </label>
                     </div>
                     
                     <div id="bg-input-color" class="${t.bgType!=='color'?'hidden':''}">
-                        <input type="color" id="theme-bgcolor" value="${t.bgColor}" class="w-full h-10 cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="theme-bgcolor" value="${t.bgColor}" class="h-12 w-12 p-1 border rounded cursor-pointer bg-white">
+                            <span class="text-gray-500 text-sm">Pick a solid color</span>
+                        </div>
                     </div>
                     
                     <div id="bg-input-gradient" class="${t.bgType!=='gradient'?'hidden':''}">
-                        <input type="text" id="theme-gradient" value="${t.bgGradient}" class="w-full border p-2 rounded" placeholder="linear-gradient(...)">
-                        <p class="text-xs text-gray-400 mt-1">CSS gradient syntax</p>
+                        <input type="text" id="theme-gradient" value="${t.bgGradient}" class="w-full border p-3 rounded-lg text-sm font-mono bg-gray-50" placeholder="linear-gradient(...)">
+                        <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Use standard CSS gradient syntax</p>
                     </div>
 
                     <div id="bg-input-image" class="${t.bgType!=='image'?'hidden':''}">
-                        <input type="text" id="theme-bgimage" value="${t.bgImage}" class="w-full border p-2 rounded mb-2" placeholder="Image URL">
-                        <input type="file" id="theme-bgfile" accept="image/*" class="w-full text-sm">
+                        <input type="text" id="theme-bgimage" value="${t.bgImage}" class="w-full border p-3 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Image URL (https://...)">
+                        <input type="file" id="theme-bgfile" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
                     </div>
                 </div>
 
                 <!-- Glassmorphism -->
-                <div class="space-y-4 md:col-span-2">
-                    <h3 class="font-bold border-b pb-2">Glassmorphism (Glossy Style)</h3>
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer font-bold">
-                            <input type="checkbox" id="theme-glass" ${t.glassEffect?'checked':''}> Enable Glass Effect
-                        </label>
-                        <div class="flex items-center gap-2 flex-1">
-                            <span class="text-sm">Opacity:</span>
-                            <input type="range" id="theme-opacity" min="0.1" max="1" step="0.05" value="${t.glassOpacity}" class="flex-1">
+                <div class="space-y-6 md:col-span-2 border-t pt-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-magic text-teal-500"></i> Interface Style</h3>
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer font-bold text-gray-700 mb-1">
+                                <input type="checkbox" id="theme-glass" ${t.glassEffect?'checked':''} class="w-5 h-5 text-blue-600 rounded"> 
+                                Enable Glassmorphism (Glossy UI)
+                            </label>
+                            <p class="text-xs text-gray-500 ml-8">Adds translucency and blur effects to containers.</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-64">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Opacity</span>
+                            <input type="range" id="theme-opacity" min="0.5" max="1" step="0.05" value="${t.glassOpacity}" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                         </div>
                     </div>
                 </div>
@@ -604,6 +625,13 @@ function renderThemeBuilder(c) {
 }
 
 window.toggleBgInput = () => {
+    // Update UI state for radio buttons
+    document.querySelectorAll('input[name="bg-type"]').forEach(r => {
+        r.parentElement.className = r.checked 
+            ? 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition bg-white shadow-sm text-blue-600 font-bold'
+            : 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition text-gray-600 hover:bg-gray-200';
+    });
+
     const type = document.querySelector('input[name="bg-type"]:checked').value;
     $('bg-input-color').classList.toggle('hidden', type!=='color');
     $('bg-input-gradient').classList.toggle('hidden', type!=='gradient');
@@ -690,7 +718,7 @@ window.registerStudent = () => { const n=$('reg-s-name').value, u=$('reg-s-user'
 function renderCourse(c) {
     const s = db.subjects.find(x => x.id === currentCourseId);
     if(!s) return goDashboard();
-    $('page-title').innerText = s.name;
+    $('page-title').innerText = `<span class="text-gray-400 cursor-pointer" onclick="goCoursesList()">${s.code}</span> <span class="mx-2">></span> ${s.name}`;
     c.innerHTML = `<div class="flex flex-col md:flex-row gap-6 h-full"><nav class="theme-panel w-full md:w-48 flex-shrink-0 flex md:flex-col gap-1 text-sm font-medium text-canvas-primary border-r border-gray-200 pb-4 md:pr-4"><a onclick="switchTab('home')" class="${currentTab==='home'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Home</a><a onclick="switchTab('modules')" class="${currentTab==='modules'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Modules</a><a onclick="switchTab('activities')" class="${currentTab==='activities'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Activities</a><a onclick="switchTab('quizzes')" class="${currentTab==='quizzes'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Quizzes/Exams</a><a onclick="switchTab('grades')" class="${currentTab==='grades'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">Grades</a><a onclick="switchTab('people')" class="${currentTab==='people'?'border-l-4 border-canvas-base font-bold pl-2':''} p-2 cursor-pointer hover:bg-gray-100 block">People</a></nav><div id="course-content" class="flex-1"></div></div>`;
     renderCourseTab();
 }
@@ -812,67 +840,32 @@ window.updateBlock = (i, val) => { builderBlocks[i].content = val; }
 window.execCmd = (i, cmd, val=null) => { document.execCommand(cmd, false, val); builderBlocks[i].content = document.getElementById(`editor-${i}`).innerHTML; }
 window.uploadBlockFile = (i, input) => { if(input.files[0]) { const r = new FileReader(); r.onload = e => { builderBlocks[i].content = e.target.result; builderBlocks[i].name = input.files[0].name; renderBlocks(); }; r.readAsDataURL(input.files[0]); } }
 window.cancelModule = () => { currentView = 'course'; render(); }
-// --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
-window.saveModule = () => {
-    const title = $('mod-title').value;
-    if (!title) return showToast('Please enter a module title', 'error');
+window.saveModule = () => { const t = $('mod-title-input').value; if(!t) return showToast('Title required','error'); if(!db.modules[currentCourseId]) db.modules[currentCourseId]=[]; const mod = { id: editingModuleId || 'm'+Date.now(), title: t, blocks: builderBlocks, date: new Date().toISOString() }; if(editingModuleId) { const idx = db.modules[currentCourseId].findIndex(m=>m.id===editingModuleId); db.modules[currentCourseId][idx] = mod; } else { db.modules[currentCourseId].push(mod); } saveDB(); currentView = 'course'; render(); showToast('Saved'); }
+function renderModuleBuilder(c) {
+    const title = editingModuleId ? db.modules[currentCourseId].find(m=>m.id===editingModuleId).title : "";
+    c.innerHTML = `<div class="max-w-4xl mx-auto pb-24"><div class="theme-panel flex justify-between items-center mb-6 bg-white p-4 rounded shadow-sm border"><input id="mod-title-input" value="${title}" class="text-xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mr-4" placeholder="Module Title"><div class="flex gap-2"><button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button><button onclick="saveModule()" class="px-4 py-2 bg-green-600 text-white font-bold rounded shadow">Save</button></div></div><div id="blocks-list" class="space-y-4"></div><div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 flex justify-center gap-4 shadow z-50"><button onclick="addBlock('text')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-font text-blue-500"></i> Text</button><button onclick="addBlock('image')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-image text-green-500"></i> Image</button><button onclick="addBlock('video')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-video text-red-500"></i> Video</button><button onclick="addBlock('file')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-paperclip text-gray-500"></i> File</button></div></div>`;
+    renderBlocks();
+}
+window.renderBlocks = () => {
+    const el = $('blocks-list'); if(!el) return;
+    el.innerHTML = builderBlocks.map((b, i) => `<div class="module-block group"><div class="block-actions"><button onclick="moveBlock(${i}, -1)" class="p-1 hover:text-blue-600"><i class="fas fa-arrow-up"></i></button><button onclick="moveBlock(${i}, 1)" class="p-1 hover:text-blue-600"><i class="fas fa-arrow-down"></i></button><button onclick="removeBlock(${i})" class="p-1 hover:text-red-500"><i class="fas fa-times"></i></button></div>${renderBlockContent(b, i)}</div>`).join('');
+}
+function renderBlockContent(b, i) {
+    if(b.type === 'text') return `<div class="rich-toolbar"><button class="rich-btn" onclick="execCmd(${i}, 'bold')">B</button><button class="rich-btn" onclick="execCmd(${i}, 'italic')">I</button><button class="rich-btn" onclick="execCmd(${i}, 'underline')">U</button><button class="rich-btn" onclick="execCmd(${i}, 'removeFormat')"><i class="fas fa-eraser"></i></button><select onchange="execCmd(${i}, 'fontSize', this.value)" class="rich-btn h-6 py-0"><option value="3">Normal</option><option value="5">Large</option><option value="7">Huge</option></select><div class="color-picker-wrapper rich-btn w-6" title="Text Color"><i class="fas fa-font"></i><input type="color" onchange="execCmd(${i}, 'foreColor', this.value)"></div><button class="rich-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800" onclick="execCmd(${i}, 'hiliteColor', 'yellow')" title="Highlight"><i class="fas fa-highlighter"></i></button></div><div id="editor-${i}" class="rich-content w-full bg-white border" contenteditable="true" oninput="updateBlock(${i}, this.innerHTML)">${b.content}</div>`;
+    else if (b.type === 'video') return `<label class="block text-xs font-bold text-gray-500 mb-2">YouTube URL</label><input class="w-full border p-2 rounded" value="${b.content}" onchange="updateBlock(${i}, this.value)" placeholder="https://youtube.com/watch?v=...">`;
+    else return `<div class="flex items-center gap-4"><input type="file" onchange="uploadBlockFile(${i}, this)">${b.content ? `<span class="text-green-600 text-xs font-bold">Uploaded</span>` : ''}</div>`;
+}
+window.viewModule = (mid) => {
+    const m = db.modules[currentCourseId].find(x=>x.id===mid);
+    const content = m.blocks.map(b => {
+        if(b.type === 'text') return `<div class="mb-4 text-gray-800">${b.content}</div>`;
+        if(b.type === 'image') return `<img src="${b.content}" class="w-full h-auto rounded mb-4 shadow">`;
+        if(b.type === 'video') return `<div class="embed-container mb-4"><iframe src="${b.content.replace('watch?v=', 'embed/')}" frameborder="0" allowfullscreen></iframe></div>`;
+        if(b.type === 'file') return `<a href="${b.content}" download="${b.name||'file'}" class="block bg-blue-50 border border-blue-200 p-3 rounded mb-4 text-blue-700 hover:bg-blue-100 font-bold"><i class="fas fa-paperclip mr-2"></i> Download ${b.name||'File'}</a>`;
+    }).join('');
+    renderModal('mod-view', m.title, `<div class="p-2">${content}</div>`);
+}
 
-    const moduleData = {
-        id: editingModuleId || 'mod_' + Date.now(),
-        title: title,
-        courseId: currentCourseId,
-        blocks: [...builderBlocks] // Captures all text/image blocks
-    };
-
-    // Ensure the array exists for this specific course
-    if (!db.modules[currentCourseId]) db.modules[currentCourseId] = [];
-
-    // Logic to Update or Add
-    if (editingModuleId) {
-        const idx = db.modules[currentCourseId].findIndex(m => m.id === editingModuleId);
-        if(idx !== -1) db.modules[currentCourseId][idx] = moduleData;
-    } else {
-        db.modules[currentCourseId].push(moduleData);
-    }
-
-    // THIS IS THE FIX: Wait for Firebase to finish saving before closing
-    saveDB().then(() => {
-        showToast('Module successfully saved to Cloud');
-        goCourse(currentCourseId); // This refreshes the view so you see it immediately
-    });
-};
-
-// --- UPDATED ACTIVITY BUILDER (Replaces your old publishActivity) ---
-window.publishActivity = () => {
-    const title = $('act-title').value;
-    const type = $('act-type').value;
-    if (!title) return showToast('Please enter a title', 'error');
-
-    const activityData = {
-        id: editingActivityId || 'act_' + Date.now(),
-        title: title,
-        type: type,
-        content: builderBlocks.map(b => b.content).join('\n'),
-        blocks: [...builderBlocks],
-        date: new Date().toISOString(),
-        courseId: currentCourseId
-    };
-
-    if (!db.activities[currentCourseId]) db.activities[currentCourseId] = [];
-
-    if (editingActivityId) {
-        const idx = db.activities[currentCourseId].findIndex(a => a.id === editingActivityId);
-        if(idx !== -1) db.activities[currentCourseId][idx] = activityData;
-    } else {
-        db.activities[currentCourseId].push(activityData);
-    }
-
-    // THIS IS THE FIX: Forces Firebase to sync so students see it
-    saveDB().then(() => {
-        showToast('Activity Published & Visible to Students');
-        goCourse(currentCourseId);
-    });
-};
 // --- ACTIVITY BUILDER (NEW) ---
 window.createActivity = () => { builderBlocks = []; editingActivityId = null; currentView = 'activity_builder'; render(); }
 window.editActivity = (aid) => { const a = db.activities[currentCourseId].find(x=>x.id===aid); builderBlocks = JSON.parse(JSON.stringify(a.blocks || [])); editingActivityId = aid; currentView = 'activity_builder'; render(); }
@@ -1129,8 +1122,5 @@ render();
 </script>
 </body>
 </html>
-
-
-
 
 

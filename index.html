@@ -24,7 +24,7 @@
                         canvas: { 
                             base: '#2D3B45', 
                             primary: '#0e1e24', 
-                            accent: '#0374B5', 
+                            accent: 'var(--accent-color)', 
                             danger: '#EE4D3D', 
                             success: '#00AC18',
                             light: '#F5F5F5'
@@ -48,7 +48,14 @@
             --text-color: #2D3B45;
             --sidebar-bg: #ffffff;
             --nav-item-active-bg: rgba(3, 116, 181, 0.1);
-            --nav-item-active-color: #0374B5;
+            
+            /* Theme Variables */
+            --header-bg: #ffffff;
+            --header-text: #2D3B45;
+            --header-shadow: none;
+            --global-border-color: #e2e8f0;
+            --accent-color: #0374B5; 
+            --btn-bg: #0374B5; 
         }
 
         body { 
@@ -64,12 +71,35 @@
         /* Professional Card Style */
         .theme-panel {
             background: var(--glass-bg);
-            border: var(--glass-border);
+            border: 1px solid var(--global-border-color);
             box-shadow: var(--glass-shadow);
             backdrop-filter: var(--backdrop-blur);
             -webkit-backdrop-filter: var(--backdrop-blur);
             transition: transform 0.2s, box-shadow 0.2s;
         }
+        
+        /* Header Styling */
+        header.theme-panel {
+            background: var(--header-bg) !important;
+            color: var(--header-text) !important;
+            border-bottom: 1px solid var(--global-border-color) !important;
+            text-shadow: var(--header-shadow);
+        }
+        
+        /* Custom Button Class */
+        .btn-theme {
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-theme:hover {
+            opacity: 0.95;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        .text-theme { color: var(--accent-color); }
         
         .hover-lift:hover {
             transform: translateY(-2px);
@@ -80,21 +110,21 @@
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #0374B5; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
         
-        .nav-item.active { background: var(--nav-item-active-bg); color: var(--nav-item-active-color); border-right: 3px solid var(--nav-item-active-color); }
+        .nav-item.active { background: var(--nav-item-active-bg); color: var(--accent-color); border-right: 3px solid var(--accent-color); }
 
         /* Global Nav */
         #global-nav { 
             width: 84px; flex-shrink: 0; 
             background: var(--sidebar-bg);
             display: flex; flex-direction: column; align-items: center; padding-top: 1rem; z-index: 50; 
-            border-right: var(--glass-border);
+            border-right: 1px solid var(--global-border-color);
             backdrop-filter: var(--backdrop-blur);
         }
         .nav-item { color: var(--text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 0.75rem 0; cursor: pointer; transition: background 0.2s; position: relative; opacity: 0.8; }
         .nav-item:hover { background-color: rgba(0,0,0,0.05); opacity: 1; }
-        .nav-item.active { background-color: rgba(3, 116, 181, 0.1); color: #0374B5; border-left: 4px solid #0374B5; opacity: 1; }
+        .nav-item.active { background-color: rgba(var(--accent-color), 0.1); color: var(--accent-color); border-left: 4px solid var(--accent-color); opacity: 1; }
         .nav-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
         .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; }
 
@@ -106,7 +136,7 @@
         /* Calendar */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); }
         .cal-cell { background: var(--glass-bg); min-height: 120px; padding: 0.5rem; position: relative; }
-        .cal-cell.today { background: rgba(3, 116, 181, 0.1); }
+        .cal-cell.today { background: rgba(var(--accent-color), 0.1); border: 1px solid var(--accent-color); }
         .event-pill { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; items-center; gap: 4px; transition: opacity 0.2s; }
         
         /* Feed */
@@ -115,16 +145,14 @@
 
         /* Module & Activity Builder Styles */
         .module-block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.8); position: relative; transition: all 0.2s; }
-        .module-block:hover { border-color: #0374B5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .module-block:hover { border-color: var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .block-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s; }
         .module-block:hover .block-actions { opacity: 1; }
         .rich-toolbar { background: rgba(0,0,0,0.02); padding: 6px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .rich-btn { padding: 4px 8px; border-radius: 4px; background: white; border: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #475569; display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 28px; }
         .rich-btn:hover { background: #e2e8f0; color: #0f172a; }
         .rich-content { min-height: 80px; padding: 10px; outline: none; background: white; color: #334155; }
-        .color-picker-wrapper { position: relative; display: inline-block; }
-        .color-picker-wrapper input[type="color"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-
+        
         @media (max-width: 768px) {
             #main-layout { flex-direction: column; }
             #global-nav { width: 100%; height: 60px; flex-direction: row; padding: 0; justify-content: space-around; position: fixed; bottom: 0; }
@@ -138,7 +166,6 @@
         
         #loading-screen { position: fixed; inset: 0; background: #2D3B45; z-index: 9999; display: flex; justify-content: center; items-center; color: white; flex-direction: column; gap: 1rem; transition: opacity 0.5s; }
         #sync-status { position: fixed; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.8); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.75rem; z-index: 100; display: flex; items-center; gap: 0.5rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-        .grade-table th { white-space: nowrap; }
     </style>
 </head>
 <body class="h-screen overflow-hidden text-sm font-sans">
@@ -244,6 +271,34 @@ function applyTheme() {
         root.style.setProperty('--backdrop-blur', 'none');
         root.style.setProperty('--sidebar-bg', '#ffffff');
     }
+    
+    // Theme Props
+    root.style.setProperty('--global-border-color', t.borderColor || '#e2e8f0');
+    root.style.setProperty('--accent-color', t.accentColor || '#0374B5');
+    root.style.setProperty('--nav-item-active-bg', `rgba(${hexToRgb(t.accentColor || '#0374B5')}, 0.1)`);
+    
+    // Header
+    if (t.headerType === 'gradient') {
+        root.style.setProperty('--header-bg', t.headerGradient || 'linear-gradient(to right, #ffffff, #f3f4f6)');
+    } else {
+        root.style.setProperty('--header-bg', t.headerColor || '#ffffff');
+    }
+    root.style.setProperty('--header-text', t.headerTextColor || '#2D3B45');
+    root.style.setProperty('--header-shadow', t.headerShadow || 'none');
+
+    // Buttons
+    if (t.btnType === 'gradient') {
+        root.style.setProperty('--btn-bg', t.btnGradient || 'linear-gradient(to right, #0374B5, #00C6FF)');
+    } else {
+        root.style.setProperty('--btn-bg', t.accentColor || '#0374B5');
+    }
+}
+
+function hexToRgb(hex) {
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) { return r + r + g + g + b + b; });
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '3, 116, 181';
 }
 
 // --- HELPERS ---
@@ -284,15 +339,16 @@ function questionsToText(questions) {
     return textOutput.trim();
 }
 window.onManualInput = (val) => { const qs = parseQuizText(val); const label = $('manual-detected-label'); if(label) label.innerHTML = qs.length > 0 ? `<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> ${qs.length} Questions Detected</span>` : `<span class="text-gray-400">Typing...</span>`; }
+
 // --- ROUTER ---
 function render() {
     const app = $('app'); if (!app) return; app.innerHTML = '';
     if(currentView === 'login') { renderLogin(app); } else {
-        const logo = db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-8 w-8 object-contain mr-2">` : '<i class="fas fa-shapes text-3xl text-canvas-accent"></i>';
+        const logo = db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-20 w-auto max-w-[80px] object-contain">` : '<i class="fas fa-shapes text-5xl text-canvas-accent"></i>';
         app.innerHTML = `
             <div id="main-layout" class="flex w-full h-full">
                 <nav id="global-nav">
-                    <div class="mb-6 hidden md:block mt-4 transform hover:scale-110 transition-transform duration-300">${logo}</div>
+                    <div class="mb-6 hidden md:block mt-4 transform hover:scale-110 transition-transform duration-300 px-2">${logo}</div>
                     <div class="nav-item ${currentView==='dashboard'?'active':''}" onclick="goDashboard()"><i class="fas fa-tachometer-alt nav-icon"></i><span class="nav-label">Dash</span></div>
                     ${currentUser.role === 'admin' ? `
                     <div class="nav-item ${currentView==='teachers_list'?'active':''}" onclick="goTeachersList()"><i class="fas fa-chalkboard-teacher nav-icon"></i><span class="nav-label">Teachers</span></div>
@@ -304,12 +360,12 @@ function render() {
                     <div class="mt-auto mb-4 nav-item" onclick="logout()"><i class="fas fa-sign-out-alt nav-icon text-gray-400"></i><span class="nav-label text-gray-400">Logout</span></div>
                 </nav>
                 <main id="content-area" class="flex-1 overflow-y-auto relative p-6">
-                    <header class="theme-panel h-16 flex items-center justify-between px-6 sticky top-0 z-40 rounded-xl mb-6 animate-slide-up">
-                        <div class="flex items-center gap-2 text-canvas-base">
-                            ${db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-8 w-8 object-contain">` : ''}
-                            <h2 class="font-bold text-lg uppercase tracking-wide" id="page-title">${db.theme.appName}</h2>
+                    <header class="theme-panel h-20 flex items-center justify-between px-6 sticky top-0 z-40 rounded-xl mb-6 animate-slide-up">
+                        <div class="flex items-center gap-4">
+                            ${db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-16 w-auto object-contain">` : ''}
+                            <h2 class="font-bold text-xl uppercase tracking-wide" id="page-title">${db.theme.appName}</h2>
                         </div>
-                        <div class="flex items-center gap-3"><span class="text-sm font-bold text-gray-600">${currentUser.name}</span>${renderAvatar(currentUser, 'w-9 h-9', 'text-sm')}</div>
+                        <div class="flex items-center gap-3"><span class="text-sm font-bold opacity-90">${currentUser.name}</span>${renderAvatar(currentUser, 'w-9 h-9', 'text-sm')}</div>
                     </header>
                     <div id="page-content" class="max-w-7xl mx-auto animate-slide-up" style="animation-delay: 0.1s;"></div>
                 </main>
@@ -338,10 +394,11 @@ window.goSettings = () => { currentView='settings'; render(); }
 window.goTeachersList = () => { currentView='teachers_list'; render(); }
 window.goThemeBuilder = () => { currentView='theme_builder'; render(); }
 window.logout = () => { currentUser=null; currentView='login'; render(); }
+window.goCourse = (sid) => { currentCourseId = sid; currentView = 'course'; render(); }
 
 // --- LOGIN ---
 function renderLogin(c) {
-    const logo = db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-20 mx-auto mb-6 object-contain drop-shadow-md">` : '<i class="fas fa-shapes text-6xl text-canvas-accent mb-6 inline-block drop-shadow-md"></i>';
+    const logo = db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-64 mx-auto mb-6 object-contain drop-shadow-md">` : '<i class="fas fa-shapes text-9xl text-canvas-accent mb-6 inline-block drop-shadow-md"></i>';
     c.innerHTML = `
         <div class="flex h-screen w-full bg-[#2D3B45] items-center justify-center relative overflow-hidden">
             <div class="absolute inset-0 opacity-20" style="background-image: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
@@ -358,7 +415,7 @@ function renderLogin(c) {
                     <div class="flex items-center mb-6"><button onclick="hideLoginForm()" class="text-gray-400 hover:text-black mr-4 p-2 rounded-full hover:bg-gray-100 transition"><i class="fas fa-arrow-left"></i></button><h2 class="text-2xl font-bold text-gray-800" id="form-role-title">Login</h2></div>
                     <div><label class="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Username</label><input id="login-user" type="text" class="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-gray-50 focus:bg-white"></div>
                     <div><label class="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">Password</label><input id="login-pass" type="password" class="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-gray-50 focus:bg-white"></div>
-                    <button onclick="loginAttempt()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-3.5 rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all mt-4">Sign In</button>
+                    <button onclick="loginAttempt()" class="btn-theme w-full font-bold py-3.5 rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all mt-4">Sign In</button>
                 </div>
             </div>
         </div>
@@ -383,7 +440,7 @@ function renderDashboard(c) {
                             <select id="gp-type" class="w-full border p-2 rounded text-sm bg-gray-50" onchange="toggleAdminMedia()"><option value="text">Text Only</option><option value="image_upload">Image (Upload Poster)</option><option value="image_url">Image (URL)</option><option value="video">Video (YouTube)</option></select>
                             <input id="gp-url" class="w-full border p-2 rounded text-sm hidden" placeholder="Media URL...">
                             <div id="gp-file-container" class="hidden"><label class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"><input type="file" id="gp-file" accept="image/*" class="w-full"></label></div>
-                            <button onclick="publishGlobalPost()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded font-bold hover:shadow-md transition">Publish</button>
+                            <button onclick="publishGlobalPost()" class="btn-theme w-full py-2 rounded font-bold hover:shadow-md transition">Publish</button>
                         </div>
                     </div>
                     <div class="theme-panel bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-lift">
@@ -419,10 +476,10 @@ function renderCoursesList(c) {
         const teachers = db.users.filter(u => u.role === 'teacher');
         filterHtml = `<select onchange="setAdminFilter(this.value)" class="border p-2 rounded bg-white text-sm"><option value="all">All Teachers</option>${teachers.map(t => `<option value="${t.id}" ${adminCourseFilter===t.id?'selected':''}>${t.name}</option>`).join('')}</select>`;
         subs = adminCourseFilter === 'all' ? db.subjects : db.subjects.filter(s => s.teacherId === adminCourseFilter);
-        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3><div class="flex gap-2">${filterHtml}${currentUser.role==='teacher' ? `<button onclick="openAddCourseModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Course</button>` : ''}</div></div>`;
+        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3><div class="flex gap-2">${filterHtml}${currentUser.role==='teacher' ? `<button onclick="openAddCourseModal()" class="btn-theme px-4 py-2 rounded font-bold text-sm shadow transition"><i class="fas fa-plus mr-2"></i>New Course</button>` : ''}</div></div>`;
     } else if (currentUser.role === 'teacher') {
         subs = db.subjects.filter(s => s.teacherId === currentUser.id);
-        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3><button onclick="openAddCourseModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Course</button></div>`;
+        c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3><button onclick="openAddCourseModal()" class="btn-theme px-4 py-2 rounded font-bold text-sm shadow transition"><i class="fas fa-plus mr-2"></i>New Course</button></div>`;
     } else {
         subs = db.subjects.filter(s => s.students.includes(currentUser.id));
         c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3></div>`;
@@ -430,12 +487,12 @@ function renderCoursesList(c) {
     if(subs.length === 0) { c.innerHTML += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-book-open text-4xl mb-3 block"></i><p>No courses found.</p></div>`; } else {
         c.innerHTML += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${subs.map(s => {
             const t = db.users.find(u => u.id === s.teacherId);
-            return `<div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer h-64 flex flex-col group hover-lift"><div class="course-header" style="background-image: url('${s.img}'); background-color: ${s.color}"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end transition group-hover:from-black/80"><span class="bg-white/20 backdrop-blur-sm text-white border border-white/30 text-xs font-bold px-2 py-1 rounded w-max shadow-sm mb-1">${s.code}</span><h3 class="font-bold text-white text-lg leading-tight drop-shadow-sm">${s.name}</h3></div></div><div class="p-4 flex-1 flex flex-col justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Instructor</p><div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div></div><div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3"><span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span><i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-canvas-accent"></i></div></div></div>`;
+            return `<div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer h-64 flex flex-col group hover-lift"><div class="course-header" style="background-image: url('${s.img}'); background-color: ${s.color}"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end transition group-hover:from-black/80"><span class="bg-white/20 backdrop-blur-sm text-white border border-white/30 text-xs font-bold px-2 py-1 rounded w-max shadow-sm mb-1">${s.code}</span><h3 class="font-bold text-white text-lg leading-tight drop-shadow-sm">${s.name}</h3></div></div><div class="p-4 flex-1 flex flex-col justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Instructor</p><div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div></div><div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3"><span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span><i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-theme"></i></div></div></div>`;
         }).join('')}</div>`;
     }
 }
 window.setAdminFilter = (val) => { adminCourseFilter = val; render(); }
-window.openAddCourseModal = () => { renderModal('modal-add-course', 'Add Course', `<div class="space-y-3"><input id="c-name" class="w-full border p-2 rounded" placeholder="Course Name"><input id="c-code" class="w-full border p-2 rounded" placeholder="Course Code"><div><label class="text-xs font-bold text-gray-500">Select Teacher</label><select id="c-teacher" class="w-full border p-2 rounded bg-white text-sm">${db.users.filter(u => u.role === 'teacher').map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div><button onclick="addCourse()" class="w-full bg-canvas-accent text-white py-2 rounded">Create</button></div>`); }
+window.openAddCourseModal = () => { renderModal('modal-add-course', 'Add Course', `<div class="space-y-3"><input id="c-name" class="w-full border p-2 rounded" placeholder="Course Name"><input id="c-code" class="w-full border p-2 rounded" placeholder="Course Code"><div><label class="text-xs font-bold text-gray-500">Select Teacher</label><select id="c-teacher" class="w-full border p-2 rounded bg-white text-sm">${db.users.filter(u => u.role === 'teacher').map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div><button onclick="addCourse()" class="w-full btn-theme py-2 rounded">Create</button></div>`); }
 window.addCourse = () => { const n=$('c-name').value, c=$('c-code').value; let tid=currentUser.id; if(currentUser.role==='admin') tid=$('c-teacher').value; if(n&&c){ db.subjects.push({id:'s'+Date.now(), name:n, code:c, teacherId:tid, students:[], color:'#0374B5', img:'', introTitle:'Welcome', introBody:'', gradingWeights:{ww:40,pt:40,qa:20}}); saveDB(); render(); closeModal('modal-add-course'); } }
 window.openCourse = (sid) => { currentCourseId = sid; currentView = 'course'; currentTab = 'home'; render(); }
 // --- CALENDAR ---
@@ -506,7 +563,7 @@ function renderThemeBuilder(c) {
                 </div>
                 <div class="flex gap-2">
                     <button onclick="resetTheme()" class="px-4 py-2 border rounded hover:bg-gray-50 transition">Reset Default</button>
-                    <button onclick="saveTheme()" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded shadow hover:shadow-lg transform hover:-translate-y-0.5 transition">Save Changes</button>
+                    <button onclick="saveTheme()" class="btn-theme px-6 py-2 font-bold rounded shadow hover:shadow-lg transform hover:-translate-y-0.5 transition">Save Changes</button>
                 </div>
             </div>
 
@@ -521,115 +578,310 @@ function renderThemeBuilder(c) {
                     <div>
                         <label class="block text-sm font-bold text-gray-600 mb-2">Logo</label>
                         <div class="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
-                            <div class="w-16 h-16 border rounded bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                            <div id="logo-preview-box" class="w-16 h-16 border rounded bg-white flex items-center justify-center overflow-hidden shadow-sm">
                                 ${t.logoUrl ? `<img src="${t.logoUrl}" class="w-full h-full object-contain">` : '<span class="text-xs text-gray-400">No Logo</span>'}
                             </div>
                             <div class="flex-1">
-                                <input type="file" id="theme-logo-file" accept="image/*" class="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
-                                <input type="hidden" id="theme-logo-url" value="${t.logoUrl}">
+                                <input type="file" id="theme-logo-file" accept="image/*" onchange="handleLogoUpload(this)" class="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                                <input type="hidden" id="theme-logo-url" value="${t.logoUrl || ''}">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Background -->
+                <!-- Global Colors -->
                 <div class="space-y-6">
-                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-paint-roller text-purple-500"></i> Background</h3>
-                    <div class="flex gap-4 mb-2 p-1 bg-gray-100 rounded-lg w-max">
-                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='color'?'bg-white shadow-sm':''}">
-                            <input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
-                            <i class="fas fa-fill-drip text-xs"></i> Solid
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='gradient'?'bg-white shadow-sm':''}">
-                            <input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
-                            <i class="fas fa-gradient text-xs"></i> Gradient
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition ${t.bgType==='image'?'bg-white shadow-sm':''}">
-                            <input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput()" class="hidden"> 
-                            <i class="fas fa-image text-xs"></i> Image
-                        </label>
-                    </div>
-                    
-                    <div id="bg-input-color" class="${t.bgType!=='color'?'hidden':''}">
-                        <div class="flex items-center gap-3">
-                            <input type="color" id="theme-bgcolor" value="${t.bgColor}" class="h-12 w-12 p-1 border rounded cursor-pointer bg-white">
-                            <span class="text-gray-500 text-sm">Pick a solid color</span>
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-swatchbook text-pink-500"></i> Global Colors</h3>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Global Border</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="global-border-color" value="${t.borderColor||'#e2e8f0'}" oninput="previewTheme()" class="h-8 w-full rounded border cursor-pointer p-0">
                         </div>
                     </div>
-                    
-                    <div id="bg-input-gradient" class="${t.bgType!=='gradient'?'hidden':''}">
-                        <input type="text" id="theme-gradient" value="${t.bgGradient}" class="w-full border p-3 rounded-lg text-sm font-mono bg-gray-50" placeholder="linear-gradient(...)">
-                        <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Use standard CSS gradient syntax</p>
-                    </div>
-
-                    <div id="bg-input-image" class="${t.bgType!=='image'?'hidden':''}">
-                        <input type="text" id="theme-bgimage" value="${t.bgImage}" class="w-full border p-3 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Image URL (https://...)">
-                        <input type="file" id="theme-bgfile" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Primary Accent (Links/Icons)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="accent-color" value="${t.accentColor || '#0374B5'}" oninput="previewTheme()" class="h-8 w-full rounded border cursor-pointer p-0">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Glassmorphism -->
+                <!-- Header Customization -->
                 <div class="space-y-6 md:col-span-2 border-t pt-6">
-                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-magic text-teal-500"></i> Interface Style</h3>
-                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 flex items-center justify-between">
-                        <div>
-                            <label class="flex items-center gap-3 cursor-pointer font-bold text-gray-700 mb-1">
-                                <input type="checkbox" id="theme-glass" ${t.glassEffect?'checked':''} class="w-5 h-5 text-blue-600 rounded"> 
-                                Enable Glassmorphism (Glossy UI)
-                            </label>
-                            <p class="text-xs text-gray-500 ml-8">Adds translucency and blur effects to containers.</p>
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-heading text-purple-500"></i> Header</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded border">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Background</label>
+                            <div class="flex gap-4 mb-3">
+                                <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="radio" name="header-type" value="solid" ${t.headerType!=='gradient'?'checked':''} onclick="toggleHeaderInput(); previewTheme()"> Solid</label>
+                                <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="radio" name="header-type" value="gradient" ${t.headerType==='gradient'?'checked':''} onclick="toggleHeaderInput(); previewTheme()"> Gradient</label>
+                            </div>
+                            <div id="header-solid-input" class="${t.headerType==='gradient'?'hidden':''}"><input type="color" id="header-color" value="${t.headerColor||'#ffffff'}" oninput="previewTheme()" class="w-full h-8 cursor-pointer rounded border"></div>
+                            <div id="header-gradient-input" class="${t.headerType!=='gradient'?'hidden':''}">
+                                <div id="header-grad-stops" class="space-y-2 mb-2"></div>
+                                <div class="flex gap-2 mb-2"><button onclick="addGradStop('header')" class="text-xs border px-2 rounded bg-white">Add Color</button><button onclick="removeGradStop('header')" class="text-xs border px-2 rounded bg-white text-red-500">Remove</button></div>
+                                <select id="header-grad-angle" onchange="previewTheme()" class="w-full text-xs border p-1 rounded"><option value="to right">Horizontal →</option><option value="to bottom">Vertical ↓</option><option value="135deg">Diagonal ↘</option></select>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-3 w-64">
-                            <span class="text-xs font-bold text-gray-500 uppercase">Opacity</span>
-                            <input type="range" id="theme-opacity" min="0.5" max="1" step="0.05" value="${t.glassOpacity}" class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="bg-gray-50 p-4 rounded border">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Text Style</label>
+                            <div class="flex gap-4 items-center mb-4">
+                                <div class="flex-1">
+                                    <span class="text-xs text-gray-400 block mb-1">Color</span>
+                                    <input type="color" id="header-text-color" value="${t.headerTextColor||'#2D3B45'}" oninput="previewTheme()" class="w-full h-8 rounded border cursor-pointer p-0">
+                                </div>
+                                <div class="flex-1">
+                                    <span class="text-xs text-gray-400 block mb-1">Text Shadow</span>
+                                    <select id="header-shadow" onchange="previewTheme()" class="w-full border p-1 h-8 rounded text-xs">
+                                        <option value="none">None</option>
+                                        <option value="0 1px 2px rgba(0,0,0,0.1)">Subtle</option>
+                                        <option value="0 2px 4px rgba(0,0,0,0.3)">Medium</option>
+                                        <option value="0 4px 8px rgba(0,0,0,0.5)">Strong Lift</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Buttons Customization -->
+                <div class="space-y-6 md:col-span-2 border-t pt-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-mouse-pointer text-blue-500"></i> Buttons</h3>
+                    <div class="bg-gray-50 p-4 rounded border">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Button Background</label>
+                        <div class="flex gap-4 mb-3">
+                            <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="radio" name="btn-type" value="solid" ${t.btnType!=='gradient'?'checked':''} onclick="toggleBtnInput(); previewTheme()"> Solid (Uses Primary)</label>
+                            <label class="flex items-center gap-2 text-xs font-bold cursor-pointer"><input type="radio" name="btn-type" value="gradient" ${t.btnType==='gradient'?'checked':''} onclick="toggleBtnInput(); previewTheme()"> Gradient</label>
+                        </div>
+                        <div id="btn-gradient-input" class="${t.btnType!=='gradient'?'hidden':''}">
+                            <div id="btn-grad-stops" class="space-y-2 mb-2"></div>
+                            <div class="flex gap-2 mb-2"><button onclick="addGradStop('btn')" class="text-xs border px-2 rounded bg-white">Add Color</button><button onclick="removeGradStop('btn')" class="text-xs border px-2 rounded bg-white text-red-500">Remove</button></div>
+                            <select id="btn-grad-angle" onchange="previewTheme()" class="w-full text-xs border p-1 rounded"><option value="to right">Horizontal →</option><option value="to bottom">Vertical ↓</option><option value="135deg">Diagonal ↘</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Background -->
+                <div class="space-y-6 md:col-span-2 border-t pt-6">
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-image text-green-500"></i> Page Background</h3>
+                    <div class="bg-gray-50 p-4 rounded border">
+                        <div class="flex gap-4 mb-3">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold"><input type="radio" name="bg-type" value="color" ${t.bgType==='color'?'checked':''} onclick="toggleBgInput(); previewTheme()"> Solid</label>
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold"><input type="radio" name="bg-type" value="gradient" ${t.bgType==='gradient'?'checked':''} onclick="toggleBgInput(); previewTheme()"> Gradient</label>
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold"><input type="radio" name="bg-type" value="image" ${t.bgType==='image'?'checked':''} onclick="toggleBgInput(); previewTheme()"> Image</label>
+                        </div>
+                        <div id="bg-input-color" class="${t.bgType!=='color'?'hidden':''}"><input type="color" id="theme-bgcolor" value="${t.bgColor}" oninput="previewTheme()" class="h-10 w-full cursor-pointer rounded border p-0"></div>
+                        <div id="bg-input-gradient" class="${t.bgType!=='gradient'?'hidden':''}">
+                            <div id="bg-grad-stops" class="space-y-2 mb-2"></div>
+                            <div class="flex gap-2 mb-2"><button onclick="addGradStop('bg')" class="text-xs border px-2 rounded bg-white">Add Color</button><button onclick="removeGradStop('bg')" class="text-xs border px-2 rounded bg-white text-red-500">Remove</button></div>
+                            <select id="bg-grad-angle" onchange="previewTheme()" class="w-full text-xs border p-1 rounded"><option value="to right">Horizontal →</option><option value="to bottom">Vertical ↓</option><option value="135deg">Diagonal ↘</option></select>
+                        </div>
+                        <div id="bg-input-image" class="${t.bgType!=='image'?'hidden':''}"><input type="text" id="theme-bgimage" value="${t.bgImage}" oninput="previewTheme()" class="w-full border p-2 rounded text-sm mb-2" placeholder="Image URL"><input type="file" id="theme-bgfile" accept="image/*" class="text-sm"></div>
                     </div>
                 </div>
             </div>
         </div>
     `;
 
-    // File Handlers
+    // Initialize State
+    initAllGradientBuilders();
+    
+    // BG Image File Handler
     setTimeout(() => {
-        $('theme-logo-file').addEventListener('change', e => {
-            const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-logo-url').value=ev.target.result; renderThemeBuilder(c);}; r.readAsDataURL(f); }
-        });
         const bgFile = $('theme-bgfile');
         if(bgFile) bgFile.addEventListener('change', e => {
-            const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-bgimage').value=ev.target.result;}; r.readAsDataURL(f); }
+            const f = e.target.files[0]; if(f) { const r=new FileReader(); r.onload=ev=>{$('theme-bgimage').value=ev.target.result; previewTheme();}; r.readAsDataURL(f); }
         });
-    }, 500);
+    }, 100);
 }
 
-window.toggleBgInput = () => {
-    // Update UI state for radio buttons
-    document.querySelectorAll('input[name="bg-type"]').forEach(r => {
-        r.parentElement.className = r.checked 
-            ? 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition bg-white shadow-sm text-blue-600 font-bold'
-            : 'flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition text-gray-600 hover:bg-gray-200';
-    });
+// Fixed Logo Upload Handler
+window.handleLogoUpload = (input) => {
+    const f = input.files[0];
+    if(f) {
+        const r = new FileReader();
+        r.onload = ev => {
+            const url = ev.target.result;
+            $('theme-logo-url').value = url;
+            $('logo-preview-box').innerHTML = `<img src="${url}" class="w-full h-full object-contain">`;
+        };
+        r.readAsDataURL(f);
+    }
+}
 
+// ... (Rest of theme logic: toggleHeaderInput, toggleBtnInput, toggleBgInput, previewTheme, etc.) ...
+// ... (Including gradState, parseGradient, initAllGradientBuilders, renderGradientUI, updateGradState, addGradStop, removeGradStop, constructGradient) ...
+
+window.toggleHeaderInput = () => {
+    const type = document.querySelector('input[name="header-type"]:checked').value;
+    $('header-solid-input').classList.toggle('hidden', type !== 'solid');
+    $('header-gradient-input').classList.toggle('hidden', type !== 'gradient');
+}
+window.toggleBtnInput = () => {
+    const type = document.querySelector('input[name="btn-type"]:checked').value;
+    $('btn-gradient-input').classList.toggle('hidden', type !== 'gradient');
+}
+window.toggleBgInput = () => {
     const type = document.querySelector('input[name="bg-type"]:checked').value;
     $('bg-input-color').classList.toggle('hidden', type!=='color');
     $('bg-input-gradient').classList.toggle('hidden', type!=='gradient');
     $('bg-input-image').classList.toggle('hidden', type!=='image');
+    
+    if(type === 'gradient') initGradientBuilder();
+}
+
+window.previewTheme = () => {
+    const root = document.documentElement;
+    
+    // Global Border
+    const border = $('global-border-color').value;
+    if(border) root.style.setProperty('--global-border-color', border);
+
+    // Accent
+    const accent = $('accent-color').value;
+    if(accent) {
+        root.style.setProperty('--accent-color', accent);
+        root.style.setProperty('--nav-item-active-bg', `rgba(${hexToRgb(accent)}, 0.1)`);
+    }
+
+    // Header BG
+    const headerType = document.querySelector('input[name="header-type"]:checked').value;
+    if(headerType === 'solid') root.style.setProperty('--header-bg', $('header-color').value);
+    else root.style.setProperty('--header-bg', constructGradient('header'));
+
+    // Header Text & Shadow
+    root.style.setProperty('--header-text', $('header-text-color').value);
+    root.style.setProperty('--header-shadow', $('header-shadow').value);
+
+    // Buttons
+    const btnType = document.querySelector('input[name="btn-type"]:checked').value;
+    if(btnType === 'solid') root.style.setProperty('--btn-bg', $('accent-color').value);
+    else root.style.setProperty('--btn-bg', constructGradient('btn'));
+
+    // Main BG
+    const bgType = document.querySelector('input[name="bg-type"]:checked').value;
+    if(bgType === 'color') root.style.setProperty('--bg-style', $('theme-bgcolor').value);
+    else if (bgType === 'gradient') root.style.setProperty('--bg-style', constructGradient('bg'));
+    else if (bgType === 'image') root.style.setProperty('--bg-style', `url('${$('theme-bgimage').value}')`);
+
+    // Glass
+    const glass = $('theme-glass').checked;
+    const opacity = $('theme-opacity').value;
+    if (glass) {
+        root.style.setProperty('--glass-bg', `rgba(255, 255, 255, ${opacity})`);
+        root.style.setProperty('--backdrop-blur', 'blur(16px)');
+        root.style.setProperty('--sidebar-bg', `rgba(255, 255, 255, ${Math.max(0.5, opacity - 0.1)})`);
+    } else {
+        root.style.setProperty('--glass-bg', '#ffffff');
+        root.style.setProperty('--backdrop-blur', 'none');
+        root.style.setProperty('--sidebar-bg', '#ffffff');
+    }
+}
+
+window.gradStops = { bg: [], header: [], btn: [] }; // Reset structure
+
+window.parseGradient = (css, fallback) => {
+    const matches = css ? css.match(/#[a-fA-F0-9]{6}/g) : null;
+    return (matches && matches.length >= 2) ? matches : fallback;
+}
+
+window.initAllGradientBuilders = () => {
+    const t = db.theme;
+    // Main BG
+    window.gradState.bg = parseGradient(t.bgGradient, ['#ffffff', '#e2e8f0']);
+    const bgDir = t.bgGradient && t.bgGradient.includes('(') ? t.bgGradient.split('(')[1].split(',')[0].trim() : '135deg';
+    if($('bg-grad-angle')) $('bg-grad-angle').value = bgDir.includes('#') ? '135deg' : bgDir; 
+    
+    // Header
+    window.gradState.header = parseGradient(t.headerGradient, ['#ffffff', '#f3f4f6']);
+    if($('header-grad-angle')) $('header-grad-angle').value = t.hGradDir || 'to right';
+    if($('header-shadow')) $('header-shadow').value = t.headerShadow || 'none';
+
+    // Buttons
+    window.gradState.btn = parseGradient(t.btnGradient, ['#0374B5', '#00C6FF']);
+    if($('btn-grad-angle')) $('btn-grad-angle').value = 'to right'; 
+
+    renderGradientUI('bg');
+    renderGradientUI('header');
+    renderGradientUI('btn');
+}
+
+window.renderGradientUI = (type) => {
+    const c = $(`${type}-grad-stops`);
+    if(!c) return;
+    c.innerHTML = window.gradState[type].map((col, i) => `
+        <div class="flex items-center gap-2">
+            <input type="color" value="${col}" oninput="updateGradState('${type}', ${i}, this.value)" class="h-8 w-10 p-0 border-0 cursor-pointer rounded">
+            <span class="text-xs text-gray-400">Color ${i+1}</span>
+        </div>
+    `).join('');
+}
+
+window.updateGradState = (type, i, val) => {
+    window.gradState[type][i] = val;
+    previewTheme();
+}
+
+window.addGradStop = (type) => {
+    const last = window.gradState[type][window.gradState[type].length-1];
+    window.gradState[type].push(last);
+    renderGradientUI(type);
+    previewTheme();
+}
+
+window.removeGradStop = (type) => {
+    if(window.gradState[type].length > 2) {
+        window.gradState[type].pop();
+        renderGradientUI(type);
+        previewTheme();
+    } else { showToast('Min 2 colors', 'error'); }
+}
+
+window.constructGradient = (type) => {
+    const dir = $(`${type}-grad-angle`).value;
+    const colors = window.gradState[type].join(', ');
+    return `linear-gradient(${dir}, ${colors})`;
 }
 
 window.saveTheme = () => {
     const bgType = document.querySelector('input[name="bg-type"]:checked').value;
+    const headerType = document.querySelector('input[name="header-type"]:checked').value;
+    const btnType = document.querySelector('input[name="btn-type"]:checked').value;
+
     db.theme = {
         appName: $('theme-name').value,
         logoUrl: $('theme-logo-url').value,
+        
+        // Colors
+        borderColor: $('global-border-color').value,
+        accentColor: $('accent-color').value,
+
+        // Header
+        headerType: headerType,
+        headerColor: $('header-color').value,
+        headerGradient: constructGradient('header'),
+        hGradDir: $('header-grad-angle').value,
+        headerTextColor: $('header-text-color').value,
+        headerShadow: $('header-shadow').value,
+
+        // Buttons
+        btnType: btnType,
+        btnGradient: constructGradient('btn'),
+
+        // BG
         bgType: bgType,
         bgColor: $('theme-bgcolor').value,
-        bgGradient: $('theme-gradient').value,
+        bgGradient: constructGradient('bg'),
         bgImage: $('theme-bgimage').value,
+        
+        // Glass
         glassEffect: $('theme-glass').checked,
         glassOpacity: $('theme-opacity').value
     };
+    
     saveDB();
     applyTheme();
-    render(); // Re-render to update logo/name in nav
+    render(); 
     showToast('Theme Saved');
 }
 
@@ -662,8 +914,8 @@ window.openExamDetail = (eid) => {
     let actionBtn = '', statusMsg = '';
     if (isUpcoming) { statusMsg = `<div class="bg-yellow-50 text-yellow-800 p-3 rounded mb-4 text-center font-bold">Opens: ${openDate.toLocaleString()}</div>`; actionBtn = `<button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded font-bold cursor-not-allowed">Not Open Yet</button>`; } 
     else if (isClosed && !sub) { statusMsg = `<div class="bg-red-50 text-red-800 p-3 rounded mb-4 text-center font-bold">Closed on ${dueDate.toLocaleString()}</div>`; actionBtn = `<button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded font-bold cursor-not-allowed">Missed</button>`; } 
-    else if (isAttemptLocked || (isClosed && sub)) { statusMsg = `<div class="bg-blue-50 text-blue-800 p-3 rounded mb-4 text-center font-bold">Completed (Score: ${sub.score}%)</div>`; actionBtn = `<button onclick="closeModal('exam-detail'); reviewExam('${ex.id}')" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">Review Results</button>`; } 
-    else { statusMsg = `<div class="bg-green-50 text-green-800 p-3 rounded mb-4 text-center font-bold">Open until ${dueDate.toLocaleString()}</div>`; actionBtn = `<button onclick="closeModal('exam-detail'); startExam('${ex.id}')" class="w-full bg-canvas-accent text-white py-2 rounded font-bold hover:bg-blue-600">Start Quiz</button>`; }
+    else if (isAttemptLocked || (isClosed && sub)) { statusMsg = `<div class="bg-blue-50 text-blue-800 p-3 rounded mb-4 text-center font-bold">Completed (Score: ${sub.score}%)</div>`; actionBtn = `<button onclick="closeModal('exam-detail'); reviewExam('${ex.id}')" class="btn-theme w-full text-white py-2 rounded font-bold hover:bg-blue-700">Review Results</button>`; } 
+    else { statusMsg = `<div class="bg-green-50 text-green-800 p-3 rounded mb-4 text-center font-bold">Open until ${dueDate.toLocaleString()}</div>`; actionBtn = `<button onclick="closeModal('exam-detail'); startExam('${ex.id}')" class="btn-theme w-full text-white py-2 rounded font-bold hover:bg-blue-600">Start Quiz</button>`; }
     renderModal('exam-detail', ex.title, `<div class="space-y-4">${statusMsg}<div class="grid grid-cols-2 gap-4 text-sm text-gray-600"><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Time Limit</span>${ex.timeLimit} Mins</div><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Attempts</span>${attemptsTaken} / ${attemptsAllowed}</div><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Questions</span>${ex.questions.length} Items</div><div class="border p-2 rounded text-center"><span class="block font-bold text-gray-800">Type</span>${ex.category === 'qa' ? 'Quarterly' : 'Written Work'}</div></div><div class="pt-4">${actionBtn}</div></div>`);
 }
 
@@ -676,7 +928,7 @@ function renderTeachersList(c) {
 }
 function renderSettings(c) {
     $('page-title').innerText = 'Account Settings';
-    let html = `<div class="max-w-2xl mx-auto space-y-8"><div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Profile Picture</h3><div class="flex items-center gap-4"><div id="settings-avatar-preview">${renderAvatar(currentUser, 'w-16 h-16', 'text-2xl')}</div><div class="flex-1"><input type="file" id="profile-pic-upload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><p class="text-xs text-gray-400 mt-1">Recommended: Square JPG/PNG</p></div><button onclick="saveProfilePic()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm">Upload</button></div></div><div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Security</h3><div class="space-y-4"><div><label class="block text-sm font-bold text-gray-500 mb-1">New Password</label><input type="password" id="set-new-pass" class="w-full border p-2 rounded" placeholder="Enter new password"></div><button onclick="updatePassword()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm">Update Password</button></div></div>`;
+    let html = `<div class="max-w-2xl mx-auto space-y-8"><div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Profile Picture</h3><div class="flex items-center gap-4"><div id="settings-avatar-preview">${renderAvatar(currentUser, 'w-16 h-16', 'text-2xl')}</div><div class="flex-1"><input type="file" id="profile-pic-upload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><p class="text-xs text-gray-400 mt-1">Recommended: Square JPG/PNG</p></div><button onclick="saveProfilePic()" class="btn-theme px-4 py-2 rounded font-bold text-sm">Upload</button></div></div><div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Security</h3><div class="space-y-4"><div><label class="block text-sm font-bold text-gray-500 mb-1">New Password</label><input type="password" id="set-new-pass" class="w-full border p-2 rounded" placeholder="Enter new password"></div><button onclick="updatePassword()" class="btn-theme px-4 py-2 rounded font-bold text-sm">Update Password</button></div></div>`;
     if(currentUser.role === 'teacher') {
         const myCourses = db.subjects.filter(s => s.teacherId === currentUser.id);
         html += `<div class="theme-panel bg-white p-6 rounded shadow border border-gray-200"><h3 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">My Course Details</h3><div class="space-y-4">${myCourses.map(s => `<div class="border rounded p-4 bg-gray-50"><h4 class="font-bold text-canvas-accent mb-2">${s.name} (${s.code})</h4><div class="grid grid-cols-2 gap-2 mb-2"><input id="edit-name-${s.id}" value="${s.name}" class="border p-1 rounded text-sm" placeholder="Name"><input id="edit-code-${s.id}" value="${s.code}" class="border p-1 rounded text-sm" placeholder="Code"></div><input id="edit-intro-${s.id}" value="${s.introTitle || ''}" class="w-full border p-1 rounded text-sm mb-2" placeholder="Intro Title"><button onclick="updateCourseDetails('${s.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">Save Changes</button></div>`).join('')}</div></div>`;
@@ -690,6 +942,9 @@ window.updatePassword = () => { const p=$('set-new-pass').value; if(p){ const u=
 window.updateCourseDetails = (sid) => { const s=db.subjects.find(x=>x.id===sid); s.name=$(`edit-name-${sid}`).value; s.code=$(`edit-code-${sid}`).value; s.introTitle=$(`edit-intro-${sid}`).value; saveDB(); }
 window.registerTeacher = () => { const n=$('reg-t-name').value, u=$('reg-t-user').value, p=$('reg-t-pass').value; if(n&&u&&p){ db.users.push({id:'u'+Date.now(), name:n, username:u, password:p, role:'teacher'}); saveDB(); render(); }}
 window.registerStudent = () => { const n=$('reg-s-name').value, u=$('reg-s-user').value, p=$('reg-s-pass').value; if(n&&u&&p){ const newId='u'+Date.now(); db.users.push({id:newId, name:n, username:u, password:p, role:'student'}); if(currentCourseId){ const s=db.subjects.find(x=>x.id===currentCourseId); if(s)s.students.push(newId); } saveDB(); render(); closeModal('modal-reg-student'); }}
+window.openRegisterStudentModal = () => { renderModal('modal-reg-student', 'Register New Student', `<div class="space-y-3"><input id="reg-s-name" class="w-full border p-2 rounded" placeholder="Full Name"><input id="reg-s-user" class="w-full border p-2 rounded" placeholder="Username"><input id="reg-s-pass" class="w-full border p-2 rounded" placeholder="Password"><button onclick="registerStudent()" class="btn-theme w-full text-white py-2 rounded font-bold">Register & Enroll</button></div>`); }
+window.openAddStudentModal = () => { const s = db.subjects.find(x => x.id === currentCourseId); const availableStudents = db.users.filter(u => u.role === 'student' && !s.students.includes(u.id)); let content = ''; if(availableStudents.length === 0) { content = '<p class="text-gray-500 italic">No existing students available to enroll.</p>'; } else { content = `<div class="space-y-2 max-h-60 overflow-y-auto">${availableStudents.map(u => `<div class="flex justify-between items-center p-2 border rounded hover:bg-gray-50"><div class="flex items-center gap-2">${renderAvatar(u, 'w-6 h-6', 'text-xs')} <span>${u.name}</span></div><button onclick="enrollExistingStudent('${u.id}')" class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded font-bold">Add</button></div>`).join('')}</div>`; } renderModal('modal-enroll-student', 'Enroll Existing Student', content); }
+window.enrollExistingStudent = (uid) => { const s = db.subjects.find(x => x.id === currentCourseId); if(s && !s.students.includes(uid)) { s.students.push(uid); saveDB(); render(); showToast('Student Enrolled'); closeModal('modal-enroll-student'); } }
 
 // --- COURSE TABS IMPLEMENTATION ---
 function renderCourse(c) {
@@ -707,19 +962,19 @@ function renderCourseTab() {
     // HOME (FEED)
     if(currentTab === 'home') {
         const posts = (db.posts||[]).filter(p=>p.courseId===s.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
-        c.innerHTML = `<div class="theme-panel bg-white p-6 rounded border border-gray-200 mb-6 relative group">${isTeacher ? `<button onclick="editIntro()" class="absolute top-4 right-4 text-gray-400 hover:text-canvas-accent"><i class="fas fa-edit"></i> Edit Info</button>` : ''}<h2 class="text-2xl font-bold text-gray-800 mb-2">${s.introTitle||`Welcome to ${s.name}`}</h2><p class="text-gray-600 leading-relaxed">${s.introBody||'No introduction provided yet.'}</p></div>${isTeacher?`<div class="theme-panel bg-white p-4 rounded border border-gray-200 mb-6 shadow-sm"><textarea id="post-content" class="w-full border p-3 rounded mb-2 text-sm focus:outline-none focus:border-canvas-accent" placeholder="Share an announcement..." rows="3"></textarea><div class="flex flex-col gap-2"><div class="flex gap-2"><select id="post-type" class="border p-2 rounded text-sm bg-gray-50 flex-1" onchange="toggleMediaInput()"><option value="text">Text Only</option><option value="link">Link</option><option value="video">Video</option><option value="image_upload">Image (Upload)</option><option value="image_url">Image (URL)</option><option value="gif">GIF (URL)</option></select><button onclick="publishPost()" class="bg-canvas-accent text-white px-6 py-2 rounded font-bold">Post</button></div><input id="post-url" class="border p-2 rounded text-sm hidden" placeholder="Paste URL here..."><div id="post-file-container" class="hidden border border-dashed border-gray-300 p-2 rounded bg-gray-50"><input type="file" id="post-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"></div></div></div>` : ''}<div class="space-y-6">${posts.map(p => renderPostCard(p, isTeacher)).join('')}</div>`;
+        c.innerHTML = `<div class="theme-panel bg-white p-6 rounded border border-gray-200 mb-6 relative group">${isTeacher ? `<button onclick="editIntro()" class="absolute top-4 right-4 text-gray-400 hover:text-canvas-accent"><i class="fas fa-edit"></i> Edit Info</button>` : ''}<h2 class="text-2xl font-bold text-gray-800 mb-2">${s.introTitle||`Welcome to ${s.name}`}</h2><p class="text-gray-600 leading-relaxed">${s.introBody||'No introduction provided yet.'}</p></div>${isTeacher?`<div class="theme-panel bg-white p-4 rounded border border-gray-200 mb-6 shadow-sm"><textarea id="post-content" class="w-full border p-3 rounded mb-2 text-sm focus:outline-none focus:border-canvas-accent" placeholder="Share an announcement..." rows="3"></textarea><div class="flex flex-col gap-2"><div class="flex gap-2"><select id="post-type" class="border p-2 rounded text-sm bg-gray-50 flex-1" onchange="toggleMediaInput()"><option value="text">Text Only</option><option value="link">Link</option><option value="video">Video</option><option value="image_upload">Image (Upload)</option><option value="image_url">Image (URL)</option><option value="gif">GIF (URL)</option></select><button onclick="publishPost()" class="btn-theme px-6 py-2 rounded font-bold">Post</button></div><input id="post-url" class="border p-2 rounded text-sm hidden" placeholder="Paste URL here..."><div id="post-file-container" class="hidden border border-dashed border-gray-300 p-2 rounded bg-gray-50"><input type="file" id="post-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"></div></div></div>` : ''}<div class="space-y-6">${posts.map(p => renderPostCard(p, isTeacher)).join('')}</div>`;
         setTimeout(() => { const fi=$('post-file'); if(fi) fi.addEventListener('change', e=>{ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=evt=>{tempTeacherImage=evt.target.result}; r.readAsDataURL(f); } }); }, 500);
     }
     // --- MODULES TAB ---
     if(currentTab === 'modules') {
         const modules = db.modules[s.id] || [];
-        c.innerHTML = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Learning Modules</h2></div>${isTeacher ? `<button onclick="openModuleBuilder()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm"><i class="fas fa-plus mr-2"></i>Create Module</button>` : ''}</div><div class="space-y-4">${modules.map(m => `<div class="theme-panel bg-white p-4 rounded border hover:shadow-md transition"><div class="flex justify-between items-center"><div class="cursor-pointer flex-1" onclick="viewModule('${m.id}')"><h3 class="font-bold text-lg text-canvas-primary">${m.title}</h3><p class="text-xs text-gray-500">${m.blocks.length} sections • Published ${new Date(m.date).toLocaleDateString()}</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="editModule('${m.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button><button onclick="deleteModule('${m.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button></div>` : '<i class="fas fa-chevron-right text-gray-300"></i>'}</div></div>`).join('')}</div>${modules.length===0?'<div class="text-center py-10 text-gray-400 border border-dashed rounded">No modules yet.</div>':''}`;
+        c.innerHTML = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Learning Modules</h2></div>${isTeacher ? `<button onclick="openModuleBuilder()" class="btn-theme px-4 py-2 rounded font-bold text-sm"><i class="fas fa-plus mr-2"></i>Create Module</button>` : ''}</div><div class="space-y-4">${modules.map(m => `<div class="theme-panel bg-white p-4 rounded border hover:shadow-md transition"><div class="flex justify-between items-center"><div class="cursor-pointer flex-1" onclick="viewModule('${m.id}')"><h3 class="font-bold text-lg text-canvas-primary">${m.title}</h3><p class="text-xs text-gray-500">${m.blocks.length} sections • Published ${new Date(m.date).toLocaleDateString()}</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="editModule('${m.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button><button onclick="deleteModule('${m.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button></div>` : '<i class="fas fa-chevron-right text-gray-300"></i>'}</div></div>`).join('')}</div>${modules.length===0?'<div class="text-center py-10 text-gray-400 border border-dashed rounded">No modules yet.</div>':''}`;
     }
     
     // --- ACTIVITIES TAB (ENHANCED BUILDER) ---
     if(currentTab === 'activities') {
         const acts = db.activities[s.id] || [];
-        let html = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Class Activities</h2><p class="text-gray-500 text-xs">Performance Tasks & Written Work</p></div>${isTeacher ? `<button onclick="createActivity()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>New Activity</button>` : ''}</div>`;
+        let html = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Class Activities</h2><p class="text-gray-500 text-xs">Performance Tasks & Written Work</p></div>${isTeacher ? `<button onclick="createActivity()" class="btn-theme px-4 py-2 rounded font-bold text-sm shadow transition"><i class="fas fa-plus mr-2"></i>New Activity</button>` : ''}</div>`;
         if(acts.length === 0) { html += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-clipboard-list text-4xl mb-3 block"></i>No activities yet.</div>`; } 
         else {
             html += `<div class="grid grid-cols-1 gap-4">`;
@@ -743,19 +998,19 @@ function renderCourseTab() {
     // --- QUIZZES TAB (RESTORED) ---
     if(currentTab === 'quizzes') {
         const exams = db.exams[s.id] || [];
-        let html = `<div class="flex justify-between items-center mb-4 border-b pb-2"><div><h2 class="text-xl font-bold text-gray-800">Quizzes & Exams</h2><p class="text-xs text-gray-500">Auto-graded assessments</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="openImportModal()" class="bg-white border text-gray-700 px-3 py-1 rounded text-sm font-bold"><i class="fas fa-file-word"></i> Import DOCX</button><button onclick="openCreateModal()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold">New Quiz</button></div>` : ''}</div><div class="space-y-3">${exams.map(e => {
+        let html = `<div class="flex justify-between items-center mb-4 border-b pb-2"><div><h2 class="text-xl font-bold text-gray-800">Quizzes & Exams</h2><p class="text-xs text-gray-500">Auto-graded assessments</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="openImportModal()" class="bg-white border text-gray-700 px-3 py-1 rounded text-sm font-bold"><i class="fas fa-file-word"></i> Import DOCX</button><button onclick="openCreateModal()" class="btn-theme px-4 py-2 rounded font-bold">New Quiz</button></div>` : ''}</div><div class="space-y-3">${exams.map(e => {
             const sub = db.examSubmissions[e.id]?.[currentUser.id];
             const attemptsAllowed = e.attempts || 1, attemptsTaken = sub ? (sub.attemptsTaken || 0) : 0, isAttemptLocked = attemptsTaken >= attemptsAllowed;
             const now = new Date(), openDate = new Date(e.openDate), dueDate = new Date(e.dueDate);
             const isUpcoming = now < openDate, isClosed = now > dueDate;
             let actionBtn = '';
             if(isTeacher || currentUser.role === 'admin') {
-                actionBtn = `<div class="flex gap-2"><button onclick="showItemAnalysis('${e.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200" title="Analytics"><i class="fas fa-chart-bar"></i></button><button onclick="reviewExamContent('${e.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200" title="Review"><i class="fas fa-eye"></i></button><button onclick="openCreateModal('${e.id}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100" title="Edit"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteExam('${e.id}')" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded" title="Delete"><i class="fas fa-trash"></i></button></div>`;
+                actionBtn = `<div class="flex gap-2"><button onclick="showItemAnalysis('${e.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200" title="Analytics"><i class="fas fa-chart-bar"></i></button><button onclick="reviewExamContent('${e.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200" title="Review"><i class="fas fa-eye"></i></button><button onclick="openCreateModal('${e.id}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100" title="Edit"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteGradeItem('${e.id}', true)" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded" title="Delete"><i class="fas fa-trash"></i></button></div>`;
             } else {
                 if (isUpcoming) actionBtn = `<span class="text-xs text-gray-500">Opens ${formatDate(e.openDate)}</span>`;
                 else if (isClosed && !sub) actionBtn = `<span class="text-xs text-red-500">Closed</span>`;
                 else if (isAttemptLocked || (isClosed && sub)) actionBtn = `<button onclick="reviewExam('${e.id}')" class="text-xs bg-gray-100 px-2 py-1 rounded">Review</button>`;
-                else actionBtn = `<button onclick="startExam('${e.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">Take</button>`;
+                else actionBtn = `<button onclick="startExam('${e.id}')" class="btn-theme px-3 py-1 rounded text-xs">Take</button>`;
             }
             return `<div class="theme-panel bg-white p-4 border rounded flex justify-between items-center hover:bg-gray-50"><div class="flex gap-4 items-center"><div><h4 class="font-bold text-gray-800">${e.title}</h4><div class="text-xs text-gray-500">Due: ${formatDate(e.dueDate)} • ${e.questions.length} Qs</div></div></div>${actionBtn}</div>`;
         }).join('')}</div>`;
@@ -766,28 +1021,114 @@ function renderCourseTab() {
     if(currentTab === 'grades') {
         const enrolled = db.users.filter(u => s.students.includes(u.id));
         const weights = s.gradingWeights || { ww: 40, pt: 40, qa: 20 };
-        const quizzes = db.exams[s.id] || [], activities = db.activities[s.id] || [];
-        const wwItems = [...quizzes.filter(q=>q.category!=='qa'), ...activities.filter(a=>a.category!=='pt')];
-        const ptItems = activities.filter(a=>a.category==='pt'), qaItems = quizzes.filter(q=>q.category==='qa');
         
-        let html = `<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-gray-800">Class Record</h2>${isTeacher?`<div class="flex gap-2"><button onclick="openWeightsModal()" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-bold border">Weights</button><button onclick="resetGrades()" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs font-bold">Reset All</button></div>`:''}</div><div class="grid grid-cols-3 gap-4 mb-4 text-center"><div class="bg-orange-50 p-2 rounded border border-orange-100"><div class="text-xs font-bold text-orange-800">WW (${weights.ww}%)</div></div><div class="bg-purple-50 p-2 rounded border border-purple-100"><div class="text-xs font-bold text-purple-800">PT (${weights.pt}%)</div></div><div class="bg-blue-50 p-2 rounded border border-blue-100"><div class="text-xs font-bold text-blue-800">QA (${weights.qa}%)</div></div></div><div class="theme-panel overflow-x-auto bg-white border rounded shadow-sm"><table class="w-full text-left text-sm grade-table"><thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b"><tr><th class="p-4 sticky left-0 bg-gray-50 border-r">Student</th><th class="p-4 text-center bg-orange-50/50">WW</th><th class="p-4 text-center bg-purple-50/50">PT</th><th class="p-4 text-center bg-blue-50/50">QA</th><th class="p-4 text-center bg-gray-100 text-gray-800">Grade</th></tr></thead><tbody class="divide-y">`;
+        // Fetch all items
+        const quizzes = db.exams[s.id] || [];
+        const activities = db.activities[s.id] || [];
+        
+        // Categorize & Sort by date
+        const wwItems = [
+            ...activities.filter(a => a.category === 'ww'),
+            ...quizzes.filter(q => q.category === 'ww') 
+        ].sort((a,b) => new Date(a.date || a.openDate) - new Date(b.date || b.openDate));
+        
+        const ptItems = activities.filter(a => a.category === 'pt').sort((a,b) => new Date(a.date) - new Date(b.date));
+        
+        const qaItems = quizzes.filter(q => q.category === 'qa').sort((a,b) => new Date(a.openDate) - new Date(b.openDate));
+
+        // Build HTML
+        let html = `<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-gray-800">Class Record</h2>${isTeacher?`<div class="flex gap-2"><button onclick="openWeightsModal()" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-bold border">Weights</button><button onclick="resetGrades()" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs font-bold">Reset All</button></div>`:''}</div>`;
+        
+        // Summary Cards
+        html += `<div class="grid grid-cols-3 gap-4 mb-4 text-center"><div class="bg-orange-50 p-2 rounded border border-orange-100"><div class="text-xs font-bold text-orange-800">WW (${weights.ww}%)</div></div><div class="bg-purple-50 p-2 rounded border border-purple-100"><div class="text-xs font-bold text-purple-800">PT (${weights.pt}%)</div></div><div class="bg-blue-50 p-2 rounded border border-blue-100"><div class="text-xs font-bold text-blue-800">QA (${weights.qa}%)</div></div></div>`;
+        
+        html += `<div class="theme-panel overflow-x-auto bg-white border rounded shadow-sm max-w-full"><table class="w-full text-left text-sm grade-table border-collapse">`;
+        
+        // Header Row
+        html += `<thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b"><tr>`;
+        html += `<th class="p-3 sticky left-0 bg-gray-50 border-r min-w-[150px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Student</th>`;
+        
+        // Helper to generate headers
+        const addHeaders = (items, prefix, colorCls) => {
+            if(items.length > 0) {
+                items.forEach((i, idx) => {
+                    const isExam = !!i.questions; // Check if it's an exam based on properties
+                    html += `<th class="p-3 text-center border-r min-w-[80px] ${colorCls} relative group align-top" title="${i.title}">
+                        <div class="flex flex-col items-center justify-between gap-1">
+                            <span class="font-bold">${prefix}${idx+1}</span>
+                            ${isTeacher ? `<button onclick="deleteGradeItem('${i.id}', ${isExam})" class="text-[10px] text-red-400 hover:text-red-700 opacity-50 hover:opacity-100 transition" title="Remove ${i.title}"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>
+                    </th>`;
+                });
+                html += `<th class="p-3 text-center border-r ${colorCls.replace('/30','/50')} font-black align-middle">${prefix} Total</th>`;
+            } else { html += `<th class="p-3 text-center border-r text-gray-300 font-normal">${prefix}</th>`; }
+        };
+
+        addHeaders(wwItems, 'WW', 'bg-orange-50/30 text-orange-800');
+        addHeaders(ptItems, 'PT', 'bg-purple-50/30 text-purple-800');
+        addHeaders(qaItems, 'QA', 'bg-blue-50/30 text-blue-800');
+
+        html += `<th class="p-3 text-center bg-gray-100 text-gray-800 min-w-[80px] align-middle border-l-2 border-gray-200">Final Grade</th>`;
+        html += `</tr></thead><tbody class="divide-y">`;
+
+        // Body Rows
         enrolled.forEach(stu => {
-            const calc = (items) => { let score=0, max=0; items.forEach(i => { 
-                let s=0, m=0;
-                if(i.questions) { m=i.questions.length; const sub=db.examSubmissions[i.id]?.[stu.id]; if(sub && sub.score!==undefined) { s=sub.score; m=100; } }
-                else { m=parseInt(i.maxScore); const sub=db.activitySubmissions[i.id]?.[stu.id]; if(typeof sub==='number') s=sub; else if(sub && typeof sub==='object') s=sub.score||0; }
-                score+=s; max+=m; 
-            }); return max===0 ? 0 : (score/max)*100; };
-            const ww=calc(wwItems), pt=calc(ptItems), qa=calc(qaItems), final = (ww*(weights.ww/100))+(pt*(weights.pt/100))+(qa*(weights.qa/100));
-            html += `<tr class="hover:bg-gray-50"><td class="p-4 font-bold text-gray-700 sticky left-0 bg-white border-r flex items-center gap-2">${renderAvatar(stu, 'w-6 h-6', 'text-[10px]')}${stu.name}</td><td class="p-4 text-center text-orange-700 font-mono bg-orange-50/20">${Math.round(ww)}%</td><td class="p-4 text-center text-purple-700 font-mono bg-purple-50/20">${Math.round(pt)}%</td><td class="p-4 text-center text-blue-700 font-mono bg-blue-50/20">${Math.round(qa)}%</td><td class="p-4 text-center font-bold text-gray-800 bg-gray-50 text-base">${Math.round(final)}</td></tr>`;
+            html += `<tr class="hover:bg-gray-50 group">`;
+            html += `<td class="p-3 font-bold text-gray-700 sticky left-0 bg-white border-r flex items-center gap-2 group-hover:bg-gray-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] h-full">${renderAvatar(stu, 'w-6 h-6', 'text-[10px]')} <span class="truncate w-32">${stu.name}</span></td>`;
+
+            const getScore = (item) => {
+                let score = 0, max = 0;
+                if(item.questions) { // Exam: stored as percentage (0-100)
+                    max = 100;
+                    const sub = db.examSubmissions[item.id]?.[stu.id];
+                    if(sub && sub.score !== undefined) score = sub.score;
+                    else return { val: '-', raw: 0, max: 100 };
+                } else { // Activity: stored as raw points
+                    max = parseInt(item.maxScore);
+                    const sub = db.activitySubmissions[item.id]?.[stu.id];
+                    if(typeof sub === 'number') score = sub;
+                    else if(sub && sub.score !== undefined) score = sub.score;
+                    else return { val: '-', raw: 0, max: max };
+                }
+                return { val: score, raw: score, max: max };
+            };
+
+            const addCells = (items, colorBg) => {
+                let totalScore = 0, totalMax = 0;
+                if(items.length > 0) {
+                    items.forEach(i => {
+                        const s = getScore(i);
+                        const numericScore = s.val === '-' ? 0 : s.val;
+                        totalScore += numericScore;
+                        totalMax += s.max;
+                        html += `<td class="p-3 text-center text-xs border-r text-gray-600">${s.val}</td>`;
+                    });
+                    const perc = totalMax === 0 ? 0 : (totalScore / totalMax) * 100;
+                    html += `<td class="p-3 text-center font-bold ${colorBg} border-r">${Math.round(perc)}%</td>`;
+                    return perc;
+                } else { 
+                    html += `<td class="p-3 text-center border-r text-gray-200">-</td>`; 
+                    return 0;
+                }
+            };
+
+            const wPerc = addCells(wwItems, 'text-orange-700 bg-orange-50/20');
+            const pPerc = addCells(ptItems, 'text-purple-700 bg-purple-50/20');
+            const qPerc = addCells(qaItems, 'text-blue-700 bg-blue-50/20');
+            
+            const final = (wPerc * (weights.ww/100)) + (pPerc * (weights.pt/100)) + (qPerc * (weights.qa/100));
+            
+            html += `<td class="p-3 text-center font-black text-gray-800 bg-gray-100 border-l-2 border-gray-200 text-base">${Math.round(final)}</td>`;
+            html += `</tr>`;
         });
-        html += `</tbody></table></div>`; c.innerHTML = html;
+
+        html += `</tbody></table></div>`;
+        c.innerHTML = html;
     }
     
     if(currentTab === 'people') {
         const ppl = db.users.filter(u=>s.students.includes(u.id));
-        c.innerHTML = `<h2 class="text-xl font-bold mb-4">People</h2>${isTeacher ? `<div class="flex gap-2"><button onclick="openRegisterStudentModal()" class="bg-white border text-gray-600 px-3 py-1 rounded text-sm font-bold shadow-sm">New</button><button onclick="openAddStudentModal()" class="bg-canvas-accent text-white px-4 py-2 rounded font-bold text-sm">Enroll</button></div>` : ''}</div><div class="theme-panel bg-white border rounded overflow-hidden"><table class="w-full text-left"><thead class="bg-gray-50 border-b text-xs uppercase font-bold text-gray-500"><tr><th class="p-4">Name</th><th class="p-4">Role</th>${isTeacher?`<th class="p-4">User</th><th class="p-4">Pass</th><th class="p-4 text-right"></th>`:''}</tr></thead><tbody class="divide-y"><tr><td class="p-4 flex items-center gap-2 font-bold">${renderAvatar(db.users.find(u=>u.id===s.teacherId),'w-6 h-6')} ${db.users.find(u=>u.id===s.teacherId)?.name}</td><td class="p-4">Teacher</td>${isTeacher?`<td class="p-4 text-gray-400">-</td><td class="p-4 text-gray-400">-</td><td></td>`:''}</tr>${ppl.map(u=>`<tr><td class="p-4 flex items-center gap-2">${renderAvatar(u,'w-6 h-6')} ${u.name}</td><td class="p-4">Student</td>${isTeacher?`<td class="p-4 font-mono text-blue-600">${u.username}</td><td class="p-4 font-mono text-red-500">${u.password}</td><td class="p-4 text-right"><button onclick="removeStudentFromCourse('${s.id}','${u.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded"><i class="fas fa-user-minus"></i></button></td>`:''}</tr>`).join('')}</tbody></table></div>`;
-        c.innerHTML = html;
+        c.innerHTML = `<h2 class="text-xl font-bold mb-4">People</h2>${isTeacher ? `<div class="flex gap-2"><button onclick="openRegisterStudentModal()" class="bg-white border text-gray-600 px-3 py-1 rounded text-sm font-bold shadow-sm">New</button><button onclick="openAddStudentModal()" class="btn-theme px-4 py-2 rounded font-bold text-sm">Enroll</button></div>` : ''}</div><div class="theme-panel bg-white border rounded overflow-hidden"><table class="w-full text-left"><thead class="bg-gray-50 border-b text-xs uppercase font-bold text-gray-500"><tr><th class="p-4">Name</th><th class="p-4">Role</th>${isTeacher?`<th class="p-4">User</th><th class="p-4">Pass</th><th class="p-4 text-right"></th>`:''}</tr></thead><tbody class="divide-y"><tr><td class="p-4 flex items-center gap-2 font-bold">${renderAvatar(db.users.find(u=>u.id===s.teacherId),'w-6 h-6')} ${db.users.find(u=>u.id===s.teacherId)?.name}</td><td class="p-4">Teacher</td>${isTeacher?`<td class="p-4 text-gray-400">-</td><td class="p-4 text-gray-400">-</td><td></td>`:''}</tr>${ppl.map(u=>`<tr><td class="p-4 flex items-center gap-2">${renderAvatar(u,'w-6 h-6')} ${u.name}</td><td class="p-4">Student</td>${isTeacher?`<td class="p-4 font-mono text-blue-600">${u.username}</td><td class="p-4 font-mono text-red-500">${u.password}</td><td class="p-4 text-right"><button onclick="removeStudentFromCourse('${s.id}','${u.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded"><i class="fas fa-user-minus"></i></button></td>`:''}</tr>`).join('')}</tbody></table></div>`;
     }
 }
 
@@ -878,6 +1219,57 @@ window.publishActivity = () => {
         goCourse(currentCourseId);
     });
 };
+
+// --- CORE RENDER FUNCTIONS FOR BUILDERS ---
+window.renderBlocks = () => {
+    const list = $('blocks-list');
+    if(!list) return;
+    list.innerHTML = builderBlocks.map((b, i) => `
+        <div class="module-block group">
+            <div class="block-actions">
+                <button onclick="moveBlock(${i}, -1)" class="text-gray-400 hover:text-blue-600"><i class="fas fa-arrow-up"></i></button>
+                <button onclick="moveBlock(${i}, 1)" class="text-gray-400 hover:text-blue-600"><i class="fas fa-arrow-down"></i></button>
+                <button onclick="removeBlock(${i})" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+            </div>
+            ${renderBlockContent(b, i)}
+        </div>
+    `).join('');
+}
+
+function renderBlockContent(b, i) {
+    if(b.type === 'text') return `<div class="rich-toolbar"><button onclick="execCmd(${i},'bold')" class="rich-btn">B</button><button onclick="execCmd(${i},'italic')" class="rich-btn">I</button><button onclick="execCmd(${i},'underline')" class="rich-btn">U</button></div><div id="editor-${i}" contenteditable="true" class="rich-content" oninput="updateBlock(${i}, this.innerHTML)">${b.content}</div>`;
+    if(b.type === 'image') return `<div class="p-2">${b.content ? `<img src="${b.content}" class="max-h-64 rounded shadow-sm">` : ''}<input type="file" onchange="uploadBlockFile(${i}, this)" accept="image/*" class="mt-2 text-sm"></div>`;
+    if(b.type === 'video') return `<div class="p-2"><input value="${b.content}" oninput="updateBlock(${i}, this.value)" class="w-full border p-2 rounded" placeholder="YouTube URL"><div class="mt-2 text-xs text-gray-500">Paste YouTube link</div></div>`;
+    if(b.type === 'file') return `<div class="p-2 flex items-center gap-4">${b.content ? `<span class="font-bold text-blue-600">${b.name}</span>` : ''}<input type="file" onchange="uploadBlockFile(${i}, this)" class="text-sm"></div>`;
+    return '';
+}
+
+function renderModuleBuilder(c) {
+    const mod = editingModuleId ? db.modules[currentCourseId].find(m=>m.id===editingModuleId) : {};
+    c.innerHTML = `
+        <div class="max-w-4xl mx-auto pb-24">
+            <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <input id="mod-title" value="${mod.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mr-4" placeholder="Module Title">
+                    <div class="flex gap-2">
+                        <button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button>
+                        <button onclick="saveModule()" class="btn-theme px-4 py-2 text-white font-bold rounded shadow">Save Module</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-2 font-bold text-gray-500 uppercase text-xs">Content Blocks</div>
+            <div id="blocks-list" class="space-y-4"></div>
+            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 flex justify-center gap-4 shadow z-50">
+                <button onclick="addBlock('text')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-font text-blue-500"></i> Text</button>
+                <button onclick="addBlock('image')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-image text-green-500"></i> Image</button>
+                <button onclick="addBlock('video')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-video text-red-500"></i> Video</button>
+                <button onclick="addBlock('file')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-paperclip text-gray-500"></i> File</button>
+            </div>
+        </div>
+    `;
+    renderBlocks();
+}
+
 // --- ACTIVITY BUILDER (NEW) ---
 window.createActivity = () => { builderBlocks = []; editingActivityId = null; currentView = 'activity_builder'; render(); }
 window.editActivity = (aid) => { const a = db.activities[currentCourseId].find(x=>x.id===aid); builderBlocks = JSON.parse(JSON.stringify(a.blocks || [])); editingActivityId = aid; currentView = 'activity_builder'; render(); }
@@ -906,7 +1298,7 @@ function renderActivityBuilder(c) {
                     <input id="act-build-title" value="${act.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mr-4" placeholder="Activity Title">
                     <div class="flex gap-2">
                         <button onclick="cancelActivity()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button>
-                        <button onclick="saveActivityBuilt()" class="px-4 py-2 bg-green-600 text-white font-bold rounded shadow">Save Activity</button>
+                        <button onclick="saveActivityBuilt()" class="btn-theme px-4 py-2 bg-green-600 text-white font-bold rounded shadow">Save Activity</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-4">
@@ -947,7 +1339,7 @@ window.openActivityDetail = (aid) => {
              if(b.type === 'text') return `<div class="mb-2">${b.content}</div>`;
              if(b.type === 'image') return `<img src="${b.content}" class="w-full h-auto rounded mb-2">`;
              if(b.type === 'video') return `<div class="embed-container mb-2"><iframe src="${b.content.replace('watch?v=', 'embed/')}" frameborder="0"></iframe></div>`;
-             if(b.type === 'file') return `<a href="${b.content}" download="${b.name}" class="text-blue-600 underline block mb-2">Download ${b.name}</a>`;
+             if(b.type === 'file') return `<a href="${b.content}" download="${b.name}" class="text-theme underline block mb-2">Download ${b.name}</a>`;
         }).join('');
         // Legacy support
         if(!act.blocks && act.description) instrHtml = `<p>${act.description}</p>${act.instructionFile?`<a href="${act.instructionFile.data}" download="${act.instructionFile.name}">File</a>`:''}`;
@@ -984,10 +1376,10 @@ window.openActivityDetail = (aid) => {
              if(b.type === 'text') return `<div class="mb-4">${b.content}</div>`;
              if(b.type === 'image') return `<img src="${b.content}" class="w-full h-auto rounded mb-4">`;
              if(b.type === 'video') return `<div class="embed-container mb-4"><iframe src="${b.content.replace('watch?v=', 'embed/')}" frameborder="0"></iframe></div>`;
-             if(b.type === 'file') return `<a href="${b.content}" download="${b.name}" class="block bg-blue-50 p-2 rounded text-blue-700 font-bold mb-4"><i class="fas fa-paperclip"></i> ${b.name}</a>`;
+             if(b.type === 'file') return `<a href="${b.content}" download="${b.name}" class="block bg-blue-50 p-2 rounded text-theme font-bold mb-4"><i class="fas fa-paperclip"></i> ${b.name}</a>`;
     }).join('');
     // Legacy support
-    if(!act.blocks && act.description) instrHtml = `<p class="whitespace-pre-wrap">${act.description}</p>${act.instructionFile?`<a href="${act.instructionFile.data}" download="${act.instructionFile.name}" class="text-blue-600 underline">Download File</a>`:''}`;
+    if(!act.blocks && act.description) instrHtml = `<p class="whitespace-pre-wrap">${act.description}</p>${act.instructionFile?`<a href="${act.instructionFile.data}" download="${act.instructionFile.name}" class="text-theme underline">Download File</a>`:''}`;
 
     const opts = act.submissionOptions || { text: true, file: true }; // Default true for legacy
 
@@ -1011,7 +1403,7 @@ window.openActivityDetail = (aid) => {
             
             ${sub.fileUrl?`<div class="text-xs text-green-600 font-bold"><i class="fas fa-check"></i> File previously uploaded</div>`:''}
 
-            <button onclick="submitWork('${aid}')" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Submit Assignment</button>
+            <button onclick="submitWork('${aid}')" class="btn-theme w-full text-white py-2 rounded font-bold">Submit Assignment</button>
             ${sub.score!==undefined ? `<div class="text-center font-bold text-xl text-green-600 mt-2 border-t pt-2">Grade: ${sub.score}/${act.maxScore}</div>` : ''}
         </div>
     `);
@@ -1053,7 +1445,7 @@ window.viewStudentSubmission = (aid, uid) => {
         <div class="bg-gray-50 p-4 rounded border">
             <p class="text-xs font-bold text-gray-400 uppercase mb-2">Student Answer</p>
             <div class="text-gray-800 whitespace-pre-wrap">${subObj.textAnswer || '<span class="italic text-gray-400">No text answer.</span>'}</div>
-            ${subObj.fileUrl ? `<div class="mt-4 border-t pt-2"><a href="${subObj.fileUrl}" download="${subObj.fileName||'file'}" class="text-blue-600 underline font-bold"><i class="fas fa-download"></i> Download ${subObj.fileName}</a></div>` : ''}
+            ${subObj.fileUrl ? `<div class="mt-4 border-t pt-2"><a href="${subObj.fileUrl}" download="${subObj.fileName||'file'}" class="text-theme underline font-bold"><i class="fas fa-download"></i> Download ${subObj.fileName}</a></div>` : ''}
         </div>
         <div class="bg-white p-4 rounded border border-blue-200 shadow-sm">
             <div class="flex gap-4 mb-3">
@@ -1082,49 +1474,340 @@ window.deleteActivity = (aid) => { showConfirm('Delete?', () => { db.activities[
 
 // --- QUIZZES (DETAILED) ---
 window.openCreateModal = (eid=null) => { 
-    let ex = { title:'', openDate:'', dueDate:'', timeLimit:30, attempts:1, category:'ww' }, content='', title='New Quiz', btn='Create';
-    if(eid) { ex=db.exams[currentCourseId].find(e=>e.id===eid); content=questionsToText(ex.questions); title='Edit Quiz'; btn='Save'; }
-    renderModal('quiz', title, `<div class="space-y-3"><input id="q-title" class="w-full border p-2" placeholder="Title" value="${ex.title}"><div class="grid grid-cols-2 gap-2"><input id="q-open" type="datetime-local" class="border p-2 w-full" value="${ex.openDate}"><input id="q-due" type="datetime-local" class="border p-2 w-full" value="${ex.dueDate}"></div><div class="grid grid-cols-2 gap-2"><input id="q-time" type="number" class="border p-2 w-full" value="${ex.timeLimit}" placeholder="Mins"><input id="q-att" type="number" class="border p-2 w-full" value="${ex.attempts}" placeholder="Attempts"></div><textarea id="q-content" class="w-full border p-2 h-40 font-mono text-sm" placeholder="1. Question\nA. Opt\nB. Opt\nAnswer: A">${content}</textarea><button onclick="saveQuiz('${eid||''}')" class="w-full bg-blue-600 text-white py-2 font-bold rounded">${btn}</button></div>`);
+    let ex = { title:'', openDate:'', dueDate:'', timeLimit:30, attempts:1, category:'ww' }, content='', title='New Assessment', btn='Create';
+    if(eid) { ex=db.exams[currentCourseId].find(e=>e.id===eid); content=questionsToText(ex.questions); title='Edit Assessment'; btn='Save'; }
+    
+    renderModal('quiz', title, `
+        <div class="space-y-3">
+            <input id="q-title" class="w-full border p-2 rounded" placeholder="Title" value="${ex.title}">
+            
+            <!-- Category Selection -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Assessment Type</label>
+                <select id="q-cat" class="w-full border p-2 rounded bg-white">
+                    <option value="ww" ${ex.category==='ww'?'selected':''}>Written Work (Quiz)</option>
+                    <option value="qa" ${ex.category==='qa'?'selected':''}>Quarterly Assessment (Exam)</option>
+                </select>
+                <p class="text-xs text-gray-400 mt-1">"Written Work" counts towards WW grade. "Quarterly Assessment" counts towards QA grade.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div><label class="text-xs font-bold text-gray-500">Open Date</label><input id="q-open" type="datetime-local" class="border p-2 w-full rounded" value="${ex.openDate}"></div>
+                <div><label class="text-xs font-bold text-gray-500">Due Date</label><input id="q-due" type="datetime-local" class="border p-2 w-full rounded" value="${ex.dueDate}"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <div><label class="text-xs font-bold text-gray-500">Time Limit (Mins)</label><input id="q-time" type="number" class="border p-2 w-full rounded" value="${ex.timeLimit}" placeholder="30"></div>
+                <div><label class="text-xs font-bold text-gray-500">Allowed Attempts</label><input id="q-att" type="number" class="border p-2 w-full rounded" value="${ex.attempts}" placeholder="1"></div>
+            </div>
+            
+            <div>
+                <label class="text-xs font-bold text-gray-500">Questions (Text Format)</label>
+                <textarea id="q-content" class="w-full border p-2 h-40 font-mono text-sm rounded" placeholder="1. What is 2+2?\nA. 3\nB. 4\nAnswer: B">${content}</textarea>
+            </div>
+            
+            <button onclick="saveQuiz('${eid||''}')" class="btn-theme w-full text-white py-2 font-bold rounded shadow">${btn}</button>
+        </div>
+    `);
 }
+
 window.saveQuiz = (eid) => {
-    const t=$('q-title').value, o=$('q-open').value, d=$('q-due').value, time=$('q-time').value, att=$('q-att').value, content=$('q-content').value;
-    if(t&&o&&d){
+    const t=$('q-title').value, cat=$('q-cat').value, o=$('q-open').value, d=$('q-due').value, time=$('q-time').value, att=$('q-att').value, content=$('q-content').value;
+    
+    if(t && o && d){
         const qs = parseQuizText(content);
         if(!db.exams[currentCourseId]) db.exams[currentCourseId]=[];
-        const data = { id:eid||'e'+Date.now(), title:t, openDate:o, dueDate:d, timeLimit:parseInt(time), attempts:parseInt(att), category:'ww', questions:qs };
-        if(eid) { const idx=db.exams[currentCourseId].findIndex(e=>e.id===eid); db.exams[currentCourseId][idx]=data; } else db.exams[currentCourseId].push(data);
-        saveDB(); closeModal('quiz'); render();
+        
+        const data = { 
+            id: eid || 'e'+Date.now(), 
+            title: t, 
+            category: cat, // Save the selected category (ww or qa)
+            openDate: o, 
+            dueDate: d, 
+            timeLimit: parseInt(time) || 30, 
+            attempts: parseInt(att) || 1, 
+            questions: qs 
+        };
+        
+        if(eid) { 
+            const idx = db.exams[currentCourseId].findIndex(e => e.id === eid); 
+            if(idx !== -1) db.exams[currentCourseId][idx] = data; 
+        } else { 
+            db.exams[currentCourseId].push(data); 
+        }
+        
+        saveDB(); 
+        closeModal('quiz'); 
+        render(); // This updates the Class Record automatically because we updated the data source
+        showToast('Assessment Saved');
+    } else {
+        showToast('Please fill in required fields', 'error');
     }
 }
-window.openImportModal = () => { renderModal('modal-import', 'Import DOCX', `<div class="space-y-4"><input type="file" id="docx-upload" accept=".docx" class="w-full border p-2 rounded"><div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold">Open</label><input id="imp-open" type="datetime-local" class="border p-2 w-full rounded"></div><div><label class="text-xs font-bold">Due</label><input id="imp-due" type="datetime-local" class="border p-2 w-full rounded"></div></div><button onclick="processDocxImport()" class="w-full bg-canvas-accent text-white py-2 font-bold rounded">Import</button></div>`); }
-window.processDocxImport = () => { const o=$('imp-open').value, d=$('imp-due').value; if(importedText && o && d) { const q=parseQuizText(importedText); if(q.length>0) { if(!db.exams[currentCourseId]) db.exams[currentCourseId]=[]; db.exams[currentCourseId].push({id:'e'+Date.now(), title:'Imported Quiz', openDate:o, dueDate:d, timeLimit:30, attempts:1, category:'ww', questions:q}); saveDB(); closeModal('modal-import'); render(); showToast('Imported'); } } }
-document.addEventListener('change', async (e) => { if(e.target && e.target.id === 'docx-upload') { const reader = new FileReader(); reader.onload = function(evt) { mammoth.extractRawText({arrayBuffer: evt.target.result}).then(r => { importedText = r.value; showToast('File Parsed'); }); }; reader.readAsArrayBuffer(e.target.files[0]); } });
+
+window.openImportModal = () => { 
+    renderModal('modal-import', 'Import Assessment (DOCX)', `
+        <div class="space-y-4">
+            <input type="file" id="docx-upload" accept=".docx" class="w-full border p-2 rounded">
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Assessment Type</label>
+                <select id="imp-cat" class="w-full border p-2 rounded bg-white">
+                    <option value="ww">Written Work (Quiz)</option>
+                    <option value="qa">Quarterly Assessment (Exam)</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div><label class="text-xs font-bold text-gray-500">Open Date</label><input id="imp-open" type="datetime-local" class="border p-2 w-full rounded"></div>
+                <div><label class="text-xs font-bold text-gray-500">Due Date</label><input id="imp-due" type="datetime-local" class="border p-2 w-full rounded"></div>
+            </div>
+            
+            <button onclick="processDocxImport()" class="btn-theme w-full text-white py-2 font-bold rounded shadow">Import</button>
+        </div>
+    `); 
+}
+
+window.processDocxImport = () => { 
+    const o=$('imp-open').value, d=$('imp-due').value, cat=$('imp-cat').value; 
+    if(importedText && o && d) { 
+        const q=parseQuizText(importedText); 
+        if(q.length>0) { 
+            if(!db.exams[currentCourseId]) db.exams[currentCourseId]=[]; 
+            db.exams[currentCourseId].push({
+                id: 'e'+Date.now(), 
+                title: 'Imported ' + (cat==='qa'?'Exam':'Quiz'), 
+                category: cat, // Save category
+                openDate: o, 
+                dueDate: d, 
+                timeLimit: 30, 
+                attempts: 1, 
+                questions: q
+            }); 
+            saveDB(); 
+            closeModal('modal-import'); 
+            render(); 
+            showToast('Imported Successfully'); 
+        } else {
+            showToast('No questions found in file', 'error');
+        }
+    } else {
+        showToast('Please upload a file and set dates', 'error');
+    }
+}
+
+document.addEventListener('change', async (e) => { if(e.target && e.target.id === 'docx-upload') { const reader = new FileReader(); reader.onload = function(evt) { mammoth.extractRawText({arrayBuffer: evt.target.result}).then(r => { importedText = r.value; showToast('File Parsed - Ready to Import'); }); }; reader.readAsArrayBuffer(e.target.files[0]); } });
 
 window.startExam = (eid) => { activeExamId=eid; currentView='exam-take'; render(); }
 window.reviewExam = (eid) => { activeExamId=eid; currentView='exam-review'; render(); }
 window.deleteExam = (eid) => { showConfirm('Delete?', ()=>{ db.exams[currentCourseId]=db.exams[currentCourseId].filter(e=>e.id!==eid); delete db.examSubmissions[eid]; saveDB(); render(); }); }
 window.renderExamTake = (c) => { 
-    const ex=db.exams[currentCourseId].find(e=>e.id===activeExamId); let time=ex.timeLimit*60;
-    c.innerHTML = `<div class="max-w-3xl mx-auto bg-white p-8 min-h-screen"><div class="flex justify-between border-b pb-4 mb-6 sticky top-0 bg-white"><h2 class="text-2xl font-bold">${ex.title}</h2><div id="timer" class="text-xl font-mono text-red-600 font-bold"></div></div><div class="space-y-8">${ex.questions.map((q,i)=>`<div class="p-4 border rounded"><p class="font-bold mb-3">${i+1}. ${q.q}</p><div class="space-y-2">${q.options.map((o,oi)=>`<label class="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="radio" name="q${i}" value="${oi}"> ${o}</label>`).join('')}</div></div>`).join('')}</div><button onclick="submitExam()" class="mt-8 w-full bg-blue-600 text-white py-3 rounded font-bold">Submit</button></div>`;
-    const int = setInterval(()=>{ time--; const m=Math.floor(time/60),s=time%60; $('timer').innerText=`${m}:${s<10?'0':''}${s}`; if(time<=0){clearInterval(int);submitExam();} },1000);
+    const ex=db.exams[currentCourseId].find(e=>e.id===activeExamId); 
+    if(!ex) return goCourse(currentCourseId);
+    let time=ex.timeLimit*60;
+    c.innerHTML = `<div class="max-w-3xl mx-auto bg-white p-8 min-h-screen"><div class="flex justify-between border-b pb-4 mb-6 sticky top-0 bg-white shadow-sm z-10"><h2 class="text-2xl font-bold text-gray-800">${ex.title}</h2><div id="timer" class="text-xl font-mono text-red-600 font-bold bg-red-50 px-3 rounded border border-red-100"></div></div><div class="space-y-8">${ex.questions.map((q,i)=>`<div class="p-4 border rounded hover:shadow-sm transition"><p class="font-bold mb-3 text-lg text-gray-800">${i+1}. ${q.q}</p><div class="space-y-2">${q.options.map((o,oi)=>`<label class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded cursor-pointer border border-transparent hover:border-gray-200 transition"><input type="radio" name="q${i}" value="${oi}" class="w-4 h-4 text-blue-600"> <span class="text-gray-700">${o}</span></label>`).join('')}</div></div>`).join('')}</div><button onclick="submitExam()" class="mt-8 w-full btn-theme text-white py-4 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">Submit Assessment</button></div>`;
+    
+    // Clear any existing timer
+    if(window.examTimer) clearInterval(window.examTimer);
+    
+    window.examTimer = setInterval(()=>{ 
+        time--; 
+        const m=Math.floor(time/60),s=time%60; 
+        const timerEl = $('timer');
+        if(timerEl) timerEl.innerText=`${m}:${s<10?'0':''}${s}`; 
+        if(time<=0){ clearInterval(window.examTimer); submitExam(); } 
+    }, 1000);
 }
+
 window.submitExam = () => {
+    if(window.examTimer) clearInterval(window.examTimer);
     const ex=db.exams[currentCourseId].find(e=>e.id===activeExamId), ans=[]; let score=0;
     ex.questions.forEach((q,i)=>{ const s=document.querySelector(`input[name="q${i}"]:checked`); const v=s?parseInt(s.value):-1; ans.push(v); if(v===q.ans)score++; });
     const p=Math.round((score/ex.questions.length)*100);
     if(!db.examSubmissions[activeExamId]) db.examSubmissions[activeExamId]={};
-    db.examSubmissions[activeExamId][currentUser.id] = { score:p, answers:ans, attemptsTaken:1 }; 
-    saveDB(); showToast(`Score: ${p}%`); reviewExam(activeExamId);
+    db.examSubmissions[activeExamId][currentUser.id] = { score:p, answers:ans, attemptsTaken:1, submittedAt: new Date().toISOString() }; 
+    saveDB(); 
+    showToast(`Submitted! Score: ${p}%`); 
+    reviewExam(activeExamId);
 }
-window.reviewExam = (eid) => {
+
+window.renderExamReview = (c) => {
+    const eid = activeExamId;
     const ex=db.exams[currentCourseId].find(e=>e.id===eid), sub=db.examSubmissions[eid][currentUser.id];
-    $('app').innerHTML = `<div class="max-w-3xl mx-auto bg-white p-8 min-h-screen"><div class="border-b pb-4 mb-6 flex justify-between"><div><h2 class="text-2xl font-bold">${ex.title} Results</h2><p class="text-xl font-bold text-blue-600">${sub.score}%</p></div><button onclick="goCourse()" class="text-gray-500 font-bold">Exit</button></div><div class="space-y-6">${ex.questions.map((q,i)=>{ const user=sub.answers[i], correct=q.ans; return `<div class="p-4 border rounded ${user===correct?'border-green-300 bg-green-50':'border-red-300 bg-red-50'}"><p class="font-bold mb-2">${i+1}. ${q.q}</p><div class="space-y-1">${q.options.map((o,oi)=>`<div class="${oi===correct?'text-green-700 font-bold':(oi===user?'text-red-600 font-bold':'')}">${String.fromCharCode(65+oi)}. ${o} ${oi===correct?'(Correct)':''}</div>`).join('')}</div></div>` }).join('')}</div></div>`;
+    
+    // --- UPDATED EXIT BUTTON LOGIC ---
+    // Instead of goCourse(id), we manually switch back to the quizzes tab
+    c.innerHTML = `
+        <div class="max-w-3xl mx-auto bg-white p-8 min-h-screen">
+            <div class="border-b pb-4 mb-6 flex justify-between items-center sticky top-0 bg-white z-10">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">${ex.title} Results</h2>
+                    <p class="text-xl font-bold text-theme mt-1">Score: ${sub.score}%</p>
+                </div>
+                <button onclick="currentView='course'; currentTab='quizzes'; render();" class="text-gray-500 font-bold hover:text-gray-800 px-4 py-2 hover:bg-gray-100 rounded transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Exit Review
+                </button>
+            </div>
+            <div class="space-y-6">
+                ${ex.questions.map((q,i)=>{ 
+                    const user=sub.answers[i], correct=q.ans; 
+                    const isCorrect = user===correct;
+                    return `
+                    <div class="p-4 border rounded-lg ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}">
+                        <div class="flex gap-3">
+                            <div class="flex-shrink-0 mt-1">
+                                ${isCorrect ? '<i class="fas fa-check-circle text-green-600 text-xl"></i>' : '<i class="fas fa-times-circle text-red-500 text-xl"></i>'}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold mb-3 text-gray-800">${i+1}. ${q.q}</p>
+                                <div class="space-y-2">
+                                    ${q.options.map((o,oi)=>`
+                                        <div class="p-2 rounded ${oi===correct ? 'bg-green-100 text-green-800 font-bold border border-green-200' : (oi===user ? 'bg-red-100 text-red-800 font-bold border border-red-200' : 'text-gray-600')}">
+                                            ${String.fromCharCode(65+oi)}. ${o} 
+                                            ${oi===correct ? '<span class="ml-2 text-xs uppercase tracking-wider bg-green-200 px-1 rounded">Correct</span>' : ''}
+                                            ${oi===user && oi!==correct ? '<span class="ml-2 text-xs uppercase tracking-wider bg-red-200 px-1 rounded">Your Answer</span>' : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>` 
+                }).join('')}
+            </div>
+        </div>`;
 }
 window.reviewExamContent = (eid) => { const ex=db.exams[currentCourseId].find(e=>e.id===eid); renderModal('rev', ex.title, `<div class="space-y-4 max-h-[60vh] overflow-y-auto">${ex.questions.map((q,i)=>`<div class="p-3 border rounded"><p class="font-bold">${i+1}. ${q.q}</p><div class="ml-4 text-sm text-gray-600">${q.options.map((o,oi)=>`<div>${oi===q.ans?'*':''} ${o}</div>`).join('')}</div></div>`).join('')}</div>`); }
-window.showItemAnalysis = (eid) => { const ex=db.exams[currentCourseId].find(e=>e.id===eid), subs=db.examSubmissions[eid]||{}, total=Object.keys(subs).length; let html=`<div class="mb-2 font-bold">Taken: ${total}</div><div class="space-y-2 max-h-60 overflow-y-auto">`; ex.questions.forEach((q,i)=>{ let c=0; Object.values(subs).forEach(s=>{if(s.answers&&s.answers[i]===q.ans)c++}); const p=total>0?Math.round((c/total)*100):0; html+=`<div class="bg-gray-50 p-2 text-xs">Q${i+1}: ${p}% Correct</div>`; }); html+=`</div>`; renderModal('modal-analytics', 'Item Analysis', html); }
-window.openWeightsModal = () => { const s=db.subjects.find(x=>x.id===currentCourseId), w=s.gradingWeights; renderModal('w', 'Weights', `<div class="grid grid-cols-3 gap-2 mb-2"><input id="ww" value="${w.ww}" placeholder="WW"><input id="pt" value="${w.pt}" placeholder="PT"><input id="qa" value="${w.qa}" placeholder="QA"></div><button onclick="saveWeights()" class="w-full bg-blue-600 text-white py-2 rounded">Save</button>`); }
+
+// --- UPDATED ANALYTICS WITH CHOICES & STUDENT NAMES ---
+window.showItemAnalysis = (eid) => { 
+    const ex = db.exams[currentCourseId].find(e => e.id === eid);
+    const subs = db.examSubmissions[eid] || {};
+    const total = Object.keys(subs).length;
+    
+    let html = `<div class="mb-4 font-bold text-gray-700 flex justify-between items-center">
+        <span>Total Submissions: ${total}</span>
+        <button onclick="closeModal('modal-analytics')" class="text-xs text-blue-500 hover:underline">Close</button>
+    </div>
+    <div class="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">`;
+    
+    ex.questions.forEach((q, i) => {
+        let correctList = [];
+        let incorrectList = [];
+        let optionCounts = new Array(q.options.length).fill(0); // Track counts per option
+        
+        // Sort students into lists based on their answer for this specific question
+        Object.entries(subs).forEach(([uid, sub]) => {
+            const student = db.users.find(u => u.id === uid);
+            if (!student) return;
+            
+            const userAnswer = sub.answers ? sub.answers[i] : -1;
+            
+            // Count option usage
+            if (userAnswer >= 0 && userAnswer < q.options.length) {
+                optionCounts[userAnswer]++;
+            }
+
+            if (userAnswer === q.ans) {
+                correctList.push(student.name);
+            } else {
+                incorrectList.push(student.name);
+            }
+        });
+        
+        const percent = total > 0 ? Math.round((correctList.length / total) * 100) : 0;
+        const barColor = percent >= 75 ? 'bg-green-500' : (percent >= 50 ? 'bg-yellow-500' : 'bg-red-500');
+        
+        html += `
+            <div class="border rounded-lg p-4 bg-white shadow-sm">
+                <div class="mb-4">
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-gray-800 text-sm mb-1 w-3/4">Q${i+1}. ${q.q}</h4>
+                        <span class="text-xs font-bold px-2 py-1 rounded bg-gray-100">${percent}% Correct</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1 mb-3">
+                        <div class="${barColor} h-1.5 rounded-full" style="width: ${percent}%"></div>
+                    </div>
+
+                    <!-- Choices Breakdown -->
+                    <div class="space-y-1 mb-4">
+                        ${q.options.map((opt, idx) => {
+                            const isCorrect = idx === q.ans;
+                            const count = optionCounts[idx];
+                            const optPercent = total > 0 ? Math.round((count / total) * 100) : 0;
+                            const bgClass = isCorrect ? 'bg-green-100 border-green-200' : 'bg-gray-50 border-gray-100';
+                            const textClass = isCorrect ? 'text-green-800 font-bold' : 'text-gray-600';
+                            
+                            return `
+                                <div class="flex items-center text-xs p-2 rounded border ${bgClass}">
+                                    <div class="w-6 font-bold ${textClass}">${String.fromCharCode(65+idx)}</div>
+                                    <div class="flex-1 ${textClass}">${opt} ${isCorrect ? '<i class="fas fa-check ml-1"></i>' : ''}</div>
+                                    <div class="w-24 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <span class="text-[10px] text-gray-500">${count} students</span>
+                                            <span class="font-bold">${optPercent}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-1 mt-1">
+                                            <div class="bg-blue-400 h-1 rounded-full" style="width: ${optPercent}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <!-- Correct Column -->
+                    <div class="bg-green-50 rounded border border-green-100 p-2">
+                        <div class="font-bold text-green-700 border-b border-green-200 pb-1 mb-2 flex justify-between">
+                            <span>Correct Students</span>
+                            <span class="bg-green-200 text-green-800 px-1.5 rounded-full">${correctList.length}</span>
+                        </div>
+                        <ul class="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+                            ${correctList.length > 0 
+                                ? correctList.map(name => `<li class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500 text-[10px]"></i> ${name}</li>`).join('') 
+                                : '<li class="text-gray-400 italic pl-1">None</li>'}
+                        </ul>
+                    </div>
+                    
+                    <!-- Incorrect Column -->
+                    <div class="bg-red-50 rounded border border-red-100 p-2">
+                        <div class="font-bold text-red-700 border-b border-red-200 pb-1 mb-2 flex justify-between">
+                            <span>Incorrect Students</span>
+                            <span class="bg-red-200 text-red-800 px-1.5 rounded-full">${incorrectList.length}</span>
+                        </div>
+                        <ul class="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+                            ${incorrectList.length > 0 
+                                ? incorrectList.map(name => `<li class="flex items-center gap-2"><i class="fas fa-times-circle text-red-500 text-[10px]"></i> ${name}</li>`).join('') 
+                                : '<li class="text-gray-400 italic pl-1">None</li>'}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    renderModal('modal-analytics', 'Item Analysis: ' + ex.title, html);
+}
+
+window.openWeightsModal = () => { const s=db.subjects.find(x=>x.id===currentCourseId), w=s.gradingWeights; renderModal('w', 'Weights', `<div class="grid grid-cols-3 gap-2 mb-2"><input id="ww" value="${w.ww}" placeholder="WW"><input id="pt" value="${w.pt}" placeholder="PT"><input id="qa" value="${w.qa}" placeholder="QA"></div><button onclick="saveWeights()" class="btn-theme w-full text-white py-2 rounded">Save</button>`); }
 window.saveWeights = () => { const ww=parseInt($('ww').value), pt=parseInt($('pt').value), qa=parseInt($('qa').value); if(ww+pt+qa!==100) return showToast('Total must be 100%','error'); const s=db.subjects.find(x=>x.id===currentCourseId); s.gradingWeights={ww,pt,qa}; saveDB(); closeModal('w'); render(); }
 window.resetGrades = () => { showConfirm('Reset ALL grades?', () => { (db.activities[currentCourseId]||[]).forEach(a=>delete db.activitySubmissions[a.id]); (db.exams[currentCourseId]||[]).forEach(e=>delete db.examSubmissions[e.id]); saveDB(); render(); }); }
+window.deleteGradeItem = (id, isExam) => {
+    showConfirm('Delete this item? This action cannot be undone.', () => {
+        if(isExam) {
+            db.exams[currentCourseId] = db.exams[currentCourseId].filter(e => e.id !== id);
+            delete db.examSubmissions[id];
+        } else {
+            db.activities[currentCourseId] = db.activities[currentCourseId].filter(a => a.id !== id);
+            delete db.activitySubmissions[id];
+        }
+        saveDB();
+        render();
+        showToast('Item deleted');
+    });
+}
 
 window.toggleModal = (id) => { if($(id)){ $(id).remove(); return; } }
 window.closeModal = (id) => { const el = document.getElementById(id); if (el) el.remove(); } 
@@ -1134,6 +1817,3 @@ render();
 </script>
 </body>
 </html>
-
-
-

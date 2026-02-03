@@ -1218,13 +1218,63 @@ function renderCourseTab() {
         c.innerHTML = `<div class="theme-panel bg-white p-6 rounded border border-gray-200 mb-6 relative group">${isTeacher ? `<button onclick="editIntro()" class="absolute top-4 right-4 text-gray-400 hover:text-canvas-accent"><i class="fas fa-edit"></i> Edit Info</button>` : ''}<h2 class="text-2xl font-bold text-gray-800 mb-2">${s.introTitle||`Welcome to ${s.name}`}</h2><p class="text-gray-600 leading-relaxed">${s.introBody||'No introduction provided yet.'}</p></div>${isTeacher?`<div class="theme-panel bg-white p-4 rounded border border-gray-200 mb-6 shadow-sm"><textarea id="post-content" class="w-full border p-3 rounded mb-2 text-sm focus:outline-none focus:border-canvas-accent" placeholder="Share an announcement..." rows="3"></textarea><div class="flex flex-col gap-2"><div class="flex gap-2"><select id="post-type" class="border p-2 rounded text-sm bg-gray-50 flex-1" onchange="toggleMediaInput()"><option value="text">Text Only</option><option value="link">Link</option><option value="video">Video</option><option value="image_upload">Image (Upload)</option><option value="image_url">Image (URL)</option><option value="gif">GIF (URL)</option></select><button onclick="publishPost()" class="btn-theme px-6 py-2 rounded font-bold">Post</button></div><input id="post-url" class="border p-2 rounded text-sm hidden" placeholder="Paste URL here..."><div id="post-file-container" class="hidden border border-dashed border-gray-300 p-2 rounded bg-gray-50"><input type="file" id="post-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"></div></div></div>` : ''}<div class="space-y-6">${posts.map(p => renderPostCard(p, isTeacher)).join('')}</div>`;
         setTimeout(() => { const fi=$('post-file'); if(fi) fi.addEventListener('change', e=>{ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=evt=>{tempTeacherImage=evt.target.result}; r.readAsDataURL(f); } }); }, 500);
     }
+
     // --- MODULES TAB ---
     if(currentTab === 'modules') {
         const modules = db.modules[s.id] || [];
-        c.innerHTML = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Learning Modules</h2></div>${isTeacher ? `<button onclick="openModuleBuilder()" class="btn-theme px-4 py-2 rounded font-bold text-sm"><i class="fas fa-plus mr-2"></i>Create Module</button>` : ''}</div><div class="space-y-4">${modules.map(m => `<div class="theme-panel bg-white p-4 rounded border hover:shadow-md transition"><div class="flex justify-between items-center"><div class="cursor-pointer flex-1" onclick="viewModule('${m.id}')"><h3 class="font-bold text-lg text-canvas-primary">${m.title}</h3><p class="text-xs text-gray-500">${m.blocks.length} sections • Published ${new Date(m.date).toLocaleDateString()}</p></div>${isTeacher ? `<div class="flex gap-2"><button onclick="editModule('${m.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button><button onclick="deleteModule('${m.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button></div>` : '<i class="fas fa-chevron-right text-gray-300"></i>'}</div></div>`).join('')}</div>${modules.length===0?'<div class="text-center py-10 text-gray-400 border border-dashed rounded">No modules yet.</div>':''}`;
+        
+        let modulesHtml = '';
+        if(modules.length === 0) {
+            modulesHtml = '<div class="text-center py-10 text-gray-400 border border-dashed rounded">No modules yet.</div>';
+        } else {
+            modulesHtml = `<div class="space-y-4">
+            ${modules.map(m => {
+                const unlockDate = m.unlockDate ? new Date(m.unlockDate) : null;
+                const now = new Date();
+                const isLocked = !isTeacher && unlockDate && now < unlockDate;
+                
+                let statusBadge = '';
+                if (unlockDate) {
+                    const dateStr = unlockDate.toLocaleString('en-US', {month: 'short', day: 'numeric', hour: 'numeric', minute:'2-digit'});
+                    if (isTeacher) {
+                        statusBadge = `<span class="text-[10px] uppercase tracking-wider font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2 border border-yellow-200"><i class="fas fa-clock mr-1"></i> Scheduled: ${dateStr}</span>`;
+                    } else if (isLocked) {
+                        statusBadge = `<span class="text-[10px] uppercase tracking-wider font-bold bg-gray-200 text-gray-600 px-2 py-1 rounded ml-2"><i class="fas fa-lock mr-1"></i> Available ${dateStr}</span>`;
+                    }
+                }
+
+                const clickAction = isLocked ? `onclick="showToast('This module is locked until ${unlockDate.toLocaleString()}', 'error')"` : `onclick="viewModule('${m.id}')"`;
+                const opacityClass = isLocked ? 'opacity-70 bg-gray-50 grayscale-[0.5]' : 'bg-white hover:shadow-md';
+                const icon = isLocked 
+                    ? '<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500"><i class="fas fa-lock"></i></div>' 
+                    : '<i class="fas fa-chevron-right text-gray-300"></i>';
+
+                return `
+                <div class="theme-panel ${opacityClass} p-4 rounded border transition">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1 cursor-pointer" ${clickAction}>
+                            <div class="flex items-center flex-wrap gap-y-1">
+                                <h3 class="font-bold text-lg text-canvas-primary mr-2">${m.title}</h3>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${m.blocks.length} sections</p>
+                        </div>
+                        ${isTeacher ? `
+                        <div class="flex gap-2">
+                            <button onclick="editModule('${m.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteModule('${m.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+                        </div>` : icon}
+                    </div>
+                </div>`;
+            }).join('')}
+            </div>`;
+        }
+
+        c.innerHTML = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Learning Modules</h2></div>${isTeacher ? `<button onclick="openModuleBuilder()" class="btn-theme px-4 py-2 rounded font-bold text-sm"><i class="fas fa-plus mr-2"></i>Create Module</button>` : ''}</div>${modulesHtml}`;
     }
     
     // --- ACTIVITIES TAB (ENHANCED BUILDER) ---
+    // ... rest of the tabs ...
     if(currentTab === 'activities') {
         const acts = db.activities[s.id] || [];
         let html = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Class Activities</h2><p class="text-gray-500 text-xs">Performance Tasks & Written Work</p></div>${isTeacher ? `<button onclick="createActivity()" class="btn-theme px-4 py-2 rounded font-bold text-sm shadow transition"><i class="fas fa-plus mr-2"></i>New Activity</button>` : ''}</div>`;
@@ -1438,14 +1488,16 @@ window.cancelModule = () => { currentView = 'course'; render(); }
 // --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
 window.saveModule = async () => {
     const title = $('mod-title').value;
+    const unlockDate = $('mod-unlock').value;
     if (!title) return showToast('Please enter a module title', 'error');
 
     const moduleData = {
         id: editingModuleId || 'mod_' + Date.now(),
         title: title,
         courseId: currentCourseId,
-        blocks: [...builderBlocks], // Captures all text/image blocks
-        date: new Date().toISOString() // Added Date Setup
+        unlockDate: unlockDate, // Save the scheduled date
+        blocks: [...builderBlocks], 
+        date: new Date().toISOString() 
     };
 
     // Ensure the array exists for this specific course
@@ -1459,11 +1511,10 @@ window.saveModule = async () => {
         db.modules[currentCourseId].push(moduleData);
     }
 
-    // THIS IS THE FIX: Wait for Firebase to finish saving before closing
     const success = await saveDB();
     if (success) {
         showToast('Module successfully saved to Cloud');
-        goCourse(currentCourseId); // This refreshes the view so you see it immediately
+        goCourse(currentCourseId); 
     }
 };
 
@@ -1529,9 +1580,17 @@ function renderModuleBuilder(c) {
     c.innerHTML = `
         <div class="max-w-4xl mx-auto pb-24">
             <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <input id="mod-title" value="${mod.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mr-4" placeholder="Module Title">
-                    <div class="flex gap-2">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-2 gap-4">
+                    <div class="w-full">
+                        <input id="mod-title" value="${mod.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mb-4" placeholder="Module Title">
+                        
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 border border-r-0 border-gray-300 text-gray-500 text-sm px-3 py-2 rounded-l font-bold whitespace-nowrap"><i class="fas fa-clock"></i> Unlock:</span>
+                            <input id="mod-unlock" type="datetime-local" class="border border-gray-300 p-2 rounded-r text-sm w-full md:w-auto outline-none focus:border-blue-500" value="${mod.unlockDate || ''}">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1 ml-1">Leave blank to publish immediately.</p>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0 self-end md:self-start">
                         <button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button>
                         <button onclick="saveModule()" class="btn-theme px-4 py-2 text-white font-bold rounded shadow">Save Module</button>
                     </div>
@@ -1566,6 +1625,8 @@ window.saveActivityBuilt = async () => {
     };
     if(editingActivityId) { const idx = db.activities[currentCourseId].findIndex(a=>a.id===editingActivityId); db.activities[currentCourseId][idx] = actData; }
     else { db.activities[currentCourseId].push(actData); }
+    
+    // THIS IS THE FIX: Forces Firebase to sync so students see it
     const success = await saveDB();
     if(success) {
         currentView = 'course'; render(); showToast('Activity Saved');

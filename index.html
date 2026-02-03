@@ -249,6 +249,42 @@ async function initSupabase() {
             $('app').classList.remove('opacity-0');
         }
         
+        // --- REALTIME SUBSCRIPTION SETUP ---
+        supabase.channel('public:app_data')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_data', filter: 'id=eq.master_record' }, payload => {
+                if (payload.new && payload.new.data) {
+                    console.log('Received live update:', new Date().toISOString());
+                    
+                    // 1. Update the local data store
+                    db = payload.new.data;
+                    
+                    // 2. Check if it's safe to re-render (don't interrupt typing/editing)
+                    const unsafeViews = ['module_builder', 'activity_builder', 'theme_builder', 'exam-take'];
+                    const isWritingPost = currentView === 'course' && currentTab === 'home' && document.activeElement && document.activeElement.tagName === 'TEXTAREA';
+                    
+                    // 3. Apply changes
+                    applyTheme(); // Theme changes are always safe
+                    
+                    if (!unsafeViews.includes(currentView) && !isWritingPost) {
+                        render(); // Refresh UI to show new content
+                        
+                        // Show "Updated" indicator
+                        const status = $('sync-status');
+                        if(status) {
+                            status.innerHTML = '<i class="fas fa-bolt text-yellow-400"></i> Live Update';
+                            status.style.opacity = '1';
+                            setTimeout(() => { 
+                                status.style.opacity = '0'; 
+                                status.innerHTML = '<i class="fas fa-save"></i> Saved'; 
+                            }, 3000);
+                        }
+                    } else {
+                        console.log('Skipped render to protect user input');
+                    }
+                }
+            })
+            .subscribe();
+
         if(!currentUser) render();
     } catch (e) {
         console.error("Supabase Init Error:", e);
@@ -1556,11 +1592,11 @@ window.renderBlocks = () => {
     const list = $('blocks-list');
     if(!list) return;
     list.innerHTML = builderBlocks.map((b, i) => `
-        <div class="module-block group">
-            <div class="block-actions">
-                <button onclick="moveBlock(${i}, -1)" class="text-gray-400 hover:text-blue-600"><i class="fas fa-arrow-up"></i></button>
-                <button onclick="moveBlock(${i}, 1)" class="text-gray-400 hover:text-blue-600"><i class="fas fa-arrow-down"></i></button>
-                <button onclick="removeBlock(${i})" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+        <div class="module-block group bg-white border border-gray-200 rounded-lg mb-4 shadow-sm hover:border-blue-400 transition-colors">
+            <div class="block-actions absolute top-2 right-2 flex gap-1 z-10 opacity-50 group-hover:opacity-100 transition-opacity">
+                <button onclick="moveBlock(${i}, -1)" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Move Up"><i class="fas fa-arrow-up"></i></button>
+                <button onclick="moveBlock(${i}, 1)" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Move Down"><i class="fas fa-arrow-down"></i></button>
+                <button onclick="removeBlock(${i})" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded" title="Delete"><i class="fas fa-trash"></i></button>
             </div>
             ${renderBlockContent(b, i)}
         </div>
@@ -1568,10 +1604,35 @@ window.renderBlocks = () => {
 }
 
 function renderBlockContent(b, i) {
-    if(b.type === 'text') return `<div class="rich-toolbar"><button onclick="execCmd(${i},'bold')" class="rich-btn">B</button><button onclick="execCmd(${i},'italic')" class="rich-btn">I</button><button onclick="execCmd(${i},'underline')" class="rich-btn">U</button></div><div id="editor-${i}" contenteditable="true" class="rich-content" oninput="updateBlock(${i}, this.innerHTML)">${b.content}</div>`;
-    if(b.type === 'image') return `<div class="p-2">${b.content ? `<img src="${b.content}" class="max-h-64 rounded shadow-sm">` : ''}<input type="file" onchange="uploadBlockFile(${i}, this)" accept="image/*" class="mt-2 text-sm"></div>`;
-    if(b.type === 'video') return `<div class="p-2"><input value="${b.content}" oninput="updateBlock(${i}, this.value)" class="w-full border p-2 rounded" placeholder="YouTube URL"><div class="mt-2 text-xs text-gray-500">Paste YouTube link</div></div>`;
-    if(b.type === 'file') return `<div class="p-2 flex items-center gap-4">${b.content ? `<span class="font-bold text-blue-600">${b.name}</span>` : ''}<input type="file" onchange="uploadBlockFile(${i}, this)" class="text-sm"></div>`;
+    if(b.type === 'text') return `
+        <div class="rich-toolbar flex flex-wrap gap-1 p-2 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+            <select onchange="execCmd(${i}, 'fontSize', this.value); this.value='';" class="h-7 text-xs border border-gray-300 rounded bg-white px-1 text-gray-700 outline-none focus:border-blue-500">
+                <option value="">Size</option>
+                <option value="3">Normal</option>
+                <option value="5">Large</option>
+                <option value="7">Huge</option>
+            </select>
+            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'bold')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Bold"><i class="fas fa-bold"></i></button>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'italic')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Italic"><i class="fas fa-italic"></i></button>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'underline')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Underline"><i class="fas fa-underline"></i></button>
+            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'insertOrderedList')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'insertUnorderedList')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'formatBlock','BLOCKQUOTE')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Quote"><i class="fas fa-quote-right"></i></button>
+            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'justifyLeft')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Align Left"><i class="fas fa-align-left"></i></button>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'justifyCenter')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Align Center"><i class="fas fa-align-center"></i></button>
+            <button onmousedown="event.preventDefault()" onclick="execCmd(${i},'justifyRight')" class="rich-btn w-7 h-7 hover:bg-gray-200 rounded" title="Align Right"><i class="fas fa-align-right"></i></button>
+        </div>
+        <div id="editor-${i}" contenteditable="true" class="rich-content min-h-[120px] p-4 outline-none text-gray-800 prose max-w-none focus:bg-blue-50/10 transition" oninput="updateBlock(${i}, this.innerHTML)">${b.content}</div>`;
+        
+    if(b.type === 'image') return `<div class="p-4"><div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center bg-gray-50 hover:bg-gray-100 transition relative">${b.content ? `<img src="${b.content}" class="max-h-80 mx-auto rounded shadow-sm mb-2">` : '<div class="text-gray-400 mb-2"><i class="fas fa-image text-3xl"></i><p class="text-xs mt-1">No Image Selected</p></div>'}<input type="file" onchange="uploadBlockFile(${i}, this)" accept="image/*" class="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"></div></div>`;
+    
+    if(b.type === 'video') return `<div class="p-4"><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">YouTube / Video URL</label><input value="${b.content}" oninput="updateBlock(${i}, this.value)" class="w-full border border-gray-300 p-2 rounded text-sm focus:border-blue-500 outline-none" placeholder="https://youtube.com/watch?v=..."><div class="mt-2 text-xs text-gray-400"><i class="fas fa-info-circle"></i> Paste a YouTube link to embed it automatically.</div></div>`;
+    
+    if(b.type === 'file') return `<div class="p-4 flex items-center gap-4 bg-gray-50 rounded-b-lg border-t border-gray-100"><div class="w-10 h-10 rounded bg-blue-100 flex items-center justify-center text-blue-600"><i class="fas fa-file-alt"></i></div><div class="flex-1 overflow-hidden"><p class="text-sm font-bold text-gray-700 truncate">${b.name || 'No file selected'}</p><input type="file" onchange="uploadBlockFile(${i}, this)" class="mt-1 text-xs text-gray-500 file:mr-2 file:py-0.5 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"></div></div>`;
+    
     return '';
 }
 
@@ -1579,57 +1640,116 @@ function renderModuleBuilder(c) {
     const mod = editingModuleId ? db.modules[currentCourseId].find(m=>m.id===editingModuleId) : {};
     c.innerHTML = `
         <div class="max-w-4xl mx-auto pb-24">
-            <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6">
+            <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6 sticky top-24 z-30">
                 <div class="flex flex-col md:flex-row justify-between items-start mb-2 gap-4">
                     <div class="w-full">
-                        <input id="mod-title" value="${mod.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full mb-4" placeholder="Module Title">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Module Details</label>
+                        <input id="mod-title" value="${mod.title||''}" class="text-2xl font-bold bg-transparent border-b-2 border-gray-200 focus:border-blue-500 outline-none w-full mb-4 py-1 transition-colors" placeholder="Enter Module Title Here...">
                         
                         <div class="flex items-center">
-                            <span class="bg-gray-100 border border-r-0 border-gray-300 text-gray-500 text-sm px-3 py-2 rounded-l font-bold whitespace-nowrap"><i class="fas fa-clock"></i> Unlock:</span>
-                            <input id="mod-unlock" type="datetime-local" class="border border-gray-300 p-2 rounded-r text-sm w-full md:w-auto outline-none focus:border-blue-500" value="${mod.unlockDate || ''}">
+                            <span class="bg-gray-100 border border-r-0 border-gray-300 text-gray-500 text-xs px-3 py-2 rounded-l font-bold whitespace-nowrap"><i class="fas fa-clock"></i> UNLOCK DATE</span>
+                            <input id="mod-unlock" type="datetime-local" class="border border-gray-300 p-1.5 rounded-r text-sm w-full md:w-auto outline-none focus:border-blue-500 bg-white" value="${mod.unlockDate || ''}">
                         </div>
-                        <p class="text-xs text-gray-400 mt-1 ml-1">Leave blank to publish immediately.</p>
                     </div>
-                    <div class="flex gap-2 flex-shrink-0 self-end md:self-start">
-                        <button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancel</button>
-                        <button onclick="saveModule()" class="btn-theme px-4 py-2 text-white font-bold rounded shadow">Save Module</button>
+                    <div class="flex gap-2 flex-shrink-0 self-end md:self-center">
+                        <button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded border border-transparent hover:border-gray-200 transition">Cancel</button>
+                        <button id="btn-save-module" onclick="saveModule()" class="btn-theme px-6 py-2 text-white font-bold rounded shadow hover:shadow-lg transition flex items-center gap-2">
+                            <i class="fas fa-save"></i> <span>Save Module</span>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="mb-2 font-bold text-gray-500 uppercase text-xs">Content Blocks</div>
-            <div id="blocks-list" class="space-y-4"></div>
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 flex justify-center gap-4 shadow z-50">
-                <button onclick="addBlock('text')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-font text-blue-500"></i> Text</button>
-                <button onclick="addBlock('image')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-image text-green-500"></i> Image</button>
-                <button onclick="addBlock('video')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-video text-red-500"></i> Video</button>
-                <button onclick="addBlock('file')" class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-blue-50 font-bold border"><i class="fas fa-paperclip text-gray-500"></i> File</button>
+
+            <div class="flex justify-between items-end mb-4 px-2">
+                 <div class="font-bold text-gray-500 uppercase text-xs tracking-wider">Module Content</div>
+                 <div class="text-xs text-gray-400 italic">${builderBlocks.length} items</div>
+            </div>
+            
+            <div id="blocks-list" class="space-y-6 min-h-[200px]"></div>
+
+            <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md border border-gray-200 p-2 rounded-full flex justify-center gap-2 shadow-xl z-50">
+                <button onclick="addBlock('text')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-blue-50 rounded-lg transition group">
+                    <i class="fas fa-font text-blue-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">Text</span>
+                </button>
+                <div class="w-px bg-gray-200 my-2"></div>
+                <button onclick="addBlock('image')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-green-50 rounded-lg transition group">
+                    <i class="fas fa-image text-green-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">Image</span>
+                </button>
+                <div class="w-px bg-gray-200 my-2"></div>
+                <button onclick="addBlock('video')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-red-50 rounded-lg transition group">
+                    <i class="fas fa-video text-red-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">Video</span>
+                </button>
+                <div class="w-px bg-gray-200 my-2"></div>
+                <button onclick="addBlock('file')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-orange-50 rounded-lg transition group">
+                    <i class="fas fa-paperclip text-orange-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">File</span>
+                </button>
             </div>
         </div>
     `;
     renderBlocks();
 }
 
-// --- ACTIVITY BUILDER (NEW) ---
-window.createActivity = () => { builderBlocks = []; editingActivityId = null; currentView = 'activity_builder'; render(); }
-window.editActivity = (aid) => { const a = db.activities[currentCourseId].find(x=>x.id===aid); builderBlocks = JSON.parse(JSON.stringify(a.blocks || [])); editingActivityId = aid; currentView = 'activity_builder'; render(); }
-window.cancelActivity = () => { currentView = 'course'; render(); }
-window.saveActivityBuilt = async () => {
-    const t=$('act-build-title').value, max=parseInt($('act-build-max').value), cat=$('act-build-cat').value, start=$('act-build-start').value, due=$('act-build-due').value;
-    const subText = $('sub-opt-text').checked, subFile = $('sub-opt-file').checked;
-    if(!t) return showToast('Title required', 'error');
-    if(!db.activities[currentCourseId]) db.activities[currentCourseId] = [];
-    const actData = {
-        id: editingActivityId || 'a'+Date.now(), title: t, maxScore: max, category: cat, openDate: start, dueDate: due,
-        blocks: builderBlocks, submissionOptions: { text: subText, file: subFile },
-        date: new Date().toISOString() // creation date
-    };
-    if(editingActivityId) { const idx = db.activities[currentCourseId].findIndex(a=>a.id===editingActivityId); db.activities[currentCourseId][idx] = actData; }
-    else { db.activities[currentCourseId].push(actData); }
+// --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
+window.saveModule = async () => {
+    const title = $('mod-title').value;
+    const unlockDate = $('mod-unlock').value;
     
-    // THIS IS THE FIX: Forces Firebase to sync so students see it
+    if (!title) return showToast('Please enter a module title', 'error');
+
+    // Show loading state
+    const btn = $('btn-save-module');
+    if(btn) {
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span>Saving...</span>';
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+    }
+
+    const moduleData = {
+        id: editingModuleId || 'mod_' + Date.now(),
+        title: title,
+        courseId: currentCourseId,
+        unlockDate: unlockDate, 
+        blocks: [...builderBlocks], 
+        date: new Date().toISOString() 
+    };
+
+    // Ensure the array exists for this specific course
+    if (!db.modules[currentCourseId]) db.modules[currentCourseId] = [];
+
+    // Logic to Update or Add
+    if (editingModuleId) {
+        const idx = db.modules[currentCourseId].findIndex(m => m.id === editingModuleId);
+        if(idx !== -1) db.modules[currentCourseId][idx] = moduleData;
+    } else {
+        db.modules[currentCourseId].push(moduleData);
+    }
+
     const success = await saveDB();
-    if(success) {
-        currentView = 'course'; render(); showToast('Activity Saved');
+    
+    if (success) {
+        showToast('Module successfully saved to Cloud');
+        goCourse(currentCourseId); 
+    } else {
+        // Reset button on failure
+        if(btn) {
+            btn.innerHTML = '<i class="fas fa-save"></i> <span>Save Module</span>';
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    }
+};
+
+window.execCmd = (i, cmd, val=null) => { 
+    // Ensure document focus allows command execution (basic)
+    document.execCommand(cmd, false, val); 
+    // Immediately update the model
+    const el = document.getElementById(`editor-${i}`);
+    if(el) {
+        builderBlocks[i].content = el.innerHTML;
     }
 }
 

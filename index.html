@@ -229,7 +229,7 @@ async function initSupabase() {
         
         if (error && error.code !== 'PGRST116') {
             console.error("Supabase Error:", error);
-            // If table doesn't exist, we'll create it on first save
+            // Don't show toast on init, just log
         }
         
         if (appData && appData.data) {
@@ -241,7 +241,7 @@ async function initSupabase() {
         } else {
             // Initialize with default data
             console.log("Initializing with default data");
-            await saveDB();
+            // Don't save immediately on load to prevent overwriting if connection fails
         }
         
         applyTheme();
@@ -256,7 +256,6 @@ async function initSupabase() {
         if(!currentUser) render();
     } catch (e) {
         console.error("Supabase Init Error:", e);
-        // If Supabase is not available, fall back to local mode
         const l = $('loading-screen');
         if(l) {
             l.style.opacity=0;
@@ -281,12 +280,12 @@ async function saveDB() {
         
         if (error) {
             console.error("Save Error:", error);
-            // If table doesn't exist, show a helpful message
-            if (error.code === '42P01') {
-                showToast('Database table not found. Please create app_data table in Supabase.', 'error');
+            if (error.code === '42P01' || error.code === '42501') {
+                showDatabaseErrorModal(error.code);
             } else {
-                showToast('Failed to save data: ' + error.message, 'error');
+                showToast('Failed to save: ' + error.message, 'error');
             }
+            return false; // Return failure
         } else {
             // Show sync indicator
             const status = $('sync-status');
@@ -294,57 +293,90 @@ async function saveDB() {
                 status.style.opacity = '1';
                 setTimeout(() => status.style.opacity = '0', 2000);
             }
+            return true; // Return success
         }
     } catch (e) {
         console.error("Save Error:", e);
-        showToast('Failed to save data', 'error');
+        showToast('Connection failed', 'error');
+        return false;
     }
+}
+
+// Helper to show SQL Fix
+window.showDatabaseErrorModal = (code) => {
+    const title = code === '42P01' ? 'Database Table Missing' : 'Permission Denied (RLS)';
+    const msg = code === '42P01' 
+        ? 'The "app_data" table does not exist in your Supabase project.' 
+        : 'Row Level Security is blocking the save. You need to enable public access.';
+    
+    renderModal('db-error', title, `
+        <div class="space-y-4">
+            <div class="bg-red-50 text-red-700 p-4 rounded border border-red-200">
+                <p class="font-bold"><i class="fas fa-exclamation-triangle"></i> Data Not Saving</p>
+                <p class="text-sm mt-1">${msg}</p>
+            </div>
+            <p class="text-sm text-gray-600">Please go to the <strong>Supabase SQL Editor</strong> and run this code:</p>
+            <div class="relative group">
+                <textarea id="sql-code" class="w-full h-32 bg-gray-800 text-green-400 font-mono text-xs p-3 rounded" readonly>
+create table if not exists app_data (
+  id text primary key,
+  data jsonb,
+  updated_at timestamptz
+);
+alter table app_data enable row level security;
+create policy "Public Access" on app_data for all using (true) with check (true);
+                </textarea>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('sql-code').value); showToast('SQL Copied!')" class="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-white px-2 py-1 rounded text-xs">Copy</button>
+            </div>
+            <button onclick="saveDB(); closeModal('db-error')" class="btn-theme w-full text-white py-2 rounded font-bold">I ran the code, Try Saving Again</button>
+        </div>
+    `);
 }
 
 initSupabase();
 
 // --- THEME ENGINE ---
-function applyTheme() {
-    const t = db.theme || defaultData.theme;
-    document.title = t.appName;
-    const root = document.documentElement;
-    if (t.bgType === 'image' && t.bgImage) root.style.setProperty('--bg-style', `url('${t.bgImage}')`);
-    else if (t.bgType === 'gradient') root.style.setProperty('--bg-style', t.bgGradient);
-    else root.style.setProperty('--bg-style', t.bgColor);
+window.saveTheme = async () => {
+    const bgType = document.querySelector('input[name="bg-type"]:checked').value;
+    const headerType = document.querySelector('input[name="header-type"]:checked').value;
+    const btnType = document.querySelector('input[name="btn-type"]:checked').value;
 
-    if (t.glassEffect) {
-        root.style.setProperty('--glass-bg', `rgba(255, 255, 255, ${t.glassOpacity || 0.8})`);
-        root.style.setProperty('--glass-border', '1px solid rgba(255, 255, 255, 0.4)');
-        root.style.setProperty('--glass-shadow', '0 8px 32px 0 rgba(31, 38, 135, 0.15)');
-        root.style.setProperty('--backdrop-blur', 'blur(16px)');
-        root.style.setProperty('--sidebar-bg', `rgba(255, 255, 255, ${Math.max(0.5, (t.glassOpacity || 0.8) - 0.1)})`);
-    } else {
-        root.style.setProperty('--glass-bg', '#ffffff');
-        root.style.setProperty('--glass-border', '1px solid #e2e8f0');
-        root.style.setProperty('--glass-shadow', '0 1px 3px 0 rgb(0 0 0 / 0.1)');
-        root.style.setProperty('--backdrop-blur', 'none');
-        root.style.setProperty('--sidebar-bg', '#ffffff');
-    }
-    
-    // Theme Props
-    root.style.setProperty('--global-border-color', t.borderColor || '#e2e8f0');
-    root.style.setProperty('--accent-color', t.accentColor || '#0374B5');
-    root.style.setProperty('--nav-item-active-bg', `rgba(${hexToRgb(t.accentColor || '#0374B5')}, 0.1)`);
-    
-    // Header
-    if (t.headerType === 'gradient') {
-        root.style.setProperty('--header-bg', t.headerGradient || 'linear-gradient(to right, #ffffff, #f3f4f6)');
-    } else {
-        root.style.setProperty('--header-bg', t.headerColor || '#ffffff');
-    }
-    root.style.setProperty('--header-text', t.headerTextColor || '#2D3B45');
-    root.style.setProperty('--header-shadow', t.headerShadow || 'none');
+    db.theme = {
+        appName: $('theme-name').value,
+        logoUrl: $('theme-logo-url').value,
+        
+        // Colors
+        borderColor: $('global-border-color').value,
+        accentColor: $('accent-color').value,
 
-    // Buttons
-    if (t.btnType === 'gradient') {
-        root.style.setProperty('--btn-bg', t.btnGradient || 'linear-gradient(to right, #0374B5, #00C6FF)');
-    } else {
-        root.style.setProperty('--btn-bg', t.accentColor || '#0374B5');
+        // Header
+        headerType: headerType,
+        headerColor: $('header-color').value,
+        headerGradient: constructGradient('header'),
+        hGradDir: $('header-grad-angle').value,
+        headerTextColor: $('header-text-color').value,
+        headerShadow: $('header-shadow').value,
+
+        // Buttons
+        btnType: btnType,
+        btnGradient: constructGradient('btn'),
+
+        // BG
+        bgType: bgType,
+        bgColor: $('theme-bgcolor').value,
+        bgGradient: constructGradient('bg'),
+        bgImage: $('theme-bgimage').value,
+        
+        // Glass
+        glassEffect: $('theme-glass').checked,
+        glassOpacity: $('theme-opacity').value
+    };
+    
+    const success = await saveDB();
+    if(success) {
+        applyTheme();
+        render(); 
+        showToast('Theme Saved');
     }
 }
 
@@ -907,7 +939,7 @@ window.constructGradient = (type) => {
     return `linear-gradient(${dir}, ${colors})`;
 }
 
-window.saveTheme = () => {
+window.saveTheme = async () => {
     const bgType = document.querySelector('input[name="bg-type"]:checked').value;
     const headerType = document.querySelector('input[name="header-type"]:checked').value;
     const btnType = document.querySelector('input[name="btn-type"]:checked').value;
@@ -943,10 +975,12 @@ window.saveTheme = () => {
         glassOpacity: $('theme-opacity').value
     };
     
-    saveDB();
-    applyTheme();
-    render(); 
-    showToast('Theme Saved');
+    const success = await saveDB();
+    if(success) {
+        applyTheme();
+        render(); 
+        showToast('Theme Saved');
+    }
 }
 
 window.resetTheme = () => {
@@ -1108,7 +1142,6 @@ function renderCourseTab() {
         html += `<div class="grid grid-cols-3 gap-4 mb-4 text-center"><div class="bg-orange-50 p-2 rounded border border-orange-100"><div class="text-xs font-bold text-orange-800">WW (${weights.ww}%)</div></div><div class="bg-purple-50 p-2 rounded border border-purple-100"><div class="text-xs font-bold text-purple-800">PT (${weights.pt}%)</div></div><div class="bg-blue-50 p-2 rounded border border-blue-100"><div class="text-xs font-bold text-blue-800">QA (${weights.qa}%)</div></div></div>`;
         
         html += `<div class="theme-panel overflow-x-auto bg-white border rounded shadow-sm max-w-full"><table class="w-full text-left text-sm grade-table border-collapse">`;
-        
         // Header Row
         html += `<thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase border-b"><tr>`;
         html += `<th class="p-3 sticky left-0 bg-gray-50 border-r min-w-[150px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Student</th>`;
@@ -1224,7 +1257,7 @@ window.execCmd = (i, cmd, val=null) => { document.execCommand(cmd, false, val); 
 window.uploadBlockFile = (i, input) => { if(input.files[0]) { const r = new FileReader(); r.onload = e => { builderBlocks[i].content = e.target.result; builderBlocks[i].name = input.files[0].name; renderBlocks(); }; r.readAsDataURL(input.files[0]); } }
 window.cancelModule = () => { currentView = 'course'; render(); }
 // --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
-window.saveModule = () => {
+window.saveModule = async () => {
     const title = $('mod-title').value;
     if (!title) return showToast('Please enter a module title', 'error');
 
@@ -1247,14 +1280,15 @@ window.saveModule = () => {
     }
 
     // THIS IS THE FIX: Wait for Firebase to finish saving before closing
-    saveDB().then(() => {
+    const success = await saveDB();
+    if (success) {
         showToast('Module successfully saved to Cloud');
         goCourse(currentCourseId); // This refreshes the view so you see it immediately
-    });
+    }
 };
 
 // --- UPDATED ACTIVITY BUILDER (Replaces your old publishActivity) ---
-window.publishActivity = () => {
+window.publishActivity = async () => {
     const title = $('act-title').value;
     const type = $('act-type').value;
     if (!title) return showToast('Please enter a title', 'error');
@@ -1279,10 +1313,11 @@ window.publishActivity = () => {
     }
 
     // THIS IS THE FIX: Forces Firebase to sync so students see it
-    saveDB().then(() => {
+    const success = await saveDB();
+    if (success) {
         showToast('Activity Published & Visible to Students');
         goCourse(currentCourseId);
-    });
+    }
 };
 
 // --- CORE RENDER FUNCTIONS FOR BUILDERS ---
@@ -1339,7 +1374,7 @@ function renderModuleBuilder(c) {
 window.createActivity = () => { builderBlocks = []; editingActivityId = null; currentView = 'activity_builder'; render(); }
 window.editActivity = (aid) => { const a = db.activities[currentCourseId].find(x=>x.id===aid); builderBlocks = JSON.parse(JSON.stringify(a.blocks || [])); editingActivityId = aid; currentView = 'activity_builder'; render(); }
 window.cancelActivity = () => { currentView = 'course'; render(); }
-window.saveActivityBuilt = () => {
+window.saveActivityBuilt = async () => {
     const t=$('act-build-title').value, max=parseInt($('act-build-max').value), cat=$('act-build-cat').value, start=$('act-build-start').value, due=$('act-build-due').value;
     const subText = $('sub-opt-text').checked, subFile = $('sub-opt-file').checked;
     if(!t) return showToast('Title required', 'error');
@@ -1351,7 +1386,10 @@ window.saveActivityBuilt = () => {
     };
     if(editingActivityId) { const idx = db.activities[currentCourseId].findIndex(a=>a.id===editingActivityId); db.activities[currentCourseId][idx] = actData; }
     else { db.activities[currentCourseId].push(actData); }
-    saveDB(); currentView = 'course'; render(); showToast('Activity Saved');
+    const success = await saveDB();
+    if(success) {
+        currentView = 'course'; render(); showToast('Activity Saved');
+    }
 }
 
 function renderActivityBuilder(c) {
@@ -1576,7 +1614,7 @@ window.openCreateModal = (eid=null) => {
     `);
 }
 
-window.saveQuiz = (eid) => {
+window.saveQuiz = async (eid) => {
     const t=$('q-title').value, cat=$('q-cat').value, o=$('q-open').value, d=$('q-due').value, time=$('q-time').value, att=$('q-att').value, content=$('q-content').value;
     
     if(t && o && d){
@@ -1586,7 +1624,7 @@ window.saveQuiz = (eid) => {
         const data = { 
             id: eid || 'e'+Date.now(), 
             title: t, 
-            category: cat, // Save the selected category (ww or qa)
+            category: cat,
             openDate: o, 
             dueDate: d, 
             timeLimit: parseInt(time) || 30, 
@@ -1601,10 +1639,12 @@ window.saveQuiz = (eid) => {
             db.exams[currentCourseId].push(data); 
         }
         
-        saveDB(); 
-        closeModal('quiz'); 
-        render(); // This updates the Class Record automatically because we updated the data source
-        showToast('Assessment Saved');
+        const success = await saveDB();
+        if (success) {
+            closeModal('quiz'); 
+            render(); 
+            showToast('Assessment Saved');
+        }
     } else {
         showToast('Please fill in required fields', 'error');
     }
@@ -1882,5 +1922,3 @@ render();
 </script>
 </body>
 </html>
-
-

@@ -575,13 +575,86 @@ function renderCoursesList(c) {
         subs = db.subjects.filter(s => s.students.includes(currentUser.id));
         c.innerHTML = `<div class="flex justify-between items-center mb-6"><h3 class="font-bold text-gray-800 text-lg">Active Courses</h3></div>`;
     }
+    
     if(subs.length === 0) { c.innerHTML += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-book-open text-4xl mb-3 block"></i><p>No courses found.</p></div>`; } else {
         c.innerHTML += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${subs.map(s => {
             const t = db.users.find(u => u.id === s.teacherId);
-            return `<div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer h-64 flex flex-col group hover-lift"><div class="course-header" style="background-image: url('${s.img}'); background-color: ${s.color}"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end transition group-hover:from-black/80"><span class="bg-white/20 backdrop-blur-sm text-white border border-white/30 text-xs font-bold px-2 py-1 rounded w-max shadow-sm mb-1">${s.code}</span><h3 class="font-bold text-white text-lg leading-tight drop-shadow-sm">${s.name}</h3></div></div><div class="p-4 flex-1 flex flex-col justify-between"><div><p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Instructor</p><div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div></div><div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3"><span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span><i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-theme"></i></div></div></div>`;
+            const isOwner = (currentUser.role === 'admin') || (currentUser.role === 'teacher' && s.teacherId === currentUser.id);
+            
+            // Background style logic
+            const bgStyle = s.img ? `background-image: url('${s.img}');` : `background-color: ${s.color};`;
+            
+            return `
+            <div onclick="openCourse('${s.id}')" class="theme-panel course-card bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer h-64 flex flex-col group hover-lift">
+                <div class="course-header relative bg-gray-200" style="${bgStyle} background-size: cover; background-position: center;">
+                    ${isOwner ? `
+                        <button onclick="event.stopPropagation(); triggerBannerUpload('${s.id}')" class="absolute top-2 right-2 bg-black/40 hover:bg-black/70 text-white w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition opacity-0 group-hover:opacity-100 z-20 shadow-md hover:scale-110" title="Change Banner Image">
+                            <i class="fas fa-camera text-xs"></i>
+                        </button>
+                    ` : ''}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 flex flex-col justify-end transition group-hover:from-black/90">
+                        <span class="bg-white/20 backdrop-blur-md text-white border border-white/30 text-xs font-bold px-2 py-1 rounded w-max shadow-md mb-1" style="text-shadow: 0 1px 2px rgba(0,0,0,0.8);">${s.code}</span>
+                        <h3 class="font-bold text-white text-lg leading-tight drop-shadow-md" style="text-shadow: 0 2px 4px rgba(0,0,0,0.9); letter-spacing: 0.5px;">${s.name}</h3>
+                    </div>
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Instructor</p>
+                        <div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div>
+                    </div>
+                    <div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3">
+                        <span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span>
+                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-theme"></i>
+                    </div>
+                </div>
+            </div>`;
         }).join('')}</div>`;
     }
 }
+
+// --- BANNER UPLOAD LOGIC ---
+let uploadingCourseId = null;
+
+window.triggerBannerUpload = (sid) => {
+    uploadingCourseId = sid;
+    let input = $('course-banner-input');
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.id = 'course-banner-input';
+        input.accept = 'image/png, image/jpeg, image/gif';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.addEventListener('change', handleBannerSelect);
+    }
+    input.click();
+}
+
+window.handleBannerSelect = (e) => {
+    const file = e.target.files[0];
+    if (file && uploadingCourseId) {
+        showToast('Uploading banner...', 'info');
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            const base64 = evt.target.result;
+            const courseIndex = db.subjects.findIndex(s => s.id === uploadingCourseId);
+            if (courseIndex !== -1) {
+                db.subjects[courseIndex].img = base64; // Save image data
+                
+                // Save to Supabase
+                const success = await saveDB();
+                if (success) {
+                    render();
+                    showToast('Course banner updated!');
+                }
+            }
+            uploadingCourseId = null;
+            e.target.value = ''; // Reset input
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
 window.setAdminFilter = (val) => { adminCourseFilter = val; render(); }
 window.openAddCourseModal = () => { renderModal('modal-add-course', 'Add Course', `<div class="space-y-3"><input id="c-name" class="w-full border p-2 rounded" placeholder="Course Name"><input id="c-code" class="w-full border p-2 rounded" placeholder="Course Code"><div><label class="text-xs font-bold text-gray-500">Select Teacher</label><select id="c-teacher" class="w-full border p-2 rounded bg-white text-sm">${db.users.filter(u => u.role === 'teacher').map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div><button onclick="addCourse()" class="w-full btn-theme py-2 rounded">Create</button></div>`); }
 window.addCourse = () => { const n=$('c-name').value, c=$('c-code').value; let tid=currentUser.id; if(currentUser.role==='admin') tid=$('c-teacher').value; if(n&&c){ db.subjects.push({id:'s'+Date.now(), name:n, code:c, teacherId:tid, students:[], color:'#0374B5', img:'', introTitle:'Welcome', introBody:'', gradingWeights:{ww:40,pt:40,qa:20}}); saveDB(); render(); closeModal('modal-add-course'); } }

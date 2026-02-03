@@ -622,7 +622,7 @@ window.triggerBannerUpload = (sid) => {
         input = document.createElement('input');
         input.type = 'file';
         input.id = 'course-banner-input';
-        input.accept = 'image/png, image/jpeg, image/gif';
+        input.accept = 'image/png, image/jpeg, image/gif, image/webp';
         input.style.display = 'none';
         document.body.appendChild(input);
         input.addEventListener('change', handleBannerSelect);
@@ -633,26 +633,83 @@ window.triggerBannerUpload = (sid) => {
 window.handleBannerSelect = (e) => {
     const file = e.target.files[0];
     if (file && uploadingCourseId) {
-        showToast('Uploading banner...', 'info');
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-            const base64 = evt.target.result;
-            const courseIndex = db.subjects.findIndex(s => s.id === uploadingCourseId);
-            if (courseIndex !== -1) {
-                db.subjects[courseIndex].img = base64; // Save image data
-                
-                // Save to Supabase
-                const success = await saveDB();
-                if (success) {
-                    render();
-                    showToast('Course banner updated!');
-                }
+        
+        // 1. SPECIAL HANDLING FOR GIFS (To preserve animation)
+        if (file.type === 'image/gif') {
+            if (file.size > 2.5 * 1024 * 1024) { // Limit GIFs to 2.5MB to prevent DB errors
+                showToast('GIF is too large (>2.5MB). Please use a smaller file.', 'error');
+                e.target.value = '';
+                uploadingCourseId = null;
+                return;
             }
-            uploadingCourseId = null;
-            e.target.value = ''; // Reset input
+            showToast('Uploading GIF...', 'info');
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                await saveBannerToDB(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        // 2. COMPRESSION FOR STATIC IMAGES (JPEG, PNG)
+        if (file.size > 5 * 1024 * 1024) {
+             showToast('Large file detected. Compressing...', 'info');
+        } else {
+             showToast('Processing banner...', 'info');
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const MAX_WIDTH = 1024;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Compress to JPEG 0.7
+                const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                await saveBannerToDB(base64);
+            }
+            img.onerror = function() {
+                showToast('Invalid image file.', 'error');
+                uploadingCourseId = null;
+            }
+            img.src = evt.target.result;
         };
         reader.readAsDataURL(file);
     }
+}
+
+// Helper to save banner
+window.saveBannerToDB = async (base64) => {
+    const courseIndex = db.subjects.findIndex(s => s.id === uploadingCourseId);
+    if (courseIndex !== -1) {
+        db.subjects[courseIndex].img = base64;
+        
+        showToast('Saving to cloud...', 'info');
+        const success = await saveDB();
+        if (success) {
+            render();
+            showToast('Course banner updated!');
+        } else {
+            showToast('Save failed. Image might be too large.', 'error');
+        }
+    }
+    uploadingCourseId = null;
+    const input = $('course-banner-input');
+    if(input) input.value = '';
 }
 
 window.setAdminFilter = (val) => { adminCourseFilter = val; render(); }

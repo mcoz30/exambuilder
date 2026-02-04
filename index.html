@@ -188,10 +188,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // --- DATA STORE ---
 const defaultData = {
     users: [
-        { id: 'u1', name: 'Mrs. Anderson', role: 'teacher', username: 'teacher', password: '123', avatar: 'MA', isOnline: false, lastSeen: null },
-        { id: 'u2', name: 'Juan Dela Cruz', role: 'student', username: 'student', password: '123', avatar: 'JD', isOnline: false, lastSeen: null },
-        { id: 'u3', name: 'Maria Santos', role: 'student', username: 'student2', password: '123', avatar: 'MS', isOnline: false, lastSeen: null },
-        { id: 'u0', name: 'School Admin', role: 'admin', username: 'admin', password: '123', avatar: 'AD', isOnline: false, lastSeen: null } 
+        { id: 'u1', name: 'Mrs. Anderson', role: 'teacher', username: 'teacher', password: '123', avatar: 'MA' },
+        { id: 'u2', name: 'Juan Dela Cruz', role: 'student', username: 'student', password: '123', avatar: 'JD' },
+        { id: 'u3', name: 'Maria Santos', role: 'student', username: 'student2', password: '123', avatar: 'MS' },
+        { id: 'u0', name: 'School Admin', role: 'admin', username: 'admin', password: '123', avatar: 'AD' } 
     ],
     subjects: [
         { id: 's1', name: 'Introduction to Physics', code: 'PHYS-101', teacherId: 'u1', students: ['u2', 'u3'], color: '#0374B5', img: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?auto=format&fit=crop&w=600&q=80', introTitle: 'Welcome to Physics', introBody: 'Check the feed.', gradingWeights: { ww: 40, pt: 40, qa: 20 } }
@@ -204,9 +204,7 @@ const defaultData = {
     examSubmissions: {},
     modules: { 's1': [] },
     globalEvents: [],
-    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95 },
-    messages: [],  // Store all messages with timestamps
-    userStatus: {}  // Track online status: { userId: { isOnline: boolean, lastSeen: ISOString } }
+    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95 }
 };
 
 let db = defaultData, currentUser = null, currentView = 'login', currentCourseId = null, activeExamId = null, currentTab = 'home', calendarDate = new Date(), importedText = '', tempPostImage = null, tempTeacherImage = null, adminCourseFilter = 'all', selectedLoginRole = null, supabaseUser = null; 
@@ -257,47 +255,15 @@ async function initSupabase() {
         supabase.channel('public:app_data')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_data', filter: 'id=eq.master_record' }, payload => {
                 // Ignore updates if they match our last local save (prevents jitter)
+                // Since we don't have a transaction ID, we check content roughly or just apply
                 if (payload.new && payload.new.data) {
                     console.log('Received live update:', new Date().toISOString());
                     
                     const unsafeViews = ['module_builder', 'activity_builder', 'theme_builder', 'exam-take'];
                     const isWritingPost = currentView === 'course' && currentTab === 'home' && document.activeElement && document.activeElement.tagName === 'TEXTAREA';
                     
-                    // Don't re-render if user is viewing grades to prevent disappearing grades
-                    const isViewingGrades = currentView === 'course' && currentTab === 'grades';
-                    
-                    if (!unsafeViews.includes(currentView) && !isWritingPost && !isViewingGrades) {
-                         // SMART MERGE: Merge new data instead of full replacement
-                         // This prevents losing local unsaved data and prevents UI flicker
-                         const cloudData = payload.new.data;
-                         
-                         // Merge top-level arrays and objects while preserving structure
-                         if (cloudData.users) db.users = cloudData.users;
-                         if (cloudData.subjects) db.subjects = cloudData.subjects;
-                         if (cloudData.posts) db.posts = cloudData.posts;
-                         if (cloudData.globalPosts) db.globalPosts = cloudData.globalPosts;
-                         if (cloudData.activities) db.activities = cloudData.activities;
-                         if (cloudData.exams) db.exams = cloudData.exams;
-                         if (cloudData.modules) db.modules = cloudData.modules;
-                         if (cloudData.activitySubmissions) {
-                             // Merge submissions - keep local data if cloud doesn't have it yet
-                             for (const actId in cloudData.activitySubmissions) {
-                                 if (!db.activitySubmissions[actId]) db.activitySubmissions[actId] = {};
-                                 Object.assign(db.activitySubmissions[actId], cloudData.activitySubmissions[actId]);
-                             }
-                         }
-                         if (cloudData.examSubmissions) {
-                             // Merge exam submissions - keep local data if cloud doesn't have it yet
-                             for (const examId in cloudData.examSubmissions) {
-                                 if (!db.examSubmissions[examId]) db.examSubmissions[examId] = {};
-                                 Object.assign(db.examSubmissions[examId], cloudData.examSubmissions[examId]);
-                             }
-                         }
-                         if (cloudData.globalEvents) db.globalEvents = cloudData.globalEvents;
-                         if (cloudData.theme) db.theme = cloudData.theme;
-                         if (cloudData.messages) db.messages = cloudData.messages;
-                         if (cloudData.userStatus) db.userStatus = cloudData.userStatus;
-                         
+                    if (!unsafeViews.includes(currentView) && !isWritingPost) {
+                         db = payload.new.data; // Apply cloud data
                          applyTheme();
                          render(); // Refresh UI
                          
@@ -307,25 +273,6 @@ async function initSupabase() {
                              status.style.opacity = '1';
                              setTimeout(() => { status.style.opacity = '0'; }, 2000);
                          }
-                    } else if (isViewingGrades) {
-                        // If viewing grades, silently update data but don't re-render
-                        // This prevents grades from disappearing when new submissions come in
-                        console.log('Silently updating grades data without re-render');
-                        const cloudData = payload.new.data;
-                        if (cloudData.activitySubmissions) {
-                            for (const actId in cloudData.activitySubmissions) {
-                                if (!db.activitySubmissions[actId]) db.activitySubmissions[actId] = {};
-                                Object.assign(db.activitySubmissions[actId], cloudData.activitySubmissions[actId]);
-                            }
-                        }
-                        if (cloudData.examSubmissions) {
-                            for (const examId in cloudData.examSubmissions) {
-                                if (!db.examSubmissions[examId]) db.examSubmissions[examId] = {};
-                                Object.assign(db.examSubmissions[examId], cloudData.examSubmissions[examId]);
-                            }
-                        }
-                        // Update unread badge silently
-                        updateUnreadBadge();
                     } else {
                         // If user is editing, we skip the full render but maybe silently update non-conflict parts? 
                         // For simplicity in this structure, we skip to avoid overwriting work.
@@ -546,18 +493,7 @@ function render() {
                             ${db.theme.logoUrl ? `<img src="${db.theme.logoUrl}" class="h-16 w-auto object-contain">` : ''}
                             <h2 class="font-bold text-xl uppercase tracking-wide" id="page-title">${db.theme.appName}</h2>
                         </div>
-                        <div class="flex items-center gap-4">
-    <div class="relative">
-        <button onclick="openAllMessages()" class="relative p-2 rounded-full hover:bg-gray-100 transition">
-            <i class="fas fa-bell text-gray-600 text-lg"></i>
-            <span id="unread-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"></span>
-        </button>
-    </div>
-    <div class="flex items-center gap-2">
-        <span class="text-sm font-bold opacity-90">${currentUser.name}</span>
-        ${renderAvatar(currentUser, 'w-8 h-8', 'text-sm')}
-    </div>
-</div>
+                        <div class="flex items-center gap-3"><span class="text-sm font-bold opacity-90">${currentUser.name}</span>${renderAvatar(currentUser, 'w-9 h-9', 'text-sm')}</div>
                     </header>
                     <div id="page-content" class="max-w-7xl mx-auto animate-slide-up" style="animation-delay: 0.1s;"></div>
                 </main>
@@ -585,14 +521,7 @@ window.goCalendar = () => { currentView='calendar'; render(); }
 window.goSettings = () => { currentView='settings'; render(); }
 window.goTeachersList = () => { currentView='teachers_list'; render(); }
 window.goThemeBuilder = () => { currentView='theme_builder'; render(); }
-window.logout = () => { 
-    updateUserOnlineStatus(false);
-    if (window.messageCleanupInterval) {
-        clearInterval(window.messageCleanupInterval);
-        window.messageCleanupInterval = null;
-    }
-    currentUser=null; currentView='login'; render(); 
-}
+window.logout = () => { currentUser=null; currentView='login'; render(); }
 window.goCourse = (sid) => { currentCourseId = sid; currentView = 'course'; render(); }
 
 // --- LOGIN ---
@@ -629,25 +558,6 @@ window.loginAttempt = async () => {
         if (selectedLoginRole && user.role !== selectedLoginRole) return showToast(`Not a ${selectedLoginRole}`, 'error'); 
         currentUser = user;
         supabaseUser = { id: user.id, email: user.username + '@school.local' };
-        
-        // Set user as online
-        updateUserOnlineStatus(true);
-        
-        // Start periodic cleanup of old messages (every hour)
-        if (!window.messageCleanupInterval) {
-            window.messageCleanupInterval = setInterval(cleanupOldMessages, 3600000); // 1 hour
-            cleanupOldMessages(); // Run once on login
-        }
-        
-        // Track page visibility for online status
-        document.addEventListener('visibilitychange', () => {
-            updateUserOnlineStatus(!document.hidden);
-        });
-        
-        // Update last seen on page unload
-        window.addEventListener('beforeunload', () => {
-            updateUserOnlineStatus(false);
-        });
         await saveDB(); // Save any pending changes
         goDashboard(); 
     } else showToast('Invalid credentials', 'error'); 
@@ -697,50 +607,6 @@ function renderDashboard(c) {
                             <div class="text-center text-gray-400 py-4"><i class="fas fa-circle-notch fa-spin"></i> Loading backups...</div>
                         </div>
                     </div>
-                    
-                    <!-- Online Status Panel -->
-                    <div class="theme-panel bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-lift">
-                        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
-                            <i class="fas fa-users text-green-500"></i>
-                            Online Status
-                        </h3>
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-2">
-                                    <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                    Teachers (${db.users.filter(u => u.role === 'teacher').length})
-                                </h4>
-                                <div class="space-y-2">
-                                    ${db.users.filter(u => u.role === 'teacher').map(t => `
-                                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
-                                            <div class="flex items-center gap-2">
-                                                ${renderAvatar(t, 'w-6 h-6', 'text-[10px]')}
-                                                <span class="text-sm font-bold text-gray-700">${t.name}</span>
-                                            </div>
-                                            ${getOnlineStatusDisplay(t.id)}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-2">
-                                    <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                    Students (${db.users.filter(u => u.role === 'student').length})
-                                </h4>
-                                <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                                    ${db.users.filter(u => u.role === 'student').map(s => `
-                                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
-                                            <div class="flex items-center gap-2">
-                                                ${renderAvatar(s, 'w-6 h-6', 'text-[10px]')}
-                                                <span class="text-sm font-bold text-gray-700">${s.name}</span>
-                                            </div>
-                                            ${getOnlineStatusDisplay(s.id)}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="lg:col-span-1 space-y-6">
@@ -778,214 +644,6 @@ function renderDashboard(c) {
     }
     c.innerHTML = `<div class="max-w-4xl mx-auto"><div class="mb-6 flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white shadow-lg"><div class="bg-white/20 p-3 rounded-lg"><i class="fas fa-newspaper text-2xl"></i></div><div><h2 class="text-2xl font-bold">School News</h2><p class="text-blue-100 text-sm">Latest updates from the administration.</p></div></div><div class="space-y-6">${(db.globalPosts && db.globalPosts.length > 0) ? db.globalPosts.map(p => renderPostCard(p, false)).join('') : '<div class="theme-panel bg-white p-12 rounded-xl border border-dashed text-center text-gray-400"><i class="fas fa-inbox text-5xl mb-4 text-gray-200 block"></i>No announcements yet.</div>'}</div></div>`;
 }
-
-// --- MESSAGING SYSTEM ---
-
-// Update user online status
-window.updateUserOnlineStatus = (isOnline) => {
-    if (!currentUser) return;
-    
-    const userIndex = db.users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-        db.users[userIndex].isOnline = isOnline;
-        db.users[userIndex].lastSeen = new Date().toISOString();
-        
-        // Update status in database
-        if (!db.userStatus) db.userStatus = {};
-        db.userStatus[currentUser.id] = {
-            isOnline: isOnline,
-            lastSeen: new Date().toISOString()
-        };
-        
-        // Save to Supabase (async, don't wait)
-        saveDB();
-    }
-};
-
-// Get online status display
-window.getOnlineStatusDisplay = (userId) => {
-    const user = db.users.find(u => u.id === userId);
-    if (!user) return '<span class="text-gray-400 text-xs">Unknown</span>';
-    
-    if (user.isOnline) {
-        return '<span class="inline-flex items-center gap-1 text-xs font-bold text-green-600"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online</span>';
-    }
-    
-    if (user.lastSeen) {
-        const lastSeen = new Date(user.lastSeen);
-        const now = new Date();
-        const diffMs = now - lastSeen;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        let timeText = '';
-        if (diffMins < 1) timeText = 'Just now';
-        else if (diffMins < 60) timeText = `${diffMins}m ago`;
-        else if (diffHours < 24) timeText = `${diffHours}h ago`;
-        else timeText = `${diffDays}d ago`;
-        
-        return `<span class="text-gray-500 text-xs">Last seen ${timeText}</span>`;
-    }
-    
-    return '<span class="text-gray-400 text-xs">Offline</span>';
-};
-
-// Cleanup old messages (older than 1 week)
-window.cleanupOldMessages = async () => {
-    if (!db.messages || db.messages.length === 0) return;
-    
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    
-    const initialCount = db.messages.length;
-    db.messages = db.messages.filter(msg => new Date(msg.timestamp) >= oneWeekAgo);
-    
-    if (db.messages.length < initialCount) {
-        console.log(`Cleaned up ${initialCount - db.messages.length} old messages`);
-        await saveDB();
-        updateUnreadBadge();
-    }
-};
-
-// Send message
-window.sendMessage = async (recipientId, courseId, text) => {
-    if (!text.trim()) return;
-    
-    const message = {
-        id: 'msg_' + Date.now(),
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-        recipientId: recipientId,
-        courseId: courseId,
-        text: text.trim(),
-        timestamp: new Date().toISOString(),
-        read: false
-    };
-    
-    if (!db.messages) db.messages = [];
-    db.messages.push(message);
-    
-    await saveDB();
-    updateUnreadBadge();
-    return message;
-};
-
-// Mark message as read
-window.markMessageAsRead = async (messageId) => {
-    const msg = db.messages.find(m => m.id === messageId);
-    if (msg && msg.recipientId === currentUser.id) {
-        msg.read = true;
-        await saveDB();
-        updateUnreadBadge();
-    }
-};
-
-// Get messages between two users
-window.getMessages = (userId1, userId2, courseId = null) => {
-    if (!db.messages) return [];
-    
-    return db.messages.filter(msg => {
-        const correctUsers = (msg.senderId === userId1 && msg.recipientId === userId2) || 
-                            (msg.senderId === userId2 && msg.recipientId === userId1);
-        const correctCourse = courseId ? msg.courseId === courseId : true;
-        return correctUsers && correctCourse;
-    }).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-};
-
-// Get unread message count
-window.getUnreadCount = (userId) => {
-    if (!db.messages) return 0;
-    return db.messages.filter(m => m.recipientId === userId && !m.read).length;
-};
-
-// Open messenger with user
-window.openMessenger = (recipientId, courseId = null) => {
-    const recipient = db.users.find(u => u.id === recipientId);
-    if (!recipient) return;
-    
-    const messages = getMessages(currentUser.id, recipientId, courseId);
-    const courseName = courseId ? db.subjects.find(s => s.id === courseId)?.name : 'Direct Message';
-    
-    // Mark all messages as read
-    messages.forEach(m => {
-        if (m.recipientId === currentUser.id && !m.read) {
-            m.read = true;
-        }
-    });
-    
-    // Update unread count in background
-    saveDB();
-    
-    renderModal('messenger', `${recipient.name} - ${courseName}`, `
-        <div class="flex flex-col h-[70vh]">
-            <div id="message-container" class="flex-1 overflow-y-auto space-y-3 p-4 bg-gray-50 rounded mb-4 custom-scrollbar">
-                ${messages.length === 0 ? 
-                    '<div class="text-center text-gray-400 py-8 italic">No messages yet. Start the conversation!</div>' : 
-                    messages.map(msg => renderMessageBubble(msg, msg.senderId === currentUser.id)).join('')
-                }
-            </div>
-            <div class="flex gap-2">
-                <input type="text" id="message-input" class="flex-1 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                    placeholder="Type your message..." 
-                    onkeypress="if(event.key==='Enter') window.sendMessageTo('${recipientId}', '${courseId || ''}')">
-                <button onclick="window.sendMessageTo('${recipientId}', '${courseId || ''}')" 
-                    class="btn-theme px-6 py-3 rounded-lg font-bold">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    `);
-    
-    // Scroll to bottom
-    setTimeout(() => {
-        const container = $('message-container');
-        if (container) container.scrollTop = container.scrollHeight;
-    }, 100);
-};
-
-// Render message bubble
-window.renderMessageBubble = (msg, isOwn) => {
-    const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const date = new Date(msg.timestamp).toLocaleDateString();
-    const isToday = new Date().toDateString() === new Date(msg.timestamp).toDateString();
-    
-    return `
-        <div class="flex ${isOwn ? 'justify-end' : 'justify-start'}">
-            <div class="max-w-[70%] ${isOwn ? 'bg-blue-500 text-white' : 'bg-white border'} rounded-lg p-3 shadow-sm">
-                ${
-!isOwn ? `<p class="text-xs font-bold text-gray-500 mb-1">${msg.senderName}</p>` : ''
-}
-                <p class="text-sm ${isOwn ? 'text-white' : 'text-gray-800'}">${msg.text}</p>
-                <div class="flex items-center justify-end gap-2 mt-1">
-                    <span class="text-[10px] ${isOwn ? 'text-blue-100' : 'text-gray-400'}">${isToday ? time : date + ' ' + time}</span>
-                    ${isOwn && msg.read ? '<i class="fas fa-check-double text-blue-200 text-xs"></i>' : ''}
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-// Send message from modal
-window.sendMessageTo = async (recipientId, courseId) => {
-    const input = $('message-input');
-    const text = input ? input.value.trim() : '';
-    
-    if (text) {
-        const msg = await sendMessage(recipientId, courseId || null, text);
-        input.value = '';
-        
-        // Add the new message to the container
-        const container = $('message-container');
-        if (container) {
-            const emptyMsg = container.querySelector('.text-center');
-            if (emptyMsg) emptyMsg.remove();
-            
-            container.innerHTML += renderMessageBubble(msg, true);
-            container.scrollTop = container.scrollHeight;
-        }
-    }
-};
 
 // --- BACKUP & RESTORE LOGIC ---
 window.checkAutoBackup = async () => {
@@ -1159,22 +817,7 @@ function renderCoursesList(c) {
                         <div class="flex items-center gap-2">${renderAvatar(t, 'w-6 h-6', 'text-[10px]')} <span class="text-sm font-medium text-gray-700">${t ? t.name : 'Unknown'}</span></div>
                     </div>
                     <div class="flex items-center justify-between text-gray-400 text-xs border-t pt-3">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span>
-                            ${isTeacher ? `
-                                <button onclick="event.stopPropagation(); openCourseMessenger('${s.id}')" 
-                                    class="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-100 transition">
-                                    <i class="fas fa-comment-dots"></i>
-                                    <span>Message</span>
-                                </button>
-                            ` : `
-                                <button onclick="event.stopPropagation(); openCourseMessenger('${s.id}')" 
-                                    class="flex items-center gap-1 bg-green-50 text-green-600 px-2 py-1 rounded font-bold hover:bg-green-100 transition">
-                                    <i class="fas fa-comment-dots"></i>
-                                    <span>Chat</span>
-                                </button>
-                            `}
-                        </div>
+                        <span class="bg-gray-100 px-2 py-1 rounded text-gray-600"><i class="fas fa-users mr-1"></i> ${s.students.length} Students</span>
                         <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform text-gray-300 group-hover:text-theme"></i>
                     </div>
                 </div>
@@ -2003,7 +1646,7 @@ function renderCourseTab() {
         const qaItems = quizzes.filter(q => q.category === 'qa').sort((a,b) => new Date(a.openDate) - new Date(b.openDate));
 
         // Build HTML
-        let html = `<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-gray-800">Class Record</h2><div class="flex gap-2">${isTeacher?`<button onclick="openWeightsModal()" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-bold border">Weights</button><button onclick="resetGrades()" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs font-bold">Reset All</button>`:''}<button onclick="forceGradeRefresh()" class="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded text-xs font-bold"><i class="fas fa-sync-alt mr-1"></i>Refresh</button></div></div>`;
+        let html = `<div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-gray-800">Class Record</h2>${isTeacher?`<div class="flex gap-2"><button onclick="openWeightsModal()" class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-bold border">Weights</button><button onclick="resetGrades()" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs font-bold">Reset All</button></div>`:''}</div>`;
         
         // Summary Cards
         html += `<div class="grid grid-cols-3 gap-4 mb-4 text-center"><div class="bg-orange-50 p-2 rounded border border-orange-100"><div class="text-xs font-bold text-orange-800">WW (${weights.ww}%)</div></div><div class="bg-purple-50 p-2 rounded border border-purple-100"><div class="text-xs font-bold text-purple-800">PT (${weights.pt}%)</div></div><div class="bg-blue-50 p-2 rounded border border-blue-100"><div class="text-xs font-bold text-blue-800">QA (${weights.qa}%)</div></div></div>`;
@@ -2091,49 +1734,9 @@ function renderCourseTab() {
         c.innerHTML = html;
     }
     
-    // --- FORCE GRADES REFRESH ---
-    window.forceGradeRefresh = async () => {
-        const btn = event.target.closest('button');
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Loading...';
-            btn.disabled = true;
-        }
-        
-        // Force fetch from Supabase
-        try {
-            const { data, error } = await supabase
-                .from('app_data')
-                .select('data')
-                .eq('id', 'master_record')
-                .single();
-            
-            if (!error && data && data.data) {
-                // Merge the fresh data
-                const cloudData = data.data;
-                if (cloudData.activitySubmissions) db.activitySubmissions = cloudData.activitySubmissions;
-                if (cloudData.examSubmissions) db.examSubmissions = cloudData.examSubmissions;
-                
-                // Re-render grades tab
-                render();
-                showToast('Grades refreshed successfully');
-            } else {
-                showToast('Failed to refresh grades', 'error');
-            }
-        } catch (err) {
-            console.error('Refresh error:', err);
-            showToast('Error refreshing grades', 'error');
-        } finally {
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i>Refresh';
-                btn.disabled = false;
-            }
-        }
-    };
-    
     if(currentTab === 'people') {
-        c.innerHTML = renderPeopleTabWithMessenger(s, isTeacher);
-        // Update unread badge
-        updateUnreadBadge();
+        const ppl = db.users.filter(u=>s.students.includes(u.id));
+        c.innerHTML = `<h2 class="text-xl font-bold mb-4">People</h2>${isTeacher ? `<div class="flex gap-2"><button onclick="openRegisterStudentModal()" class="bg-white border text-gray-600 px-3 py-1 rounded text-sm font-bold shadow-sm">New</button><button onclick="openAddStudentModal()" class="btn-theme px-4 py-2 rounded font-bold text-sm">Enroll</button></div>` : ''}</div><div class="theme-panel bg-white border rounded overflow-hidden"><table class="w-full text-left"><thead class="bg-gray-50 border-b text-xs uppercase font-bold text-gray-500"><tr><th class="p-4">Name</th><th class="p-4">Role</th>${isTeacher?`<th class="p-4">User</th><th class="p-4">Pass</th><th class="p-4 text-right"></th>`:''}</tr></thead><tbody class="divide-y"><tr><td class="p-4 flex items-center gap-2 font-bold">${renderAvatar(db.users.find(u=>u.id===s.teacherId),'w-6 h-6')} ${db.users.find(u=>u.id===s.teacherId)?.name}</td><td class="p-4">Teacher</td>${isTeacher?`<td class="p-4 text-gray-400">-</td><td class="p-4 text-gray-400">-</td><td></td>`:''}</tr>${ppl.map(u=>`<tr><td class="p-4 flex items-center gap-2">${renderAvatar(u,'w-6 h-6')} ${u.name}</td><td class="p-4">Student</td>${isTeacher?`<td class="p-4 font-mono text-blue-600">${u.username}</td><td class="p-4 font-mono text-red-500">${u.password}</td><td class="p-4 text-right"><button onclick="removeStudentFromCourse('${s.id}','${u.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded"><i class="fas fa-user-minus"></i></button></td>`:''}</tr>`).join('')}</tbody></table></div>`;
     }
 }
 
@@ -2151,79 +1754,6 @@ function renderPostCard(p, isAdmin) {
     else if(p.mediaType==='link') mediaHtml=`<a href="${p.mediaUrl}" target="_blank" class="block mt-2 bg-gray-50 p-3 rounded border text-canvas-accent font-bold"><i class="fas fa-link mr-2"></i> ${p.mediaUrl}</a>`;
     return `<div class="theme-panel bg-white p-6 rounded border border-gray-200 shadow-sm relative group ${p.isPinned ? 'bg-yellow-50 border-yellow-200' : ''}">${p.isPinned ? '<div class="absolute top-2 left-2 text-xs font-bold text-yellow-600"><i class="fas fa-thumbtack mr-1"></i> Pinned</div>' : ''}${isAdmin ? `<div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition"><button onclick="togglePinPost('${p.id}')" class="${p.isPinned ? 'text-canvas-accent' : 'text-gray-300 hover:text-canvas-accent'}"><i class="fas fa-thumbtack"></i></button><button onclick="deletePost('${p.id}')" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash"></i></button></div>` : ''}<div class="flex gap-3 mb-3 mt-4">${renderAvatar({name:p.authorName}, 'w-10 h-10', 'text-sm')}<div><p class="font-bold text-sm">${p.authorName}</p><p class="text-xs text-gray-500">${new Date(p.date).toLocaleString()}</p></div></div><div class="text-gray-700 whitespace-pre-line">${p.content}</div>${mediaHtml}</div>`;
 }
-
-// --- BLOCK RENDERER (Shared by Activity & Module Builders) ---
-window.renderBlocks = () => {
-    const container = $('blocks-list');
-    if (!container) return;
-    
-    if (builderBlocks.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-400 py-12 italic border-2 border-dashed rounded-lg">Click the buttons below to add content blocks</div>';
-        return;
-    }
-    
-    container.innerHTML = builderBlocks.map((block, i) => {
-        let content = '';
-        
-        if (block.type === 'text') {
-            content = `
-                <div class="rich-toolbar">
-                    <button onclick="execCmd(${i}, 'bold')" class="rich-btn" title="Bold"><i class="fas fa-bold"></i></button>
-                    <button onclick="execCmd(${i}, 'italic')" class="rich-btn" title="Italic"><i class="fas fa-italic"></i></button>
-                    <button onclick="execCmd(${i}, 'underline')" class="rich-btn" title="Underline"><i class="fas fa-underline"></i></button>
-                    <div class="w-px h-4 bg-gray-300 mx-1"></div>
-                    <button onclick="execCmd(${i}, 'insertUnorderedList')" class="rich-btn" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-                    <button onclick="execCmd(${i}, 'insertOrderedList')" class="rich-btn" title="Numbered List"><i class="fas fa-list-ol"></i></button>
-                    <button onclick="execCmd(${i}, 'justifyLeft')" class="rich-btn" title="Align Left"><i class="fas fa-align-left"></i></button>
-                    <button onclick="execCmd(${i}, 'justifyCenter')" class="rich-btn" title="Center"><i class="fas fa-align-center"></i></button>
-                </div>
-                <div id="editor-${i}" contenteditable="true" class="rich-content" oninput="updateBlock(${i}, this.innerHTML)">${block.content || ''}</div>
-            `;
-        } else if (block.type === 'image') {
-            content = block.content 
-                ? `<img src="${block.content}" class="w-full h-auto rounded mb-2 max-h-96 object-contain bg-gray-100">
-                   <button onclick="uploadBlockFile(${i}, this.previousElementSibling.previousElementSibling)" class="text-sm text-blue-600 hover:underline font-bold">Change Image</button>
-                   <input type="file" accept="image/*" class="hidden" onchange="uploadBlockFile(${i}, this)">`
-                : `<label class="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded cursor-pointer hover:bg-gray-50 transition">
-                       <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
-                       <span class="text-sm text-gray-500">Click to upload image</span>
-                       <input type="file" accept="image/*" class="hidden" onchange="uploadBlockFile(${i}, this)">
-                   </label>`;
-        } else if (block.type === 'video') {
-            content = `
-                <input type="text" value="${block.content || ''}" placeholder="Paste YouTube URL (e.g., https://youtube.com/watch?v=...)" 
-                    class="w-full border p-2 rounded mb-2 text-sm" oninput="updateBlock(${i}, this.value)">
-                ${block.content ? `<div class="embed-container"><iframe src="${block.content.replace('watch?v=', 'embed/')}" frameborder="0" allowfullscreen></iframe></div>` : ''}
-            `;
-        } else if (block.type === 'file') {
-            content = block.content 
-                ? `<div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded">
-                       <i class="fas fa-file text-blue-500 text-xl"></i>
-                       <div class="flex-1">
-                           <p class="font-bold text-sm text-blue-700">${block.name || 'File'}</p>
-                       </div>
-                       <button onclick="uploadBlockFile(${i}, this.nextElementSibling)" class="text-sm text-red-500 hover:underline font-bold">Remove</button>
-                       <input type="file" class="hidden" onchange="uploadBlockFile(${i}, this)">
-                   </div>`
-                : `<label class="flex flex-col items-center justify-center h-24 border-2 border-dashed rounded cursor-pointer hover:bg-gray-50 transition">
-                       <i class="fas fa-paperclip text-xl text-gray-400 mb-2"></i>
-                       <span class="text-sm text-gray-500">Click to upload file</span>
-                       <input type="file" class="hidden" onchange="uploadBlockFile(${i}, this)">
-                   </label>`;
-        }
-        
-        return `
-            <div class="module-block">
-                <div class="block-actions">
-                    ${i > 0 ? `<button onclick="moveBlock(${i}, -1)" class="w-6 h-6 bg-white border rounded hover:bg-gray-100 text-gray-500" title="Move Up"><i class="fas fa-arrow-up text-xs"></i></button>` : ''}
-                    ${i < builderBlocks.length - 1 ? `<button onclick="moveBlock(${i}, 1)" class="w-6 h-6 bg-white border rounded hover:bg-gray-100 text-gray-500" title="Move Down"><i class="fas fa-arrow-down text-xs"></i></button>` : ''}
-                    <button onclick="removeBlock(${i})" class="w-6 h-6 bg-red-100 border border-red-200 rounded hover:bg-red-200 text-red-600" title="Delete"><i class="fas fa-trash text-xs"></i></button>
-                </div>
-                ${content}
-            </div>
-        `;
-    }).join('');
-};
 
 // --- MODULE BUILDER ---
 window.openModuleBuilder = () => { builderBlocks = []; editingModuleId = null; currentView = 'module_builder'; render(); }
@@ -2322,7 +1852,6 @@ window.toLocalISOString = (dateStr) => {
     const pad = (n) => n < 10 ? '0' + n : n;
     return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
 }
-window.toLocalISO = window.toLocalISOString;  // Alias for backward compatibility
 
 window.saveActivityBuilt = async () => {
     const t=$('act-build-title').value, max=parseInt($('act-build-max').value), cat=$('act-build-cat').value, start=$('act-build-start').value, due=$('act-build-due').value;
@@ -2542,64 +2071,6 @@ window.execCmd = (i, cmd, val=null) => {
     if(el) {
         builderBlocks[i].content = el.innerHTML;
     }
-}
-
-
-// --- MODULE BUILDER RENDERER ---
-function renderModuleBuilder(c) {
-    const mod = editingModuleId ? db.modules[currentCourseId].find(m=>m.id===editingModuleId) : {};
-    c.innerHTML = `
-        <div class="max-w-4xl mx-auto pb-24">
-            <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6 sticky top-24 z-30">
-                <div class="flex justify-between items-center mb-4">
-                    <div class="flex-1 mr-4">
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Module Title</label>
-                        <input id="mod-title" value="${mod.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full" placeholder="e.g., Lesson 1: Introduction">
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="cancelModule()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded border border-transparent hover:border-gray-200 transition">Cancel</button>
-                        <button id="btn-save-mod" onclick="saveModule()" class="btn-theme px-4 py-2 bg-green-600 text-white font-bold rounded shadow hover:shadow-lg transition">Save Module</button>
-                    </div>
-                </div>
-                <div class="flex gap-6 border-t pt-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">Unlock Date</label>
-                        <input id="mod-unlock" type="datetime-local" value="${toLocalISO(mod.unlockDate)}" class="border p-2 rounded text-sm">
-                    </div>
-                    ${editingModuleId ? `<button onclick="deleteModule('${editingModuleId}')" class="ml-auto text-red-500 hover:text-red-700 text-xs font-bold uppercase"><i class="fas fa-trash mr-1"></i> Remove Module</button>` : ''}
-                </div>
-            </div>
-
-            <div class="flex justify-between items-end mb-4 px-2">
-                <div class="font-bold text-gray-500 uppercase text-xs tracking-wider">Module Content</div>
-            </div>
-
-            <div id="blocks-list" class="space-y-4"></div>
-
-            <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md border border-gray-200 p-2 rounded-full flex justify-center gap-2 shadow-xl z-50">
-                <button onclick="addBlock('text')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-blue-50 rounded-lg transition group">
-                    <i class="fas fa-font text-blue-500 text-lg group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-gray-600 mt-1">Text</span>
-                </button>
-                <div class="w-px bg-gray-200 my-2"></div>
-                <button onclick="addBlock('image')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-green-50 rounded-lg transition group">
-                    <i class="fas fa-image text-green-500 text-lg group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-gray-600 mt-1">Image</span>
-                </button>
-                <div class="w-px bg-gray-200 my-2"></div>
-                <button onclick="addBlock('video')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-red-50 rounded-lg transition group">
-                    <i class="fas fa-video text-red-500 text-lg group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-gray-600 mt-1">Video</span>
-                </button>
-                <div class="w-px bg-gray-200 my-2"></div>
-                <button onclick="addBlock('file')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-orange-50 rounded-lg transition group">
-                    <i class="fas fa-paperclip text-orange-500 text-lg group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold text-gray-600 mt-1">File</span>
-                </button>
-            </div>
-        </div>
-    `;
-    renderBlocks();
 }
 
 function renderActivityBuilder(c) {

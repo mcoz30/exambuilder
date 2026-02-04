@@ -137,7 +137,7 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); }
         .cal-cell { background: var(--glass-bg); min-height: 120px; padding: 0.5rem; position: relative; }
         .cal-cell.today { background: rgba(var(--accent-color), 0.1); border: 1px solid var(--accent-color); }
-        .event-pill { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; transition: opacity 0.2s; }
+        .event-pill { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; items-center; gap: 4px; transition: opacity 0.2s; }
         
         /* Feed */
         .embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; margin-top: 10px; } 
@@ -164,8 +164,8 @@
             .cal-header-row { display: none; }
         }
         
-        #loading-screen { position: fixed; inset: 0; background: #2D3B45; z-index: 9999; display: flex; justify-content: center; align-items: center; color: white; flex-direction: column; gap: 1rem; transition: opacity 0.5s; }
-        #sync-status { position: fixed; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.8); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.75rem; z-index: 100; display: flex; align-items: center; gap: 0.5rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        #loading-screen { position: fixed; inset: 0; background: #2D3B45; z-index: 9999; display: flex; justify-content: center; items-center; color: white; flex-direction: column; gap: 1rem; transition: opacity 0.5s; }
+        #sync-status { position: fixed; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.8); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.75rem; z-index: 100; display: flex; items-center; gap: 0.5rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     </style>
 </head>
 <body class="h-screen overflow-hidden text-sm font-sans">
@@ -1784,150 +1784,8 @@ window.viewModule = (mid) => {
     `);
 }
 
-// Alias for backward compatibility with datetime helper
-window.toLocalISO = window.toLocalISOString;
-
-// --- BLOCK MANAGEMENT FUNCTIONS ---
-
-// Add a new block to the builder
-    document.execCommand(cmd, false, val); 
-    builderBlocks[i].content = document.getElementById(`editor-${i}`).innerHTML; 
-}
-
-// Handle file uploads for image/file blocks
-window.uploadBlockFile = (i, input) => { 
-    if(input.files[0]) { 
-        const r = new FileReader(); 
-        r.onload = e => { 
-            builderBlocks[i].content = e.target.result; 
-            builderBlocks[i].name = input.files[0].name; 
-            renderBlocks(); 
-        }; 
-        r.readAsDataURL(input.files[0]); 
-    } 
-}
-
-// Render all blocks to the UI
-window.renderBlocks = () => { 
-    const container = $('blocks-list'); 
-    if(!container) return;
-    
-    if(builderBlocks.length === 0) {
-        container.innerHTML = '<div class="text-center py-12 text-gray-400 border-2 border-dashed rounded-lg"><i class="fas fa-plus-circle text-3xl mb-3"></i><p class="text-sm">Click the buttons below to add content blocks</p></div>';
-        return;
-    }
-    
-    container.innerHTML = builderBlocks.map((b, i) => {
-        let content = '';
-        
-        if(b.type === 'text') {
-            content = `
-                <div class="rich-toolbar">
-                    <button onclick="execCmd(${i}, 'bold')" class="rich-btn" title="Bold"><i class="fas fa-bold"></i></button>
-                    <button onclick="execCmd(${i}, 'italic')" class="rich-btn" title="Italic"><i class="fas fa-italic"></i></button>
-                    <button onclick="execCmd(${i}, 'underline')" class="rich-btn" title="Underline"><i class="fas fa-underline"></i></button>
-                    <button onclick="execCmd(${i}, 'insertUnorderedList')" class="rich-btn" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-                    <button onclick="execCmd(${i}, 'insertOrderedList')" class="rich-btn" title="Numbered List"><i class="fas fa-list-ol"></i></button>
-                    <div class="w-px h-6 bg-gray-300 mx-1"></div>
-                    <button onclick="execCmd(${i}, 'justifyLeft')" class="rich-btn" title="Align Left"><i class="fas fa-align-left"></i></button>
-                    <button onclick="execCmd(${i}, 'justifyCenter')" class="rich-btn" title="Align Center"><i class="fas fa-align-center"></i></button>
-                    <button onclick="execCmd(${i}, 'justifyRight')" class="rich-btn" title="Align Right"><i class="fas fa-align-right"></i></button>
-                </div>
-                <div id="editor-${i}" contenteditable="true" class="rich-content" 
-                     oninput="updateBlock(${i}, this.innerHTML)"
-                     placeholder="Type your text here...">${b.content}</div>
-            `;
-        } else if(b.type === 'image') {
-            content = `
-                <div class="space-y-2">
-                    ${b.content ? `<img src="${b.content}" class="w-full h-auto rounded border max-h-64 object-cover">` : ''}
-                    <div class="flex items-center gap-2">
-                        <label class="flex-1">
-                            <input type="file" accept="image/*" onchange="uploadBlockFile(${i}, this)" class="hidden">
-                            <div class="w-full border-2 border-dashed rounded p-3 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
-                                <i class="fas fa-cloud-upload-alt text-gray-400 mr-2"></i>
-                                <span class="text-sm text-gray-500">${b.content ? 'Change image' : 'Upload image'}</span>
-                            </div>
-                        </label>
-                        ${b.content ? `<button onclick="builderBlocks[${i}].content=''; renderBlocks()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded text-sm font-bold">Remove</button>` : ''}
-                    </div>
-                </div>
-            `;
-        } else if(b.type === 'video') {
-            content = `
-                <div class="space-y-2">
-                    ${b.content ? `
-                        <div class="aspect-video rounded overflow-hidden bg-gray-900">
-                            ${b.content.includes('youtube.com') || b.content.includes('youtu.be') 
-                                ? `<iframe src="${b.content.replace('watch?v=', 'embed/')}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>` 
-                                : `<video src="${b.content}" controls class="w-full h-full"></video>`
-                            }
-                        </div>
-                    ` : ''}
-                    <div class="flex gap-2">
-                        <input type="text" value="${b.content}" 
-                               onchange="updateBlock(${i}, this.value)"
-                               placeholder="Paste YouTube or video URL..." 
-                               class="flex-1 border p-2 rounded text-sm">
-                        ${b.content ? `<button onclick="builderBlocks[${i}].content=''; renderBlocks()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded text-sm font-bold">Remove</button>` : ''}
-                    </div>
-                </div>
-            `;
-        } else if(b.type === 'file') {
-            content = `
-                <div class="space-y-2">
-                    ${b.content ? `
-                        <div class="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded">
-                            <i class="fas fa-file text-orange-500 text-2xl"></i>
-                            <div class="flex-1">
-                                <p class="font-bold text-sm">${b.name || 'File'}</p>
-                                <p class="text-xs text-gray-500">File attached</p>
-                            </div>
-                        </div>
-                    ` : ''}
-                    <div class="flex items-center gap-2">
-                        <label class="flex-1">
-                            <input type="file" onchange="uploadBlockFile(${i}, this)" class="hidden">
-                            <div class="w-full border-2 border-dashed rounded p-3 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition">
-                                <i class="fas fa-paperclip text-gray-400 mr-2"></i>
-                                <span class="text-sm text-gray-500">${b.content ? 'Change file' : 'Upload file'}</span>
-                            </div>
-                        </label>
-                        ${b.content ? `<button onclick="builderBlocks[${i}].content=''; renderBlocks()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded text-sm font-bold">Remove</button>` : ''}
-                    </div>
-                </div>
-            `;
-        }
-        
-        return `
-            <div class="module-block" data-index="${i}">
-                <div class="block-actions">
-                    <button onclick="moveBlock(${i}, -1)" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded" title="Move Up">
-                        <i class="fas fa-chevron-up"></i>
-                    </button>
-                    <button onclick="moveBlock(${i}, 1)" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded" title="Move Down">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <button onclick="removeBlock(${i})" class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1 rounded" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-                <div class="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
-                    <i class="fas ${b.type === 'text' ? 'fa-font text-blue-500' : b.type === 'image' ? 'fa-image text-green-500' : b.type === 'video' ? 'fa-video text-red-500' : 'fa-paperclip text-orange-500'}"></i>
-                    ${b.type.charAt(0).toUpperCase() + b.type.slice(1)} Block
-                </div>
-                ${content}
-            </div>
-        `;
-    }).join('');
-});
+window.addBlock = (type) => { builderBlocks.push({ type, content: '' }); renderBlocks(); }
 window.removeBlock = (i) => { builderBlocks.splice(i, 1); renderBlocks(); }
-
-// Add a new block to the builder
-window.addBlock = (type) => { 
-    builderBlocks.push({ type, content: '' }); 
-    renderBlocks(); 
-}
 window.moveBlock = (i, dir) => { if(i+dir>=0 && i+dir<builderBlocks.length) { [builderBlocks[i], builderBlocks[i+dir]] = [builderBlocks[i+dir], builderBlocks[i]]; renderBlocks(); } }
 window.updateBlock = (i, val) => { builderBlocks[i].content = val; }
 window.execCmd = (i, cmd, val=null) => { document.execCommand(cmd, false, val); builderBlocks[i].content = document.getElementById(`editor-${i}`).innerHTML; }
@@ -2040,6 +1898,178 @@ window.saveActivityBuilt = async () => {
             btn.disabled = false;
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
         }
+    }
+}
+
+function renderActivityBuilder(c) {
+    const act = editingActivityId ? db.activities[currentCourseId].find(a=>a.id===editingActivityId) : {};
+    c.innerHTML = `
+        <div class="max-w-4xl mx-auto pb-24">
+            <div class="theme-panel bg-white p-6 rounded shadow-sm border mb-6 sticky top-24 z-30">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex-1 mr-4">
+                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Activity Title</label>
+                        <input id="act-build-title" value="${act.title||''}" class="text-2xl font-bold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full" placeholder="e.g., Reflection Paper 1">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="cancelActivity()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded border border-transparent hover:border-gray-200 transition">Cancel</button>
+                        <button id="btn-save-act" onclick="saveActivityBuilt()" class="btn-theme px-4 py-2 bg-green-600 text-white font-bold rounded shadow hover:shadow-lg transition">Save Activity</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 bg-gray-50 p-4 rounded border">
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Category</label><select id="act-build-cat" class="w-full border p-2 rounded bg-white text-sm"><option value="ww" ${act.category==='ww'?'selected':''}>Written Work</option><option value="pt" ${act.category==='pt'?'selected':''}>Perf Task</option></select></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Max Score</label><input id="act-build-max" type="number" value="${act.maxScore||100}" class="w-full border p-2 rounded text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Unlock Date (Start)</label><input id="act-build-start" type="datetime-local" value="${toLocalISO(act.openDate)}" class="w-full border p-2 rounded text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Due Date (Lock)</label><input id="act-build-due" type="datetime-local" value="${toLocalISO(act.dueDate)}" class="w-full border p-2 rounded text-sm"></div>
+                </div>
+                <div class="flex gap-6 border-t pt-4">
+                    <span class="text-sm font-bold text-gray-700">Submission Type:</span>
+                    <label class="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" id="sub-opt-text" ${(act.submissionOptions?.text !== false)?'checked':''} class="accent-blue-600"> Text Entry</label>
+                    <label class="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" id="sub-opt-file" ${(act.submissionOptions?.file !== false)?'checked':''} class="accent-blue-600"> File Upload</label>
+                    
+                    ${editingActivityId ? `<button onclick="deleteActivity('${editingActivityId}')" class="ml-auto text-red-500 hover:text-red-700 text-xs font-bold uppercase"><i class="fas fa-trash mr-1"></i> Remove Activity</button>` : ''}
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end mb-4 px-2">
+                 <div class="font-bold text-gray-500 uppercase text-xs tracking-wider">Instructions & Content</div>
+            </div>
+
+            <div id="blocks-list" class="space-y-4"></div>
+
+            <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md border border-gray-200 p-2 rounded-full flex justify-center gap-2 shadow-xl z-50">
+                <button onclick="addBlock('text')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-blue-50 rounded-lg transition group">
+                    <i class="fas fa-font text-blue-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">Text</span>
+                </button>
+                <div class="w-px bg-gray-200 my-2"></div>
+                <button onclick="addBlock('image')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-green-50 rounded-lg transition group">
+                    <i class="fas fa-image text-green-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">Image</span>
+                </button>
+                <div class="w-px bg-gray-200 my-2"></div>
+                <button onclick="addBlock('video')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-red-50 rounded-lg transition group">
+                    <i class="fas fa-video text-red-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">Video</span>
+                </button>
+                <div class="w-px bg-gray-200 my-2"></div>
+                <button onclick="addBlock('file')" class="flex flex-col items-center justify-center w-16 h-14 hover:bg-orange-50 rounded-lg transition group">
+                    <i class="fas fa-paperclip text-orange-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600 mt-1">File</span>
+                </button>
+            </div>
+        </div>
+    `;
+    renderBlocks();
+}
+
+// --- UPDATED MODULE BUILDER (Replaces your old saveModule) ---
+    // --- ACTIVITIES TAB (ENHANCED BUILDER) ---
+    if(currentTab === 'activities') {
+        const acts = db.activities[s.id] || [];
+        let html = `<div class="flex justify-between items-center mb-6 border-b pb-4"><div><h2 class="text-xl font-bold text-gray-800">Class Activities</h2><p class="text-gray-500 text-xs">Performance Tasks & Written Work</p></div>${isTeacher ? `<button onclick="createActivity()" class="btn-theme px-4 py-2 rounded font-bold text-sm shadow transition"><i class="fas fa-plus mr-2"></i>New Activity</button>` : ''}</div>`;
+        if(acts.length === 0) { html += `<div class="theme-panel bg-white p-12 rounded border border-dashed text-center text-gray-400"><i class="fas fa-clipboard-list text-4xl mb-3 block"></i>No activities yet.</div>`; } 
+        else {
+            html += `<div class="grid grid-cols-1 gap-4">`;
+            acts.forEach(a => {
+                const now = new Date();
+                const openDate = a.openDate ? new Date(a.openDate) : null;
+                const dueDate = a.dueDate ? new Date(a.dueDate) : null;
+                
+                // Logic for locking
+                const isLocked = !isTeacher && openDate && now < openDate;
+                const isClosed = !isTeacher && dueDate && now > dueDate;
+                
+                // Styling
+                const badgeColor = a.category === 'pt' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-orange-100 text-orange-700 border-orange-200';
+                const opacityClass = isLocked ? 'opacity-70 bg-gray-50 grayscale-[0.5]' : 'bg-white hover:shadow-md';
+                const clickAction = isLocked 
+                    ? `onclick="showToast('Locked until ${openDate.toLocaleString()}', 'error')"` 
+                    : `onclick="openActivityDetail('${a.id}')"`;
+
+                let statusBadge = '';
+                if(openDate && now < openDate) statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-0.5 rounded border border-yellow-200"><i class="fas fa-clock"></i> Scheduled: ${formatDate(openDate)}</span>`;
+                else if(dueDate) statusBadge = `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded border border-gray-200"><i class="fas fa-hourglass-end"></i> Due: ${formatDate(dueDate)}</span>`;
+                
+                let subStatus = '';
+                if (!isTeacher) {
+                    const sub = db.activitySubmissions[a.id]?.[currentUser.id];
+                    if(sub && (sub.submittedAt || typeof sub === 'number')) subStatus = `<span class="text-green-600 text-xs font-bold ml-2"><i class="fas fa-check-circle"></i> Submitted</span>`;
+                    else if(isClosed) subStatus = `<span class="text-red-500 text-xs font-bold ml-2"><i class="fas fa-times-circle"></i> Missing</span>`;
+                }
+
+                html += `
+                <div class="theme-panel ${opacityClass} p-4 rounded border flex justify-between items-center transition cursor-pointer" ${clickAction}>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
+                            <i class="fas ${isLocked ? 'fa-lock' : 'fa-clipboard-check'} text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                                ${a.title}
+                                ${subStatus}
+                            </h4>
+                            <div class="flex flex-wrap gap-2 text-xs mt-1 items-center">
+                                <span class="${badgeColor} px-2 py-0.5 rounded font-bold uppercase border">${a.category==='pt'?'Performance Task':'Written Work'}</span>
+                                <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">Max: ${a.maxScore} pts</span>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                    </div>
+                    ${isTeacher ? `
+                    <div class="flex gap-2">
+                        <button onclick="event.stopPropagation(); editActivity('${a.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="event.stopPropagation(); deleteActivity('${a.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded transition"><i class="fas fa-trash"></i></button>
+                    </div>` : '<i class="fas fa-chevron-right text-gray-300"></i>'}
+                </div>`;
+            });
+            html += `</div>`;
+        }
+        c.innerHTML = html;
+    }
+
+    const moduleData = {
+        id: editingModuleId || 'mod_' + Date.now(),
+        title: title,
+        courseId: currentCourseId,
+        unlockDate: unlockDate, 
+        blocks: [...builderBlocks], 
+        date: new Date().toISOString() 
+    };
+
+    // Ensure the array exists for this specific course
+    if (!db.modules[currentCourseId]) db.modules[currentCourseId] = [];
+
+    // Logic to Update or Add
+    if (editingModuleId) {
+        const idx = db.modules[currentCourseId].findIndex(m => m.id === editingModuleId);
+        if(idx !== -1) db.modules[currentCourseId][idx] = moduleData;
+    } else {
+        db.modules[currentCourseId].push(moduleData);
+    }
+
+    const success = await saveDB();
+    
+    if (success) {
+        showToast('Module successfully saved to Cloud');
+        goCourse(currentCourseId); 
+    } else {
+        // Reset button on failure
+        if(btn) {
+            btn.innerHTML = '<i class="fas fa-save"></i> <span>Save Module</span>';
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    }
+};
+
+window.execCmd = (i, cmd, val=null) => { 
+    // Ensure document focus allows command execution (basic)
+    document.execCommand(cmd, false, val); 
+    // Immediately update the model
+    const el = document.getElementById(`editor-${i}`);
+    if(el) {
+        builderBlocks[i].content = el.innerHTML;
     }
 }
 

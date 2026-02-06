@@ -1,3 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LearnNovaLMS</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2D3B45">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Lato"', 'sans-serif'] },
+                    colors: {
+                        canvas: { 
+                            base: '#2D3B45', 
+                            primary: '#0e1e24', 
+                            accent: 'var(--accent-color)', 
+                            danger: '#EE4D3D', 
+                            success: '#00AC18',
+                            light: '#F5F5F5'
+                        }
+                    },
+                    animation: { 'fade-in': 'fadeIn 0.3s ease-out' },
+                    keyframes: { fadeIn: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Dynamic Theme Variables */
+        :root {
+            --bg-style: #F5F5F5;
+            --glass-bg: #ffffff;
+            --glass-border: 1px solid #e2e8f0;
+            --glass-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            --backdrop-blur: none;
+            --text-color: #2D3B45;
+            --sidebar-bg: #ffffff;
+            --nav-item-active-bg: rgba(3, 116, 181, 0.1);
+            
+            /* Theme Variables */
+            --header-bg: #ffffff;
+            --header-text: #2D3B45;
+            --header-shadow: none;
+            --global-border-color: #e2e8f0;
+            --accent-color: #0374B5; 
+            --btn-bg: #0374B5; 
+        }
+
+        body { 
+            background: var(--bg-style); 
+            color: var(--text-color); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            transition: background 0.3s ease;
+        }
+
+        /* Professional Card Style */
+        .theme-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--global-border-color);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        /* Header Styling */
+        header.theme-panel {
+            background: var(--header-bg) !important;
+            color: var(--header-text) !important;
+            border-bottom: 1px solid var(--global-border-color) !important;
+            text-shadow: var(--header-shadow);
+        }
+        
+        /* Custom Button Class */
+        .btn-theme {
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-theme:hover {
+            opacity: 0.95;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        .text-theme { color: var(--accent-color); }
+        
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+        
+        .nav-item.active { background: var(--nav-item-active-bg); color: var(--accent-color); border-right: 3px solid var(--accent-color); }
+
+        /* Global Nav */
+        #global-nav { 
+            width: 84px; flex-shrink: 0; 
+            background: var(--sidebar-bg);
+            display: flex; flex-direction: column; align-items: center; padding-top: 1rem; z-index: 50; 
+            border-right: 1px solid var(--global-border-color);
+            backdrop-filter: var(--backdrop-blur);
+        }
+        .nav-item { color: var(--text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 0.75rem 0; cursor: pointer; transition: background 0.2s; position: relative; opacity: 0.8; }
+        .nav-item:hover { background-color: rgba(0,0,0,0.05); opacity: 1; }
+        .nav-item.active { background-color: rgba(var(--accent-color), 0.1); color: var(--accent-color); border-left: 4px solid var(--accent-color); opacity: 1; }
+        .nav-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; }
+
+        /* Course Cards */
+        .course-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .course-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .course-header { height: 140px; background-size: cover; background-position: center; position: relative; }
+
+        /* Calendar */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); }
+        .cal-cell { background: var(--glass-bg); min-height: 120px; padding: 0.5rem; position: relative; }
+        .cal-cell.today { background: rgba(var(--accent-color), 0.1); border: 1px solid var(--accent-color); }
+        .event-pill { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; items-center; gap: 4px; transition: opacity 0.2s; }
+        
+        /* Feed */
+        .embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; margin-top: 10px; } 
+        .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* Module & Activity Builder Styles */
+        .module-block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.8); position: relative; transition: all 0.2s; }
+        .module-block:hover { border-color: var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .block-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s; }
+        .module-block:hover .block-actions { opacity: 1; }
+        .rich-toolbar { background: rgba(0,0,0,0.02); padding: 6px; border-bottom: 1px solid #e2e8f0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .rich-btn { padding: 4px 8px; border-radius: 4px; background: white; border: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: #475569; display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 28px; }
+        .rich-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .rich-content { min-height: 80px; padding: 10px; outline: none; background: white; color: #334155; }
+        
+        @media (max-width: 768px) {
+            #main-layout { flex-direction: column; }
+            #global-nav { width: 100%; height: 60px; flex-direction: row; padding: 0; justify-content: space-around; position: fixed; bottom: 0; }
+            .nav-item { padding: 0.5rem; }
+            .nav-label { display: none; }
+            #content-area { padding-bottom: 80px; }
+            .calendar-grid { display: flex; flex-direction: column; gap: 8px; border: none; background: transparent; }
+            .cal-cell { min-height: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+            .cal-header-row { display: none; }
+        }
+        
+        #loading-screen { position: fixed; inset: 0; background: #2D3B45; z-index: 9999; display: flex; justify-content: center; items-center; color: white; flex-direction: column; gap: 1rem; transition: opacity 0.5s; }
+        #sync-status { position: fixed; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.8); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.75rem; z-index: 100; display: flex; items-center; gap: 0.5rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    </style>
+</head>
+<body class="h-screen overflow-hidden text-sm font-sans">
+
+    <div id="loading-screen"><i class="fas fa-circle-notch fa-spin text-4xl"></i><p class="font-bold tracking-widest">CONNECTING...</p></div>
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+    <div id="sync-status"><i class="fas fa-save"></i> Saved</div>
+    <div id="app" class="flex h-full w-full opacity-0 transition-opacity duration-500"></div>
+    <div id="modal-portal" class="relative z-[60]"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+// --- SUPABASE CONFIGURATION ---
+const supabaseUrl = 'https://lgovvztkuqnpsshdrwyu.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnb3Z2enRrdXFucHNzaGRyd3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwMTY0OTgsImV4cCI6MjA4NTU5MjQ5OH0.0gks6pz9g8JCP6LMiKEGQj3J-M27ljGPLwv-umyoPVA';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// --- DATA STORE ---
+const defaultData = {
+    users: [
+        { id: 'u1', name: 'Mrs. Anderson', role: 'teacher', username: 'teacher', password: '123', avatar: 'MA' },
+        { id: 'u2', name: 'Juan Dela Cruz', role: 'student', username: 'student', password: '123', avatar: 'JD' },
+        { id: 'u3', name: 'Maria Santos', role: 'student', username: 'student2', password: '123', avatar: 'MS' },
+        { id: 'u0', name: 'School Admin', role: 'admin', username: 'admin', password: '123', avatar: 'AD' } 
+    ],
+    subjects: [
+        { id: 's1', name: 'Introduction to Physics', code: 'PHYS-101', teacherId: 'u1', students: ['u2', 'u3'], color: '#0374B5', img: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?auto=format&fit=crop&w=600&q=80', introTitle: 'Welcome to Physics', introBody: 'Check the feed.', gradingWeights: { ww: 40, pt: 40, qa: 20 } }
+    ],
+    posts: [{ id: 'p1', courseId: 's1', authorId: 'u1', authorName: 'Mrs. Anderson', date: '2023-10-24T09:00', content: 'Welcome to class!', mediaType: 'text', isPinned: false }],
+    globalPosts: [],
+    activities: { 's1': [] },
+    activitySubmissions: {},
+    exams: { 's1': [] },
+    examSubmissions: {},
+    modules: { 's1': [] },
+    globalEvents: [],
+    theme: { appName: 'LearnNovaLMS', logoUrl: '', bgType: 'color', bgColor: '#F5F5F5', bgGradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', bgImage: '', glassEffect: false, glassOpacity: 0.95 }
+};
+
+let db = defaultData, currentUser = null, currentView = 'login', currentCourseId = null, activeExamId = null, currentTab = 'home', calendarDate = new Date(), importedText = '', tempPostImage = null, tempTeacherImage = null, adminCourseFilter = 'all', selectedLoginRole = null, supabaseUser = null; 
+let builderBlocks = [], editingModuleId = null, editingActivityId = null;
+
+// --- PH HOLIDAYS ---
+const phHolidays = [
+    {m:0, d:1, t:'New Year\'s Day', c:'red'}, {m:1, d:25, t:'EDSA Revolution', c:'yellow'}, {m:3, d:9, t:'Araw ng Kagitingan', c:'red'}, {m:4, d:1, t:'Labor Day', c:'red'},
+    {m:5, d:12, t:'Independence Day', c:'blue'}, {m:7, d:21, t:'Ninoy Aquino Day', c:'yellow'}, {m:7, d:28, t:'National Heroes Day', c:'red'}, {m:10, d:1, t:'All Saints Day', c:'purple'},
+    {m:10, d:2, t:'All Souls Day', c:'purple'}, {m:10, d:30, t:'Bonifacio Day', c:'red'}, {m:11, d:8, t:'Feast of Immaculate Conception', c:'blue'}, {m:11, d:25, t:'Christmas Day', c:'green'}, {m:11, d:30, t:'Rizal Day', c:'blue'}
+];
+
+// --- SUPABASE SYNC ---
+let saveTimeout = null;
+
+async function initSupabase() {
+    try {
+        const { data: appData, error } = await supabase
+            .from('app_data')
+            .select('data')
+            .eq('id', 'master_record')
+            .single();
+        
+        if (error && error.code !== 'PGRST116') {
+            console.error("Supabase Error:", error);
+        }
+        
+        if (appData && appData.data) {
+            db = appData.data;
+            ['activities','activitySubmissions','modules','exams','examSubmissions','globalEvents'].forEach(k=>{
+                if(!db[k]) db[k] = (k==='activitySubmissions'||k==='examSubmissions') ? {} : [];
+            });
+            if(!db.theme) db.theme = defaultData.theme;
+        } else {
+            console.log("Initializing with default data");
+        }
+        
+        applyTheme();
+        
+        const l = $('loading-screen');
+        if(l) {
+            l.style.opacity=0;
+            setTimeout(() => l.remove(), 500);
+            $('app').classList.remove('opacity-0');
+        }
+       
+// Optimized Non-Blocking Save
+async function saveDB() {
+    // Immediate UI Feedback
+    const status = $('sync-status');
+    if(status) {
+        status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+        status.style.opacity = '1';
+    }
+
+    // Debounce to prevent flooding
+    if (saveTimeout) clearTimeout(saveTimeout);
+
+    return new Promise((resolve) => {
+        saveTimeout = setTimeout(async () => {
+            try {
+                const { error } = await supabase
+                    .from('app_data')
+                    .upsert({ 
+                        id: 'master_record', 
+                        data: db,
+                        updated_at: new Date().toISOString()
+                    }, { 
+                        onConflict: 'id' 
+                    });
+                
+                if (error) {
+                    console.error("Save Error:", error);
+                    if (error.code === '42P01' || error.code === '42501') {
+                        showDatabaseErrorModal(error.code);
+                    } else {
+                        showToast('Sync failed: ' + error.message, 'error');
+                    }
+                    resolve(false);
+                } else {
+                    if(status) {
+                        status.innerHTML = '<i class="fas fa-check"></i> Saved';
+                        setTimeout(() => status.style.opacity = '0', 2000);
+                    }
+                    resolve(true);
+                }
+            } catch (e) {
+                console.error("Save Error:", e);
+                showToast('Connection failed', 'error');
+                resolve(false);
+            }
+        }, 500); // 500ms delay to batch rapid updates
+    });
+}
+
+// Helper to show SQL Fix
+window.showDatabaseErrorModal = (code) => {
+    const title = code === '42P01' ? 'Database Table Missing' : 'Permission Denied (RLS)';
+    const msg = code === '42P01' 
+        ? 'The "app_data" table does not exist in your Supabase project.' 
+        : 'Row Level Security is blocking the save. You need to enable public access.';
+    
+    renderModal('db-error', title, `
+        <div class="space-y-4">
+            <div class="bg-red-50 text-red-700 p-4 rounded border border-red-200">
+                <p class="font-bold"><i class="fas fa-exclamation-triangle"></i> Data Not Saving</p>
+                <p class="text-sm mt-1">${msg}</p>
+            </div>
+            <p class="text-sm text-gray-600">Please go to the <strong>Supabase SQL Editor</strong> and run this code:</p>
+            <div class="relative group">
+                <textarea id="sql-code" class="w-full h-32 bg-gray-800 text-green-400 font-mono text-xs p-3 rounded" readonly>
+create table if not exists app_data (
+  id text primary key,
+  data jsonb,
+  updated_at timestamptz
+);
+alter table app_data enable row level security;
+create policy "Public Access" on app_data for all using (true) with check (true);
+                </textarea>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('sql-code').value); showToast('SQL Copied!')" class="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-white px-2 py-1 rounded text-xs">Copy</button>
+            </div>
+            <button onclick="saveDB(); closeModal('db-error')" class="btn-theme w-full text-white py-2 rounded font-bold">I ran the code, Try Saving Again</button>
+        </div>
+    `);
+}
+
+initSupabase();
+
 // --- THEME ENGINE ---
 function applyTheme() {
     const t = db.theme || defaultData.theme;
